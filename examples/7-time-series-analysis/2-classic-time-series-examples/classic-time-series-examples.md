@@ -12,6 +12,8 @@ Open [classic-time-series-examples.bestfit](classic-time-series-examples.bestfit
 
 The supplied [Airline](airline-passengers.csv), [Nile](nile-river-flow.csv) and [CO2](mauna-loa-co2.csv) CSV files provide source snapshots. All stored observations are finite. The Nile values match the CSV in order, but its saved 1897–1996 dates differ from the source 1871–1970 dates. The [manual-entry tutorial](../../1-time-series-data/6-manual-entry/manual-entry-example.md) explains the same discrepancy. Dates remain unchanged; historical event labels would be misleading on the shifted axis.
 
+In **Project Explorer**, expand **Time Series Data** to select the three observation series, and **Time Series Analysis** to select their fitted alternatives. Selecting **Airline Passengers** exposes its source settings and **Unit Label** in **Properties > General**; this input selection differs from **Airline Passengers - TSA**. The input series ACF describes correlation in observed passengers, while the fitted analysis offers residual and parameter-chain diagnostics. The Nile input plot retains the shifted saved dates described above.
+
 ## Work through the actual models
 
 1. Open Airline Passengers - TSA. It is untransformed ARIMA(1,1,1), with an intercept and no seasonal term. It is not a seasonal log-ARIMA textbook fit.
@@ -25,6 +27,8 @@ The supplied [Airline](airline-passengers.csv), [Nile](nile-river-flow.csv) and 
 | Airline Passengers - TSA | 1,1,1 | None | None | False | 120 / 24 / 0 |
 | Nile River Flows - TSA | 1,1,0 | None | None | False | 80 / 20 / 0 |
 | Mauna Loa - CO2 | 0,0,0 | Quadratic | None | True | 632 / 158 / 0 |
+
+With **Airline Passengers - TSA** selected, open **Time Series Results > Time Series Plot** and **Tabular Results**. Inspect **Training Steps**, **Validation Steps** and **Forecast Steps** under **Properties > Output**; the current zero future horizon keeps the plot within the observed record. A new forecast experiment would change **Forecast Steps** in a working copy and use **Estimate** under **Properties > General**, producing new results. Do not infer forecast skill from the saved validation view or its band. Use **Residual Diagnostics > ACF Plot** and **PACF Plot** for residual structure. The separate **Autocorrelation** tab for **Intercept (μ)** shows chain mixing, alongside **Markov Chain Traces** and **MCMC Report**.
 
 ## Saved diagnostics and the Airline limitation
 
@@ -48,9 +52,9 @@ RMSE is training fit, not held-out skill. Prediction intervals include process/e
 
 ## Read the figures
 
-![Retained Airline training/validation result; weak saved MCMC diagnostics limit interpretation.](images/classic-time-series-examples-airline-validation.png)
+![Retained Airline training/validation result; weak saved MCMC diagnostics limit interpretation.](screenshots/airline-validation.png)
 
-*Retained Airline training/validation result; weak saved MCMC diagnostics limit interpretation.* [SVG](images/classic-time-series-examples-airline-validation.svg) · [Plot data](images/classic-time-series-examples-airline-validation.plotspec.json.gz)
+*Retained Airline training/validation result; weak saved MCMC diagnostics limit interpretation.* [SVG](images/classic-time-series-examples-airline-validation.svg) · [Plot data](images/classic-time-series-examples-airline-validation.plotspec.json.gz) [Native SVG](screenshots/airline-validation.svg) [Capture data](screenshots/airline-validation.json.gz)
 
 ![Nile validation view uses the saved 1897–1996 calendar, which is offset from the CSV source.](images/classic-time-series-examples-nile-validation.png)
 
@@ -72,8 +76,12 @@ RMSE is training fit, not held-out skill. Prediction intervals include process/e
 
 *CO2 residuals on the actual saved dates.* [SVG](images/classic-time-series-examples-co2-residuals.svg) · [Plot data](images/classic-time-series-examples-co2-residuals.plotspec.json.gz)
 
+![Airline Passengers - TSA: native Intercept (μ) parameter-chain ACF. Poor saved R-hat and ESS remain; this is not residual autocorrelation.](screenshots/airline-intercept-chain-acf.png)
+
+*Airline Passengers - TSA: native Intercept (μ) parameter-chain ACF. Poor saved R-hat and ESS remain; this is not residual autocorrelation.* [Native SVG](screenshots/airline-intercept-chain-acf.svg) [Capture data](screenshots/airline-intercept-chain-acf.json.gz)
+
 ## Reproduce and check
 
-The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only classic-time-series-examples`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
+Figures under `screenshots/` export the named native views from the current classic project. The remaining figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only classic-time-series-examples`. Each Python figure links an SVG and its exact display inputs in a compressed PlotSpec. Native captures link their own capture data and, for plots, a native SVG.
 
 Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

@@ -33,6 +33,8 @@ The analysis named **ARMA(2,2) actually stores p=2, q=1**. Its name and settings
 
 Default training uses 240 observations; several examples instead retain manual 280/20 or 275/25 splits. The saved BlockBootstrap covariate option is dormant because these fits have no exogenous covariates. The [source workbook](Synthetic%20Data.xlsx) is a generator-provenance lead; the saved fit alone does not establish known-truth parameter recovery.
 
+Select **Intercept + Linear Trend + LogTransform** in **Project Explorer**, then **Time Series Results > Time Series Plot** or **Tabular Results**. Under **Properties > Output**, inspect **Training Steps**, **Validation Steps** and **Forecast Steps**: the retained future horizon is zero. A separate experiment can change **Forecast Steps** in a working copy and use **Estimate** under **Properties > General**; that creates new results and is not the saved evidence shown here. For the current model, open **Residual Diagnostics > ACF Plot** for residual correlation, and **Markov Chain Traces**, **Autocorrelation** and **MCMC Report** for parameter-chain diagnostics. The residual and chain ACFs answer different questions.
+
 ## Saved diagnostics
 
 All fits retain DEMCzs, seed 12345, warmup 1,750, iterations 3,500, 10,000 output draws and 90% interval width. The chain/thinning settings and chosen posterior mean or mode parameter vector remain as saved. Inspect the actual prior bounds, parameter chains, autocorrelation and tail uncertainty. Scalar diagnostics describe the retained run; they do not substitute for scientific validation.
@@ -99,9 +101,9 @@ Saved RMSE describes the training-window fit, not held-out forecast error. The p
 
 *Intercept + Linear Trend + ARMA(1,1): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-11.svg) · [Plot data](images/synthetic-time-series-examples-model-11.plotspec.json.gz)
 
-![Intercept + Linear Trend + LogTransform: training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-12.png)
+![Intercept + Linear Trend + LogTransform: training and withheld validation. No future observations beyond the saved record are predicted.](screenshots/synthetic-log-validation.png)
 
-*Intercept + Linear Trend + LogTransform: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-12.svg) · [Plot data](images/synthetic-time-series-examples-model-12.plotspec.json.gz)
+*Intercept + Linear Trend + LogTransform: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-12.svg) · [Plot data](images/synthetic-time-series-examples-model-12.plotspec.json.gz) [Native SVG](screenshots/synthetic-log-validation.svg) [Capture data](screenshots/synthetic-log-validation.json.gz)
 
 ![Residual autocorrelation for the saved ARMA(1,1) fit.](images/synthetic-time-series-examples-arma-residual-acf.png)
 
@@ -111,8 +113,12 @@ Saved RMSE describes the training-window fit, not held-out forecast error. The p
 
 *Residual Q–Q view for ARMA(1,1); examine distributional departures separately from autocorrelation.* [SVG](images/synthetic-time-series-examples-arma-residual-qq.svg) · [Plot data](images/synthetic-time-series-examples-arma-residual-qq.plotspec.json.gz)
 
+![Intercept + Linear Trend + LogTransform: native residual ACF for the saved fit; this is separate from a parameter-chain ACF.](screenshots/synthetic-log-residual-acf.png)
+
+*Intercept + Linear Trend + LogTransform: native residual ACF for the saved fit; this is separate from a parameter-chain ACF.* [Native SVG](screenshots/synthetic-log-residual-acf.svg) [Capture data](screenshots/synthetic-log-residual-acf.json.gz)
+
 ## Reproduce and check
 
-The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only synthetic-time-series-examples`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
+The log-transform validation and residual ACF figures under `screenshots/` export current native BestFit views. The remaining figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only synthetic-time-series-examples`. Each Python figure links an SVG and its exact display inputs in a compressed PlotSpec. Native captures link their own capture data and, for plots, a native SVG.
 
 Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

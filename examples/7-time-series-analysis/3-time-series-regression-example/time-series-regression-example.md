@@ -22,6 +22,8 @@ All five series contain 187 finite, aligned quarterly values from January 1970 t
 4. Locate the 149/38 training/validation split and the 30 future quarters. Validation uses observed covariates; future periods require the stored extension rule.
 5. Inspect residuals, residual autocorrelation and predictive bands before drawing conclusions about performance. Regression coefficients are conditional associations, not established causal effects.
 
+Select **Simple Linear Regression** in **Project Explorer**, then **Time Series Results > Time Series Plot** or **Tabular Results** to inspect the saved training, validation and future periods. **Properties > Output > Forecast Steps** retains 30 future quarters; changing this value and selecting **Estimate** under **Properties > General** in a working copy produces a separate experiment. Inspect **Markov Chain Traces**, **MCMC Report** and the separate **Autocorrelation** tab for **Intercept (μ)** to assess parameter-chain mixing. Residual correlation belongs to **Residual Diagnostics > ACF Plot** and **PACF Plot**; retain the saved-fit display correction described below when reading these regression residuals.
+
 ## Saved coefficients and diagnostics
 
 | Analysis | Parameter / stored space | Saved point value |
@@ -52,9 +54,9 @@ There are 217 output positions: 149 training, 38 withheld observed quarters and 
 
 ## Read the figures
 
-![Income-only regression: training, observed validation and 30 future quarters after July 2016.](images/time-series-regression-example-simple-prediction.png)
+![Income-only regression: training, observed validation and 30 future quarters after July 2016.](screenshots/simple-regression-prediction.png)
 
-*Income-only regression: training, observed validation and 30 future quarters after July 2016.* [SVG](images/time-series-regression-example-simple-prediction.svg) · [Plot data](images/time-series-regression-example-simple-prediction.plotspec.json.gz)
+*Income-only regression: training, observed validation and 30 future quarters after July 2016.* [SVG](images/time-series-regression-example-simple-prediction.svg) · [Plot data](images/time-series-regression-example-simple-prediction.plotspec.json.gz) [Native SVG](screenshots/simple-regression-prediction.svg) [Capture data](screenshots/simple-regression-prediction.json.gz)
 
 ![Four-covariate regression with saved future-extension uncertainty after July 2016.](images/time-series-regression-example-multiple-prediction.png)
 
@@ -72,9 +74,13 @@ There are 217 output positions: 149 training, 38 withheld observed quarters and 
 
 *Multiple-regression residual Q–Q diagnostic.* [SVG](images/time-series-regression-example-multiple-residual-qq.svg) · [Plot data](images/time-series-regression-example-multiple-residual-qq.plotspec.json.gz)
 
+![Simple Linear Regression: native Intercept (μ) parameter-chain ACF, distinct from the corrected Multiple-regression residual ACF above.](screenshots/simple-intercept-chain-acf.png)
+
+*Simple Linear Regression: native Intercept (μ) parameter-chain ACF, distinct from the corrected Multiple-regression residual ACF above.* [Native SVG](screenshots/simple-intercept-chain-acf.svg) [Capture data](screenshots/simple-intercept-chain-acf.json.gz)
+
 ## Reproduce and check
 
-The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only time-series-regression-example`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
+The Simple regression prediction and Intercept chain ACF under `screenshots/` export native BestFit views from the current project. The other figures render saved BestFit desktop coordinates through the shared Python plotting package, including the saved-coefficient residual display correction documented below. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only time-series-regression-example`. Each Python figure links an SVG and its exact display inputs in a compressed PlotSpec. Native captures link their own capture data and, for plots, a native SVG.
 
 Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.
 

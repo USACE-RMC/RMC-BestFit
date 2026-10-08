@@ -2,11 +2,17 @@
 
 This project compares nine stationary Generalized Extreme Value (GEV) analyses for the Kamp River at Zwettl, Austria. It teaches how a longer systematic record, historical floods and a quantified external estimate affect a frequency curve. The saved models are GEV; descriptions in older copies that say LP3 are incorrect.
 
+## Find these results in BestFit
+
+Select **MCMC - Systematic (1951-2001)** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Location (ξ)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
 ## Open the saved project
 
 Open [viglione-et-al-2013.bestfit](viglione-et-al-2013.bestfit) with **File > Open** and save a separate working copy before editing or rerunning.
 
-The figures display saved BestFit results through the shared Python renderer; no analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
+The figures display saved BestFit results. The views identified as native exports use BestFit's plotting controls; Python companion links and the additional figures retain the shared renderer. No analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
 
 The point curve evaluates the distribution at the selected posterior mean or mode **parameter vector**. It is not necessarily the posterior median of each quantile. The curve labeled Posterior Predictive averages over parameter uncertainty. A credible band describes uncertainty about a quantile; it is not a band containing 90% of future floods.
 
@@ -77,9 +83,9 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 
 *Historical chronology: interval observations and the retained perception threshold.* [SVG](images/viglione-et-al-2013-historical-chronology.svg) · [Plot data](images/viglione-et-al-2013-historical-chronology.plotspec.json.gz)
 
-![1951–2001 systematic GEV fit with its saved 90% credible band.](images/viglione-et-al-2013-systematic-2001.png)
+![MCMC - Systematic (1951-2001): 1951–2001 systematic GEV fit with its saved 90% credible band.](screenshots/viglione-et-al-2013-frequency.png)
 
-*1951–2001 systematic GEV fit with its saved 90% credible band.* [SVG](images/viglione-et-al-2013-systematic-2001.svg) · [Plot data](images/viglione-et-al-2013-systematic-2001.plotspec.json.gz)
+*MCMC - Systematic (1951-2001): 1951–2001 systematic GEV fit with its saved 90% credible band.* Native BestFit plot export. Python companion: [SVG](images/viglione-et-al-2013-systematic-2001.svg) · [Plot data](images/viglione-et-al-2013-systematic-2001.plotspec.json.gz) [Native SVG](screenshots/viglione-et-al-2013-frequency.svg) [Capture data](screenshots/viglione-et-al-2013-frequency.json.gz)
 
 ![1951–2005 GEV fit. This alternative selects the posterior mode parameter vector.](images/viglione-et-al-2013-systematic-2005.png)
 
@@ -93,9 +99,19 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 
 *Three enabled quantile priors; this saved fit uses a 95% credible band.* [SVG](images/viglione-et-al-2013-three-priors.svg) · [Plot data](images/viglione-et-al-2013-three-priors.plotspec.json.gz)
 
-![Saved baseline chain trace for the desktop-selected parameter; inspect the other parameters in BestFit.](images/viglione-et-al-2013-trace.png)
+![MCMC - Systematic (1951-2001): saved Markov-chain traces for Location (ξ), with warmup excluded.](screenshots/viglione-et-al-2013-trace-location.png)
 
-*Saved baseline chain trace for the desktop-selected parameter; inspect the other parameters in BestFit.* [SVG](images/viglione-et-al-2013-trace.svg) · [Plot data](images/viglione-et-al-2013-trace.plotspec.json.gz)
+*MCMC - Systematic (1951-2001): saved Markov-chain traces for Location (ξ), with warmup excluded.* Native BestFit plot export. Python companion: [SVG](images/viglione-et-al-2013-trace.svg) · [Plot data](images/viglione-et-al-2013-trace.plotspec.json.gz) [Native SVG](screenshots/viglione-et-al-2013-trace-location.svg) [Capture data](screenshots/viglione-et-al-2013-trace-location.json.gz)
+
+## Inspect the selected result and parameter views
+
+![MCMC - Systematic (1951-2001): posterior kernel density for Location (ξ).](screenshots/viglione-et-al-2013-kernel-density-location.png)
+
+*MCMC - Systematic (1951-2001): posterior kernel density for Location (ξ).* Native BestFit plot export. [Native SVG](screenshots/viglione-et-al-2013-kernel-density-location.svg) [Capture data](screenshots/viglione-et-al-2013-kernel-density-location.json.gz)
+
+![MCMC - Systematic (1951-2001): autocorrelation for Location (ξ); inspect the other sampled parameters as well.](screenshots/viglione-et-al-2013-autocorrelation-location.png)
+
+*MCMC - Systematic (1951-2001): autocorrelation for Location (ξ); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/viglione-et-al-2013-autocorrelation-location.svg) [Capture data](screenshots/viglione-et-al-2013-autocorrelation-location.json.gz)
 
 ## Interpretation and limits
 

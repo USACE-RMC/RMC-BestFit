@@ -21,6 +21,8 @@ All 300 values in each series are finite. The generic saved SeriesType on Stage 
 4. Inspect the residual plots and their log10 discharge-error context. The error sigma is in log10 discharge space.
 5. Compare parameter uncertainty with curve uncertainty. A curve can be well constrained while individual parameters trade off or are weakly identified.
 
+Select **1 Segment Rating Curve** in **Project Explorer** and open **Rating Curve Results**; **Tabular Results** shows the saved stage grid and discharge estimates. Inspect **Min Stage**, **Max Stage** and **Stage Bins** under **Properties > Output** without changing the authoritative saved range. In **Residual Diagnostics > Residuals Plot**, the horizontal coordinate is log10(fitted discharge), and the vertical residual is log10(observed discharge) − log10(fitted discharge). The **Histogram Plot** and **Normal Q-Q Plot** assess that same residual scale. Open **Markov Chain Traces** and select **Zero-Flow Stage (h₁)** for the native trace below; inspect every other parameter and **MCMC Report** as well.
+
 ## Generating evidence and saved parameters
 
 The [source workbook](Synthetic%20Data.xlsx), [archived fixture](../../verification/data/rating-curve/rating-curve-example-fixtures.json) and [verification discussion](../../docs/verification/rating-curve.md) document the construction. Stage uses 1 + 19 r1; generated log10 discharge adds 0.05 times a standard-Normal quantile to the log10 additive rating. Stored workbook draws supply r1 and the error draw.
@@ -76,9 +78,9 @@ Archived independent evidence identifies weak third-control precision: beta3 sta
 
 The 100 saved stage bins run from −0.7327 to 21.7691 ft, beyond the measured range at both ends. Zero discharge below activation remains zero. These **prediction intervals include residual variation and parameter uncertainty**; they are not confidence bounds for the mean curve alone. Extrapolation is not independently validated by a finite interval.
 
-![1-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.](images/synthetic-rating-curve-examples-1-control.png)
+![1-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.](screenshots/synthetic-rc-rating.png)
 
-*1-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.* [SVG](images/synthetic-rating-curve-examples-1-control.svg) · [Plot data](images/synthetic-rating-curve-examples-1-control.plotspec.json.gz)
+*1-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.* [SVG](images/synthetic-rating-curve-examples-1-control.svg) · [Plot data](images/synthetic-rating-curve-examples-1-control.plotspec.json.gz) [Native SVG](screenshots/synthetic-rc-rating.svg) [Capture data](screenshots/synthetic-rc-rating.json.gz)
 
 ![2-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.](images/synthetic-rating-curve-examples-2-control.png)
 
@@ -96,8 +98,16 @@ The 100 saved stage bins run from −0.7327 to 21.7691 ft, beyond the measured r
 
 *Three-control residual Q–Q diagnostic; inspect departures without assuming a satisfactory fit.* [SVG](images/synthetic-rating-curve-examples-three-control-qq.svg) · [Plot data](images/synthetic-rating-curve-examples-three-control-qq.plotspec.json.gz)
 
+![1 Segment Rating Curve: native log10 discharge residuals against log10 fitted discharge.](screenshots/synthetic-rc-residuals.png)
+
+*1 Segment Rating Curve: native log10 discharge residuals against log10 fitted discharge.* [Native SVG](screenshots/synthetic-rc-residuals.svg) [Capture data](screenshots/synthetic-rc-residuals.json.gz)
+
+![1 Segment Rating Curve: native saved Zero-Flow Stage (h₁) chains; inspect other parameters separately.](screenshots/synthetic-rc-zero-flow-trace.png)
+
+*1 Segment Rating Curve: native saved Zero-Flow Stage (h₁) chains; inspect other parameters separately.* [Native SVG](screenshots/synthetic-rc-zero-flow-trace.svg) [Capture data](screenshots/synthetic-rc-zero-flow-trace.json.gz)
+
 ## Reproduce and check
 
-The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../README.md#reproducing-the-figures) with `--only synthetic-rating-curve-examples`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
+Figures under `screenshots/` export native BestFit views of the named current analysis; their app legend labels do not change the prediction-interval interpretation above. The other figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../README.md#reproducing-the-figures) with `--only synthetic-rating-curve-examples`. Each Python figure links an SVG and its exact display inputs in a compressed PlotSpec. Native captures link their own capture data and, for plots, a native SVG.
 
 Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

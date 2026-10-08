@@ -5,6 +5,13 @@ Open [bulletin-17c-examples.bestfit](bulletin-17c-examples.bestfit) in BestFit a
 The computed curve comes from BestFit's Generalized Method of Moments (GMM) LP3 fit. Uncertainty is represented by a frequentist parameter ensemble or bootstrap. These are **confidence limits**, not Bayesian credible limits. Shared storage names such as BayesianAnalysis or ModeCurve do not change that interpretation. Some saved GMM reports also retain the legacy label “Credible Interval”; for these frequentist results, read it as the stated confidence level. This tutorial does not claim that BestFit ran the USGS Expected Moments Algorithm (EMA).
 
 Inspect GMM optimizer status, convergence, the objective and uncertainty diagnostics before interpreting a curve. R-hat, chain mixing and posterior ESS are not acceptance measures for these GMM ensembles. An empty or NaN diagnostic means it is unavailable or inapplicable, not zero.
+
+## Find these results in BestFit
+
+Select **Example #1** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **GMM Report** for parameter summaries, optimizer status and uncertainty diagnostics. In **Kernel Density**, use **Select Parameter** to choose **Mean (of log) (µ)**. This density summarizes the saved frequentist parameter ensemble; it is not a Bayesian posterior. **Parameter Sets** displays the ensemble. MCMC trace, R-hat and posterior ESS checks do not apply to this GMM result.
+
 ## Data and source representation
 
 [Bulletin 17C, USGS Techniques and Methods 4–B5](https://doi.org/10.3133/tm4B5) is the primary reference for the worked datasets and flow-interval/perception-threshold concepts. The [repository verification chapter](../../../../docs/verification/report/data-distributions-b17c.md) explains the source-backed comparison scope. The tables here report saved project results; they are not a newly executed verification study.
@@ -68,9 +75,9 @@ These are different diagnostic counters. A candidate evaluation-limit status is 
 
 ## Compare the saved figures
 
-![Moose River GMM curve with natural-space MVN confidence limits.](images/bulletin-17c-examples-moose-mvn.png)
+![Example #1: Moose River GMM curve with natural-space MVN confidence limits.](screenshots/bulletin-17c-frequency.png)
 
-*Moose River GMM curve with natural-space MVN confidence limits.* [SVG](images/bulletin-17c-examples-moose-mvn.svg) · [Plot data](images/bulletin-17c-examples-moose-mvn.plotspec.json.gz)
+*Example #1: Moose River GMM curve with natural-space MVN confidence limits.* Native BestFit plot export. Python companion: [SVG](images/bulletin-17c-examples-moose-mvn.svg) · [Plot data](images/bulletin-17c-examples-moose-mvn.plotspec.json.gz) [Native SVG](screenshots/bulletin-17c-frequency.svg) [Capture data](screenshots/bulletin-17c-frequency.json.gz)
 
 ![Same Moose River parent curve with bias-corrected-bootstrap confidence limits.](images/bulletin-17c-examples-moose-bootstrap.png)
 
@@ -92,6 +99,12 @@ These are different diagnostic counters. A candidate evaluation-limit status is 
 
 *Moose River frequentist parameter-ensemble histogram. The legacy plot selector is named posterior; the draws are not an MCMC posterior.* [SVG](images/bulletin-17c-examples-parameter-ensemble.svg) · [Plot data](images/bulletin-17c-examples-parameter-ensemble.plotspec.json.gz)
 
+## Inspect the parameter ensemble
+
+![Example #1: frequentist parameter-ensemble kernel density for Mean (of log) (µ).](screenshots/bulletin-17c-kernel-density-mean.png)
+
+*Example #1: frequentist parameter-ensemble kernel density for Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/bulletin-17c-kernel-density-mean.svg) [Capture data](screenshots/bulletin-17c-kernel-density-mean.json.gz)
+
 ## Interpretation and checks
 
 Natural-space MVN, linked-MVN and bootstrap are different uncertainty procedures. Linked-MVN samples in transformed parameter space; it should not be described as the same natural-space sampling with a different label. Compare intervals at the same AEP and examine physical plausibility in the tails.
@@ -102,4 +115,4 @@ The [Bayesian companion](../../1-univariate-analysis/3-bulletin17C-examples/bull
 
 AEP is annual exceedance probability; 0.01 means 1% per year under the model. Plotting positions summarize observations and are not fitted probabilities. A 90% confidence band describes uncertainty in a flood quantile, not the range containing 90% of future floods.
 
-The shared Python renderer draws coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The figures retain source hashes and exact display coordinates in their compressed PlotSpec files.
+The additional Python figures and companion links draw coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The Python figures retain source hashes and exact display coordinates in their compressed PlotSpec files.

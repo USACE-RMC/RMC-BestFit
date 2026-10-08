@@ -2,6 +2,14 @@
 
 Open [nsffa-synthetic-data.bestfit](nsffa-synthetic-data.bestfit) and save a working copy. Nine separate datasets illustrate how a mean function changes a **Normal** distribution through an index. The saved models are not LP3 fits, despite older descriptions in this collection.
 
+## Find these results in BestFit
+
+Select **NSFFA - Constant Trend** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Mean (µ) (α)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
+For this illustration, **Properties > Options > Time Index** is **51**. Keep that conditioning index explicit when comparing frequency ordinates. The selected constant trend still uses the nonstationary model wrapper.
+
 ## Data and model scope
 
 Each input contains 100 exact values at indexes 1–100, with generic Value units, no uncertain observations, no intervals or thresholds, and no flagged low outliers. A plot axis labeled Year does not establish real calendar dates. Each trend has its own dataset; these are not nine candidate fits to one common observation vector.
@@ -93,8 +101,26 @@ All saved nonstationary models set Alpha = 0.5. Their Chronology curve is the **
 
 *Linear-trend Normal distribution conditional on index 51, with saved uncertainty.* [SVG](images/nsffa-synthetic-data-index-51-frequency.svg) · [Plot data](images/nsffa-synthetic-data-index-51-frequency.plotspec.json.gz)
 
+## Inspect the selected result and parameter views
+
+![NSFFA - Constant Trend: saved frequency curve and 90% credible limits, conditional on index 51.](screenshots/nsffa-synthetic-frequency.png)
+
+*NSFFA - Constant Trend: saved frequency curve and 90% credible limits, conditional on index 51.* Native BestFit plot export. [Native SVG](screenshots/nsffa-synthetic-frequency.svg) [Capture data](screenshots/nsffa-synthetic-frequency.json.gz)
+
+![NSFFA - Constant Trend: posterior kernel density for Mean (µ) (α).](screenshots/nsffa-synthetic-kernel-density-mean.png)
+
+*NSFFA - Constant Trend: posterior kernel density for Mean (µ) (α).* Native BestFit plot export. [Native SVG](screenshots/nsffa-synthetic-kernel-density-mean.svg) [Capture data](screenshots/nsffa-synthetic-kernel-density-mean.json.gz)
+
+![NSFFA - Constant Trend: saved Markov-chain traces for Mean (µ) (α), with warmup excluded.](screenshots/nsffa-synthetic-trace-mean.png)
+
+*NSFFA - Constant Trend: saved Markov-chain traces for Mean (µ) (α), with warmup excluded.* Native BestFit plot export. [Native SVG](screenshots/nsffa-synthetic-trace-mean.svg) [Capture data](screenshots/nsffa-synthetic-trace-mean.json.gz)
+
+![NSFFA - Constant Trend: autocorrelation for Mean (µ) (α); inspect the other sampled parameters as well.](screenshots/nsffa-synthetic-autocorrelation-mean.png)
+
+*NSFFA - Constant Trend: autocorrelation for Mean (µ) (α); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/nsffa-synthetic-autocorrelation-mean.svg) [Capture data](screenshots/nsffa-synthetic-autocorrelation-mean.json.gz)
+
 ## Reproduce and check your understanding
 
-The shared Python renderer uses BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
+The additional Python figures and companion links use BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each Python figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
 
 Before using a result in a study, explain the target variable, the represented observation period, the information added through thresholds or priors, and what the plotted interval means. Separate a teaching example's saved settings from a justified engineering choice for another site.

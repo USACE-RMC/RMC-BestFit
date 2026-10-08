@@ -2,11 +2,17 @@
 
 Five saved Bayesian fits demonstrate distinct information choices in the Australian Rainfall and Runoff examples. Examples 3–5 use Log-Pearson Type III (LP3); examples 6a and 6b use GEV. Start with the Hunter River baseline, then change one source of information at a time when interpreting the alternatives.
 
+## Find these results in BestFit
+
+Select **Example #3** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Mean (of log) (µ)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
 ## Open the saved project
 
 Open [arr-flike-examples.bestfit](arr-flike-examples.bestfit) with **File > Open** and save a separate working copy before editing or rerunning.
 
-The figures display saved BestFit results through the shared Python renderer; no analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
+The figures display saved BestFit results. The views identified as native exports use BestFit's plotting controls; Python companion links and the additional figures retain the shared renderer. No analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
 
 The point curve evaluates the distribution at the selected posterior mean or mode **parameter vector**. It is not necessarily the posterior median of each quantile. The curve labeled Posterior Predictive averages over parameter uncertainty. A credible band describes uncertainty about a quantile; it is not a band containing 90% of future floods.
 
@@ -65,9 +71,9 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 
 ## Read the figures
 
-![Hunter River baseline LP3 fit, Example 3.](images/arr-flike-examples-example-3.png)
+![Example #3: Hunter River baseline LP3 fit, Example 3.](screenshots/arr-flike-examples-frequency.png)
 
-*Hunter River baseline LP3 fit, Example 3.* [SVG](images/arr-flike-examples-example-3.svg) · [Plot data](images/arr-flike-examples-example-3.plotspec.json.gz)
+*Example #3: Hunter River baseline LP3 fit, Example 3.* Native BestFit plot export. Python companion: [SVG](images/arr-flike-examples-example-3.svg) · [Plot data](images/arr-flike-examples-example-3.plotspec.json.gz) [Native SVG](screenshots/arr-flike-examples-frequency.svg) [Capture data](screenshots/arr-flike-examples-frequency.json.gz)
 
 ![Hunter River LP3 fit including the historical exceedance count, Example 4.](images/arr-flike-examples-example-4.png)
 
@@ -85,9 +91,19 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 
 *Wimmera GEV fit with 27 low-outlier flags, Example 6b.* [SVG](images/arr-flike-examples-example-6b.svg) · [Plot data](images/arr-flike-examples-example-6b.plotspec.json.gz)
 
-![Saved Hunter River baseline parameter trace.](images/arr-flike-examples-trace.png)
+![Example #3: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.](screenshots/arr-flike-examples-trace-mean.png)
 
-*Saved Hunter River baseline parameter trace.* [SVG](images/arr-flike-examples-trace.svg) · [Plot data](images/arr-flike-examples-trace.plotspec.json.gz)
+*Example #3: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.* Native BestFit plot export. Python companion: [SVG](images/arr-flike-examples-trace.svg) · [Plot data](images/arr-flike-examples-trace.plotspec.json.gz) [Native SVG](screenshots/arr-flike-examples-trace-mean.svg) [Capture data](screenshots/arr-flike-examples-trace-mean.json.gz)
+
+## Inspect the selected result and parameter views
+
+![Example #3: posterior kernel density for Mean (of log) (µ).](screenshots/arr-flike-examples-kernel-density-mean.png)
+
+*Example #3: posterior kernel density for Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/arr-flike-examples-kernel-density-mean.svg) [Capture data](screenshots/arr-flike-examples-kernel-density-mean.json.gz)
+
+![Example #3: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.](screenshots/arr-flike-examples-autocorrelation-mean.png)
+
+*Example #3: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/arr-flike-examples-autocorrelation-mean.svg) [Capture data](screenshots/arr-flike-examples-autocorrelation-mean.json.gz)
 
 ## Interpretation and limits
 

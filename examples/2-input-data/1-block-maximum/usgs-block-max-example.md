@@ -8,6 +8,20 @@ Open [usgs-block-max-example.bestfit](usgs-block-max-example.bestfit) in BestFit
 
 The saved daily series contains 29,050 observations from 1947-01-01 through 2026-07-14, with no stored missing ordinates. Discharge is in cubic feet per second (cfs). The source record stops partway through 2026. The water-year series also starts partway through water year 1947 because October–December 1946 are absent.
 
+## Find the controls
+
+Expand **Time Series Data** and **Input Data** in the **Project Explorer** and select **USGS - 01134500 - Block Max - Calendar Year**. In **Properties**, read **Data Entry Method = Block Series**, **Time Series**, **Block Function = Maximum**, and **Time Block = Calendar Year**. Open **Data Frame** on the left, then **Exact Data** above the grid. The **Chronology Plot** and **Frequency Plot** selectors below the plot switch between event timing and empirical frequency.
+
+For a separate working input, right-click **Input Data**, choose **New Input Data...**, and enter a name. Configure **Data Entry Method** and the source in **Properties**; **Process** extracts a block or POT sample, while **Download** retrieves direct USGS peaks. Follow the saved example by inspection before processing a new input.
+
+![Project Explorer for this saved project, with USGS - 01134500 - Block Max - Calendar Year selected.](screenshots/block-max-project-explorer-current.png)
+
+*Project Explorer for this saved project, with USGS - 01134500 - Block Max - Calendar Year selected.* [Capture data](screenshots/block-max-project-explorer-current.json.gz)
+
+![Properties for USGS - 01134500 - Block Max - Calendar Year. Check the source and settings before changing a working copy.](screenshots/block-max-properties-current.png)
+
+*Properties for USGS - 01134500 - Block Max - Calendar Year. Check the source and settings before changing a working copy.* [Capture data](screenshots/block-max-properties-current.json.gz)
+
 ## Saved configuration and sample
 
 | Saved input | Block | Observations | Year indexes | Low outliers |
@@ -18,7 +32,7 @@ The saved daily series contains 29,050 observations from 1947-01-01 through 2026
 ## Work through the example
 
 1. Select **USGS - 01134500 - Daily Discharge** under **Time Series Data**. Check the first and last dates and confirm that the values are daily means.
-2. Select **USGS - 01134500 - Block Max - Calendar Year** under **Input Data**. In Properties, confirm **Exact Data Method = Block Series**, the Moose River source, **Block Function = Maximum**, and **Time Block = Calendar Year**.
+2. Select **USGS - 01134500 - Block Max - Calendar Year** under **Input Data**. In Properties, confirm **Data Entry Method = Block Series**, the Moose River source, **Block Function = Maximum**, and **Time Block = Calendar Year**.
 3. Inspect the data grid and **Chronology**. There are 80 rows, including an incomplete 2026 block. A row count alone does not prove that each year was completely observed.
 4. Select the water-year element and confirm **Time Block = Water Year**. Read each observation’s event date as well as its year index; an October event belongs to the following water year.
 5. Compare the two samples by year index. Sixteen of the 80 paired magnitudes differ. The grouping choice can change the selected event even though no daily value changed.
@@ -27,17 +41,21 @@ The saved daily series contains 29,050 observations from 1947-01-01 through 2026
 
 ## Read the plots
 
-![Calendar-year maxima of daily mean discharge. The 2026 block is incomplete.](images/usgs-block-max-example-calendar-chronology.png)
+![Calendar-year maxima of daily mean discharge. The 2026 block is incomplete.](screenshots/block-max-calendar-chronology-native.png)
 
-*Calendar-year maxima of daily mean discharge. The 2026 block is incomplete.* [SVG](images/usgs-block-max-example-calendar-chronology.svg) · [Plot data](images/usgs-block-max-example-calendar-chronology.plotspec.json.gz)
+*Calendar-year maxima of daily mean discharge. The 2026 block is incomplete.* [Python SVG](images/usgs-block-max-example-calendar-chronology.svg) · [Python plot data](images/usgs-block-max-example-calendar-chronology.plotspec.json.gz) [Native SVG](screenshots/block-max-calendar-chronology-native.svg) [Capture data](screenshots/block-max-calendar-chronology-native.json.gz)
 
-![Water-year maxima. Both the first and last water-year blocks have incomplete coverage.](images/usgs-block-max-example-water-year-chronology.png)
+![Water-year maxima. Both the first and last water-year blocks have incomplete coverage.](screenshots/block-max-wateryear-chronology-native.png)
 
-*Water-year maxima. Both the first and last water-year blocks have incomplete coverage.* [SVG](images/usgs-block-max-example-water-year-chronology.svg) · [Plot data](images/usgs-block-max-example-water-year-chronology.plotspec.json.gz)
+*Water-year maxima. Both the first and last water-year blocks have incomplete coverage.* [Python SVG](images/usgs-block-max-example-water-year-chronology.svg) · [Python plot data](images/usgs-block-max-example-water-year-chronology.plotspec.json.gz) [Native SVG](screenshots/block-max-wateryear-chronology-native.svg) [Capture data](screenshots/block-max-wateryear-chronology-native.json.gz)
 
-![Empirical frequency of the saved daily-mean maxima, including the retained boundary years.](images/usgs-block-max-example-calendar-frequency.png)
+![Empirical frequency of the saved daily-mean maxima, including the retained boundary years.](screenshots/block-max-calendar-frequency-native.png)
 
-*Empirical frequency of the saved daily-mean maxima, including the retained boundary years.* [SVG](images/usgs-block-max-example-calendar-frequency.svg) · [Plot data](images/usgs-block-max-example-calendar-frequency.plotspec.json.gz)
+*Empirical frequency of the saved daily-mean maxima, including the retained boundary years.* [Python SVG](images/usgs-block-max-example-calendar-frequency.svg) · [Python plot data](images/usgs-block-max-example-calendar-frequency.plotspec.json.gz) [Native SVG](screenshots/block-max-calendar-frequency-native.svg) [Capture data](screenshots/block-max-calendar-frequency-native.json.gz)
+
+![Moose River daily means used by both saved block inputs. The source stops in July 2026, so the final annual blocks are incomplete.](screenshots/block-max-daily-discharge-native.png)
+
+*Moose River daily means used by both saved block inputs. The source stops in July 2026, so the final annual blocks are incomplete.* [Native SVG](screenshots/block-max-daily-discharge-native.svg) [Capture data](screenshots/block-max-daily-discharge-native.json.gz)
 
 ## Interpretation and limits
 
@@ -55,4 +73,4 @@ Compare the [USGS annual-peak example](../2-usgs-peak-discharge/usgs-peak-downlo
 
 ## Reproduce the figures
 
-Follow the [shared figure-generation instructions](../../README.md#reproducing-the-figures) with `--only usgs-block-max-example`. No saved analysis is refitted. Threshold views, where present, call the desktop diagnostic fits on the saved source; the Python package renders their returned geometry.
+Follow the [shared figure-generation instructions](../../README.md#reproducing-the-figures) with `--only usgs-block-max-example`. Native screenshots show the current desktop views of the saved inputs. The linked Python SVG and plot-data files remain companion exports; views without a native replacement retain their Python figure. No saved analysis is refitted. Threshold views, where present, call the desktop diagnostic fits on the saved source.

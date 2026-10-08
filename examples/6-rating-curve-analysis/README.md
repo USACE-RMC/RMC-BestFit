@@ -16,9 +16,9 @@ The field example is a teaching fit, not an official USGS rating or an adopted h
 1. Open the linked `.bestfit` project and save a separate working copy.
 2. Under **Time Series Data**, check stage/discharge units and matching timestamps. Generic series labels do not supersede the documented units.
 3. Under **Rating Curve Analysis**, select the named alternative. Read each activation stage, stored log10(alpha), exponent and error scale. Sigma describes residual variability in log10 discharge space.
-4. Inspect parameter chains and uncertainty, then the rating curve and residual diagnostics. Curves that look similar can arise from poorly identified parameter combinations.
-5. Compare the prediction grid with the observed stage range. Values beyond that range are extrapolations. Prediction bands include residual variation as well as parameter uncertainty.
+4. Open **Rating Curve Results** and its **Tabular Results**, then **Residual Diagnostics > Residuals Plot**, **Histogram Plot** and **Normal Q-Q Plot**. Residuals are log10(observed Q) − log10(fitted Q), plotted against log10(fitted Q). Curves that look similar can arise from poorly identified parameter combinations. Inspect **Markov Chain Traces** and **MCMC Report** separately for parameter uncertainty and mixing.
+5. Inspect **Properties > Output > Min Stage**, **Max Stage** and **Stage Bins** to compare the prediction grid with the observed stage range. Values beyond that range are extrapolations. Prediction bands include residual variation as well as parameter uncertainty.
 
-The plots follow the desktop orientation: discharge is horizontal and stage is vertical. The Python legend identifies prediction intervals explicitly; saved result cells retain their original field names. No estimator was rerun to produce these figures.
+The plots follow the desktop orientation: discharge is horizontal and stage is vertical. Native exports retain the app legend wording; these bands include residual variation and parameter uncertainty. The Python legend identifies prediction intervals explicitly; saved result cells retain their original field names. No estimator was rerun to produce these figures.
 
 See the [author issue log](../../docs/example-issues-for-haden.md), [figure reproduction instructions](../README.md#reproducing-the-figures) and [input-data chapter](../2-input-data/README.md). Converting a continuous stage record into discharge requires a separately justified applicable rating; these examples do not perform that conversion automatically.

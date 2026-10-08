@@ -1,0 +1,668 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1000" height="650" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="1000" height="650" style="fill:rgb(255,255,255);stroke:none;" />
+  <defs>
+    <clipPath id="clipPath1">
+      <rect x="0" y="0" width="1000" height="650" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clipPath1)">
+    <rect x="76.913" y="36.106" width="897.8325" height="556.437" style="fill:rgb(255,255,255);stroke:none;" />
+    <polyline points="76.913,592.543 974.7455,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,550.6669 974.7455,550.6669" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,526.171 974.7455,526.171" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,508.7909 974.7455,508.7909" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,495.3098 974.7455,495.3098" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,484.295 974.7455,484.295" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,474.982 974.7455,474.982" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,466.9148 974.7455,466.9148" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,459.799 974.7455,459.799" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,411.5577 974.7455,411.5577" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,387.0618 974.7455,387.0618" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,369.6816 974.7455,369.6816" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,356.2006 974.7455,356.2006" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,345.1857 974.7455,345.1857" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,335.8728 974.7455,335.8728" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,327.8056 974.7455,327.8056" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,320.6898 974.7455,320.6898" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,272.4484 974.7455,272.4484" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,247.9525 974.7455,247.9525" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,230.5724 974.7455,230.5724" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,217.0913 974.7455,217.0913" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,206.0765 974.7455,206.0765" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,196.7635 974.7455,196.7635" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,188.6963 974.7455,188.6963" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,181.5805 974.7455,181.5805" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,133.3392 974.7455,133.3392" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,108.8433 974.7455,108.8433" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,91.4631 974.7455,91.4631" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,77.9821 974.7455,77.9821" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,66.9672 974.7455,66.9672" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,57.6543 974.7455,57.6543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,49.5871 974.7455,49.5871" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,42.4713 974.7455,42.4713" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.12549019607843137;stroke-dasharray:4,1" shape-rendering="crispEdges" />
+    <polyline points="76.913,592.543 72.913,592.543" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,550.6669 72.913,550.6669" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,526.171 72.913,526.171" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,508.7909 72.913,508.7909" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,495.3098 72.913,495.3098" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,484.295 72.913,484.295" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,474.982 72.913,474.982" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,466.9148 72.913,466.9148" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,459.799 72.913,459.799" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,411.5577 72.913,411.5577" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,387.0618 72.913,387.0618" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,369.6816 72.913,369.6816" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,356.2006 72.913,356.2006" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,345.1857 72.913,345.1857" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,335.8728 72.913,335.8728" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,327.8056 72.913,327.8056" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,320.6898 72.913,320.6898" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,272.4484 72.913,272.4484" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,247.9525 72.913,247.9525" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,230.5724 72.913,230.5724" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,217.0913 72.913,217.0913" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,206.0765 72.913,206.0765" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,196.7635 72.913,196.7635" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,188.6963 72.913,188.6963" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,181.5805 72.913,181.5805" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,133.3392 72.913,133.3392" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,108.8433 72.913,108.8433" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,91.4631 72.913,91.4631" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,77.9821 72.913,77.9821" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,66.9672 72.913,66.9672" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,57.6543 72.913,57.6543" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,49.5871 72.913,49.5871" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,42.4713 72.913,42.4713" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <text dominant-baseline="middle" text-anchor="end" transform="translate(65.913,453.4338)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">1</text>
+    <text dominant-baseline="middle" text-anchor="end" transform="translate(65.913,314.3245)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">10</text>
+    <text dominant-baseline="middle" text-anchor="end" transform="translate(65.913,175.2153)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">100</text>
+    <text dominant-baseline="middle" text-anchor="end" transform="translate(65.913,36.106)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">1,000</text>
+    <polyline points="76.913,453.4338 974.7455,453.4338" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="76.913,314.3245 974.7455,314.3245" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="76.913,175.2153 974.7455,175.2153" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="76.913,36.106 974.7455,36.106" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="76.913,453.4338 69.913,453.4338" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,314.3245 69.913,314.3245" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,175.2153 69.913,175.2153" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <polyline points="76.913,36.106 69.913,36.106" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(14,314.3245) rotate(-90)" font-family="Segoe UI" font-size="16" font-weight="400" fill="black">Rainfall (in)</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(272.8089,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.9</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(411.612,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.5</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(550.4152,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.1</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(663.5757,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.01</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(746.3111,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.001</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(814.4139,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">1E-4</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(873.5368,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">1E-5</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(926.4492,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">1E-6</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(974.7455,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">1E-7</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(159.6483,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.99</text>
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(76.913,596.543)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">0.999</text>
+    <polyline points="272.8089,36.106 272.8089,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="411.612,36.106 411.612,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="550.4152,36.106 550.4152,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="663.5757,36.106 663.5757,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="746.3111,36.106 746.3111,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="814.4139,36.106 814.4139,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="873.5368,36.106 873.5368,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="926.4492,36.106 926.4492,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="974.7455,36.106 974.7455,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="159.6483,36.106 159.6483,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <polyline points="76.913,36.106 76.913,592.543" style="fill:none;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.25098039215686274" shape-rendering="crispEdges" />
+    <text dominant-baseline="baseline" text-anchor="middle" transform="translate(525.8293,636)" font-family="Segoe UI" font-size="16" font-weight="400" fill="black">Exceedance Probability  [P(X &gt; x)]</text>
+  </g>
+  <defs>
+    <clipPath id="clipPath2">
+      <rect x="76.913" y="36.106" width="897.8325" height="556.437" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clipPath2)">
+    <polyline points="926.4492,270.5046 911.0648,273.8345 890.0303,278.4031 873.5368,282.0791 856.4878,285.9582 832.997,291.2819 814.4139,295.5006 795.0339,300.0955 768.0047,306.4879 746.3111,311.6893 723.342,317.1509 690.5967,325.1269 663.5757,331.6626 634.0509,339.0679 589.764,350.2517 550.4152,360.3585 502.7669,372.685 468.4092,381.6457 411.612,396.6604 354.8149,411.8788 320.4571,421.3263 272.8089,434.7438 233.4601,446.6813 189.1732,461.99 159.6483,473.9103" style="fill:none;stroke:rgb(53,59,122);stroke-width:1;stroke-linejoin:bevel" />
+    <polyline points="159.6483,459.0396 189.1732,449.7175 233.4601,436.3471 272.8089,424.8498 320.4571,411.4021 354.8149,401.9388 411.612,386.3795 468.4092,369.9652 502.7669,359.4227 550.4152,343.4289 589.764,329.0034 634.0509,311.5788 663.5757,299.0361 690.5967,286.6422 723.342,270.9266 746.3111,259.1813 768.0047,247.8369 795.0339,233.0181 814.4139,221.9421 832.997,211.0534 856.4878,196.7669 873.5368,185.7776 890.0303,175.0693 911.0648,161.0759 926.4492,150.379" style="fill:none;stroke:rgb(53,59,122);stroke-width:1;stroke-linejoin:bevel" />
+    <polygon points="159.6483,459.0396 189.1732,449.7175 233.4601,436.3471 272.8089,424.8498 320.4571,411.4021 354.8149,401.9388 411.612,386.3795 468.4092,369.9652 502.7669,359.4227 550.4152,343.4289 589.764,329.0034 634.0509,311.5788 663.5757,299.0361 690.5967,286.6422 723.342,270.9266 746.3111,259.1813 768.0047,247.8369 795.0339,233.0181 814.4139,221.9421 832.997,211.0534 856.4878,196.7669 873.5368,185.7776 890.0303,175.0693 911.0648,161.0759 926.4492,150.379 926.4492,270.5046 911.0648,273.8345 890.0303,278.4031 873.5368,282.0791 856.4878,285.9582 832.997,291.2819 814.4139,295.5006 795.0339,300.0955 768.0047,306.4879 746.3111,311.6893 723.342,317.1509 690.5967,325.1269 663.5757,331.6626 634.0509,339.0679 589.764,350.2517 550.4152,360.3585 502.7669,372.685 468.4092,381.6457 411.612,396.6604 354.8149,411.8788 320.4571,421.3263 272.8089,434.7438 233.4601,446.6813 189.1732,461.99 159.6483,473.9103" style="fill:rgb(104,140,175);fill-opacity:0.29411764705882354;stroke:none;" />
+    <polyline points="926,165 911,178 890,196 874,208 856,220 833,236 814,247 795,258 768,272 746,282 723,292 691,306 664,316 634,326 590,341 550,353 503,366 468,376 412,392 355,407 320,417 273,430 233,442 189,456 160,466" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-linejoin:bevel;stroke-dasharray:4,1" />
+    <polyline points="926,221 911,227 890,236 874,242 856,249 833,258 814,265 795,272 768,282 746,290 723,298 691,309 664,318 634,327 590,341 550,353 503,366 468,376 412,392 355,407 320,416 273,430 233,441 189,456 160,466" style="fill:none;stroke:black;stroke-width:1;stroke-linejoin:bevel" />
+    <ellipse cx="371.142" cy="431.3644" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="340.5593" cy="437.987" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="299.1742" cy="444.3933" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="271.8313" cy="447.7622" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="522.2336" cy="387.3001" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="502.4627" cy="396.2031" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="420.1718" cy="418.614" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="390.0942" cy="426.6049" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="336.5333" cy="438.5422" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="535.6884" cy="382.9994" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="348.3332" cy="436.7113" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="435.3147" cy="415.2352" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="150.0787" cy="452.256" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="375.692" cy="429.4154" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="385.7148" cy="426.9108" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="449.7986" cy="411.202" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="500.952" cy="396.3879" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="255.5475" cy="449.2973" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="309.6411" cy="442.9765" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="414.8191" cy="420.3771" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="439.7145" cy="414.3568" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="412.6809" cy="420.653" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="644.5568" cy="339.9852" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="443.0446" cy="413.1239" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="297.3258" cy="444.3933" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="699.4342" cy="317.8757" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="476.1631" cy="403.6542" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="467.4304" cy="406.3208" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="419.1" cy="419.2861" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="421.2444" cy="418.614" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="266.7634" cy="448.1968" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="411.612" cy="421.0691" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="432.0408" cy="415.9983" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="376.8194" cy="429.4154" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="433.1299" cy="415.6155" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="573.9732" cy="373.2328" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="673.1454" cy="318.0525" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="546.6136" cy="381.8249" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="358.2212" cy="434.4112" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="634.7602" cy="341.0123" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="278.9043" cy="447.116" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="178.6673" cy="452.256" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="492.2266" cy="398.0766" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="382.4027" cy="427.6824" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="471.1253" cy="405.5622" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="499.4585" cy="396.6661" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="304.5327" cy="443.9851" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="221.2007" cy="451.1009" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="123.7898" cy="452.256" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="602.0234" cy="358.5282" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="440.8214" cy="413.3684" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="405.1951" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="389.0029" cy="426.6049" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="496.5204" cy="397.1326" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="428.7854" cy="416.6417" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="450.9382" cy="411.202" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="488.0559" cy="399.8139" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="445.2811" cy="412.7588" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="188.4639" cy="452.256" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="456.7047" cy="410.0311" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="357.0109" cy="434.9343" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="462.602" cy="407.4213" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="459.0466" cy="408.6554" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="391.1833" cy="426.6049" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="485.3375" cy="402.109" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="396.6001" cy="425.0983" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="447.532" cy="411.9155" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="413.7499" cy="420.3771" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="559.118" cy="378.9846" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="577.3385" cy="373.1069" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="513.583" cy="390.4031" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="349.5966" cy="436.7113" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="328.1495" cy="439.8576" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="269.3363" cy="447.7622" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="482.6647" cy="403.1347" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="252.4664" cy="449.2973" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="466.2132" cy="406.8685" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="366.5194" cy="432.1955" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="474.8909" cy="404.1782" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="226.0213" cy="451.1009" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="429.8687" cy="416.2548" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="407.3355" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="597.2028" cy="359.5754" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="556.4607" cy="379.6823" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="489.4333" cy="399.5209" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="365.3511" cy="432.1955" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="329.5806" cy="439.4788" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="507.1051" cy="395.7437" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="344.4895" cy="437.6198" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="422.318" cy="417.9494" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="403.0523" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="383.5096" cy="427.6824" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="580.872" cy="373.1069" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="415.8886" cy="420.3771" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="362.9982" cy="432.1955" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="505.5385" cy="395.7437" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="258.5072" cy="448.8547" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="261.3568" cy="448.8547" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="404.1241" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="531.6545" cy="384.7289" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="425.5455" cy="417.9494" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="316.119" cy="442.3793" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="359.4248" cy="433.8926" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="306.2615" cy="443.3779" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="511.9299" cy="391.2469" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="360.6221" cy="433.0381" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="399.8314" cy="423.9194" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="584.5953" cy="368.2131" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="392.2703" cy="426.6049" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="343.1895" cy="437.6198" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="339.2285" cy="437.987" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="427.7039" cy="416.901" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="215.9703" cy="451.1009" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="314.5321" cy="442.3793" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="203.882" cy="451.5603" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="454.3836" cy="410.38" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="355.7937" cy="435.2855" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="418.0289" cy="419.557" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="416.9585" cy="419.557" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="481.3445" cy="403.1347" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="564.7169" cy="378.0896" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="477.4442" cy="403.6542" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="325.2426" cy="440.4303" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="166.4855" cy="452.256" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="230.5" cy="450.4182" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="410.5432" cy="421.0691" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="337.8866" cy="437.987" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="312.9242" cy="442.3793" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="381.2927" cy="428.1501" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="380.1795" cy="428.464" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="607.2537" cy="357.4017" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="472.3723" cy="404.3891" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="520.4479" cy="388.1014" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="570.7576" cy="375.2201" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="478.7346" cy="403.1347" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="394.4386" cy="425.3966" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="469.8862" cy="405.778" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="434.2212" cy="415.2352" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="285.4526" cy="446.6891" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="515.2601" cy="389.7365" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="567.6766" cy="377.5453" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="347.061" cy="437.073" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="527.7806" cy="385.8841" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="295.4435" cy="445.0108" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="276.6104" cy="447.116" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="544.3197" cy="382.0434" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="364.1775" cy="432.1955" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="453.2305" cy="410.966" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="274.2543" cy="447.7622" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="400.9061" cy="422.4775" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="525.8982" cy="386.2741" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="373.4254" cy="431.0352" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="300.9905" cy="444.3933" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="361.8131" cy="432.6996" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="452.0821" cy="411.202" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="322.2721" cy="441.3969" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="326.7037" cy="439.8576" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="345.7799" cy="437.073" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="395.5202" cy="425.3966" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="408.405" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="317.6856" cy="442.3793" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="524.0498" cy="387.0618" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="369.9936" cy="431.3644" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="320.7614" cy="441.3969" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="401.9796" cy="422.0515" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="503.9912" cy="395.7437" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="319.2328" cy="442.3793" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="461.4109" cy="408.0913" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="210.2394" cy="451.5603" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="542.0839" cy="382.1895" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="423.3926" cy="417.9494" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="592.724" cy="361.0006" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="234.6889" cy="449.9673" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="424.4684" cy="417.9494" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="377.943" cy="428.9378" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="281.1402" cy="447.116" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="468.6546" cy="406.1031" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="460.2259" cy="408.6554" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="480.0346" cy="403.1347" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="409.4742" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="350.8517" cy="436.7113" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="612.9847" cy="356.2006" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="529.6987" cy="385.1115" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="486.6908" cy="400.5032" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="430.9538" cy="415.9983" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="437.5093" cy="414.6065" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="353.3379" cy="436.7113" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="510.2999" cy="393.4094" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="619.342" cy="355.3503" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="386.8133" cy="426.6049" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="283.3218" cy="446.6891" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="311.2942" cy="442.3793" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="588.5351" cy="363.9019" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="384.6136" cy="427.3726" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="341.8795" cy="437.6198" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="465.0029" cy="407.4213" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="335.1682" cy="438.5422" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="302.7761" cy="444.3933" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="372.2859" cy="431.0352" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="561.8673" cy="378.6388" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="483.9956" cy="402.8252" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="242.3521" cy="449.9673" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="196.7162" cy="451.5603" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="332.4007" cy="438.9151" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="379.063" cy="428.9378" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="533.6503" cy="383.5206" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="473.6274" cy="404.1782" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="352.0987" cy="436.7113" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="539.9022" cy="382.6299" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="374.5608" cy="430.5447" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="238.6287" cy="449.9673" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="307.9639" cy="443.3779" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="455.5416" cy="410.38" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="490.8233" cy="399.0356" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="289.5738" cy="446.0543" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="426.624" cy="417.5541" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="323.7656" cy="441.3969" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="516.9625" cy="389.4884" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="448.6633" cy="411.5577" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="656.7386" cy="325.9321" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="397.6786" cy="424.3588" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="446.4047" cy="412.5167" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="393.3554" cy="426.149" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="293.5254" cy="445.0108" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="333.7908" cy="438.9151" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="368.8404" cy="431.8617" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="438.6105" cy="414.3568" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="457.8729" cy="409.7996" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="264.106" cy="448.8547" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="330.9975" cy="438.9151" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="537.7715" cy="382.9994" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="367.6824" cy="432.1955" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="626.5079" cy="345.5834" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="398.7556" cy="424.3588" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="463.7992" cy="407.4213" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="497.9815" cy="397.1326" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="249.2509" cy="449.2973" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="493.6435" cy="398.0766" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="553.8878" cy="380.3881" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="508.6919" cy="395.2878" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="406.2656" cy="421.3482" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="551.3927" cy="380.6014" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="291.5696" cy="445.426" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="387.9093" cy="426.6049" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="548.9698" cy="381.1022" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="245.8855" cy="449.2973" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="436.4107" cy="414.9829" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="287.5356" cy="446.6891" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="441.9314" cy="413.3684" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="354.5695" cy="435.8162" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="495.0746" cy="398.0766" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="518.6914" cy="389.0771" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="444.1611" cy="412.7588" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <ellipse cx="264.592" cy="431.3644" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="243.4141" cy="437.987" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="222.3843" cy="444.3933" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="212.8248" cy="447.7622" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="427.9665" cy="387.3001" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="403.054" cy="396.2031" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="308.4737" cy="418.614" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="280.1592" cy="426.6049" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="240.9909" cy="438.5422" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="445.1053" cy="382.9994" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="248.3321" cy="436.7113" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="324.2423" cy="415.2352" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="196.6789" cy="452.256" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="268.1613" cy="429.4154" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="276.3996" cy="426.9108" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="340.1479" cy="411.202" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="401.1698" cy="396.3879" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="208.5226" cy="449.2973" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="226.9135" cy="442.9765" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="303.1303" cy="420.3771" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="328.9935" cy="414.3568" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="301.0312" cy="420.653" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="582.1001" cy="339.9852" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="332.6373" cy="413.1239" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="221.6368" cy="444.3933" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="647.3526" cy="317.8757" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="370.8186" cy="403.6542" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="360.4438" cy="406.3208" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="307.3937" cy="419.2861" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="309.5594" cy="418.614" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="211.3833" cy="448.1968" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="299.9895" cy="421.0691" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="320.7548" cy="415.9983" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="269.0622" cy="429.4154" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="321.9103" cy="415.6155" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="494.0365" cy="373.2328" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="616.4508" cy="318.0525" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="459.0741" cy="381.8249" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="255.0455" cy="434.4112" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="570.1438" cy="341.0123" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="215.0012" cy="447.116" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="198.047" cy="452.256" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="390.3559" cy="398.0766" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="273.6204" cy="427.6824" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="364.81" cy="405.5622" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="399.3102" cy="396.6661" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="224.6392" cy="443.9851" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="202.191" cy="451.1009" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="195.9973" cy="452.256" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="529.5277" cy="358.5282" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="330.2002" cy="413.3684" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="293.846" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="279.2134" cy="426.6049" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="395.6621" cy="397.1326" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="317.3289" cy="416.6417" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="341.4303" cy="411.202" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="385.2332" cy="399.8139" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="335.1068" cy="412.7588" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="198.7335" cy="452.256" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="347.9848" cy="410.0311" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="254.1962" cy="434.9343" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="354.7941" cy="407.4213" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="350.6764" cy="408.6554" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="281.109" cy="426.6049" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="381.9121" cy="402.109" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="285.9203" cy="425.0983" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="337.6099" cy="411.9155" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="302.0781" cy="420.3771" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="475.0726" cy="378.9846" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="498.3203" cy="373.1069" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="417.0152" cy="390.4031" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="249.1613" cy="436.7113" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="236.2126" cy="439.8576" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="212.1031" cy="447.7622" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="378.6614" cy="403.1347" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="207.812" cy="449.2973" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="359.0135" cy="406.8685" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="261.0762" cy="432.1955" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="369.2954" cy="404.1782" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="202.8875" cy="451.1009" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="318.4642" cy="416.2548" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="295.8741" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="523.4674" cy="359.5754" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="471.6739" cy="379.6823" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="386.9214" cy="399.5209" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="260.2053" cy="432.1955" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="237.0028" cy="439.4788" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="408.8639" cy="395.7437" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="245.861" cy="437.6198" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="310.651" cy="417.9494" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="291.8371" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="274.543" cy="427.6824" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="502.8116" cy="373.1069" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="304.1878" cy="420.3771" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="258.473" cy="432.1955" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="406.9001" cy="395.7437" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="209.235" cy="448.8547" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="209.9493" cy="448.8547" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="292.8392" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="439.9568" cy="384.7289" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="313.9619" cy="417.9494" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="229.9765" cy="442.3793" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="255.8978" cy="433.8926" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="225.3951" cy="443.3779" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="414.9306" cy="391.2469" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="256.7532" cy="433.0381" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="288.8585" cy="423.9194" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="507.5366" cy="368.2131" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="282.0629" cy="426.6049" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="245.0427" cy="437.6198" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="242.6038" cy="437.987" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="316.2002" cy="416.901" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="201.4961" cy="451.1009" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="229.2074" cy="442.3793" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="200.1115" cy="451.5603" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="345.3338" cy="410.38" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="253.3498" cy="435.2855" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="306.3195" cy="419.557" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="305.2509" cy="419.557" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="377.0613" cy="403.1347" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="482.2286" cy="378.0896" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="372.3564" cy="403.6542" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="234.6395" cy="440.4303" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="197.3622" cy="452.256" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="203.5858" cy="450.4182" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="298.9531" cy="421.0691" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="241.796" cy="437.987" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="228.4405" cy="442.3793" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="272.7015" cy="428.1501" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="271.7863" cy="428.464" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="536.0815" cy="357.4017" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="366.2914" cy="404.3891" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="425.7006" cy="388.1014" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="489.9384" cy="375.2201" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="373.9092" cy="403.1347" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="283.9832" cy="425.3966" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="363.3417" cy="405.778" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="323.0727" cy="415.2352" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="217.1951" cy="446.6891" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="419.133" cy="389.7365" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="486.0077" cy="377.5453" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="247.5057" cy="437.073" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="435.0198" cy="385.8841" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="220.8915" cy="445.0108" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="214.2738" cy="447.116" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="456.1392" cy="382.0434" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="259.3376" cy="432.1955" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="344.0231" cy="410.966" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="213.5484" cy="447.7622" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="289.8468" cy="422.4775" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="432.624" cy="386.2741" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="266.3699" cy="431.0352" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="223.1338" cy="444.3933" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="257.6116" cy="432.6996" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="342.722" cy="411.202" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="233.0758" cy="441.3969" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="235.4248" cy="439.8576" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="246.682" cy="437.073" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="284.9496" cy="425.3966" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="296.8954" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="230.7479" cy="442.3793" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="430.2736" cy="387.0618" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="263.7082" cy="431.3644" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="232.2975" cy="441.3969" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="290.8397" cy="422.0515" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="404.9638" cy="395.7437" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="231.5216" cy="442.3793" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="353.4105" cy="408.0913" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="200.803" cy="451.5603" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="453.2793" cy="382.1895" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="311.7485" cy="417.9494" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="517.821" cy="361.0006" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="204.2858" cy="449.9673" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="312.8521" cy="417.9494" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="269.9667" cy="428.9378" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="215.7306" cy="447.116" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="361.8865" cy="406.1031" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="352.0381" cy="408.6554" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="375.4774" cy="403.1347" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="297.9217" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="249.9933" cy="436.7113" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="543.2357" cy="356.2006" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="437.4633" cy="385.1115" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="383.5636" cy="400.5032" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="319.6061" cy="415.9983" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="326.603" cy="414.6065" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="251.6658" cy="436.7113" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="412.878" cy="393.4094" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="551.1376" cy="355.3503" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="277.3336" cy="426.6049" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="216.4619" cy="446.6891" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="227.6759" cy="442.3793" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="512.5268" cy="363.9019" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="275.4694" cy="427.3726" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="244.2271" cy="437.6198" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="357.5953" cy="407.4213" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="240.1882" cy="438.5422" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="223.8855" cy="444.3933" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="265.4793" cy="431.0352" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="478.5874" cy="378.6388" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="380.2782" cy="402.8252" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="205.691" cy="449.9673" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="199.4217" cy="451.5603" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="238.5906" cy="438.9151" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="270.8747" cy="428.9378" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="442.5032" cy="383.5206" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="367.7865" cy="404.1782" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="250.8282" cy="436.7113" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="450.4897" cy="382.6299" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="267.2639" cy="430.5447" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="204.9875" cy="449.9673" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="226.1532" cy="443.3779" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="346.6543" cy="410.38" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="388.6288" cy="399.0356" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="218.6676" cy="446.0543" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="315.0779" cy="417.5541" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="233.8565" cy="441.3969" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="421.2855" cy="389.4884" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="338.8744" cy="411.5577" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="596.8352" cy="325.9321" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="286.8953" cy="424.3588" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="336.354" cy="412.5167" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="283.021" cy="426.149" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="220.1481" cy="445.0108" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="239.3881" cy="438.9151" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="262.8276" cy="431.8617" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="327.7945" cy="414.3568" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="349.3254" cy="409.7996" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="210.6654" cy="448.8547" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="237.7954" cy="438.9151" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="447.7664" cy="382.9994" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="261.9503" cy="432.1955" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="559.9994" cy="345.5834" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="287.8747" cy="424.3588" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="356.1889" cy="407.4213" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="397.4746" cy="397.1326" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="207.1032" cy="449.2973" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="392.1034" cy="398.0766" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="468.3822" cy="380.3881" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="410.8562" cy="395.2878" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="294.8576" cy="421.3482" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="465.1896" cy="380.6014" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="219.4069" cy="445.426" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="278.2715" cy="426.6049" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="462.089" cy="381.1022" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="206.3962" cy="449.2973" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="325.419" cy="414.9829" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="217.9304" cy="446.6891" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="331.4148" cy="413.3684" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="252.5064" cy="435.8162" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="393.8719" cy="398.0766" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="423.4742" cy="389.0771" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+    <ellipse cx="333.8679" cy="412.7588" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+  </g>
+  <defs>
+    <clipPath id="clipPath3">
+      <rect x="0" y="0" width="1000" height="650" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clipPath3)">
+    <text dominant-baseline="hanging" text-anchor="middle" transform="translate(525.8293,10)" font-family="Segoe UI" font-size="18" font-weight="700" fill="black">Frequency</text>
+    <rect x="76.913" y="36.106" width="897.8325" height="556.437" style="fill:none;stroke:black;stroke-width:1" shape-rendering="crispEdges" />
+    <rect x="84.913" y="44.106" width="126.495" height="66.265" style="fill:rgb(255,255,255);fill-opacity:0.5490196078431373;stroke:rgb(169,169,169);stroke-width:1" shape-rendering="crispEdges" />
+  </g>
+  <defs>
+    <clipPath id="clipPath4">
+      <rect x="84.913" y="44.106" width="126.495" height="66.265" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clipPath4)">
+    <text dominant-baseline="hanging" text-anchor="start" transform="translate(112.913,52.106)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">90% Credible Intervals</text>
+    <polyline points="92.913,60.1484 108.913,60.1484" style="fill:none;stroke:rgb(53,59,122);stroke-width:1" />
+    <polyline points="108.913,54.1166 92.913,58.1378" style="fill:none;stroke:rgb(53,59,122);stroke-width:1" />
+    <polygon points="92.913,60.1484 108.913,60.1484 108.913,54.1166 92.913,58.1378" style="fill:rgb(104,140,175);fill-opacity:0.29411764705882354;stroke:none;" />
+    <text dominant-baseline="hanging" text-anchor="start" transform="translate(112.913,62.159)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">Posterior Predictive</text>
+    <polyline points="92.913,67.1855 108.913,67.1855" style="fill:none;stroke:rgb(0,0,255);stroke-width:1;stroke-dasharray:4,1" />
+    <text dominant-baseline="hanging" text-anchor="start" transform="translate(112.913,72.212)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">Posterior Mean</text>
+    <polyline points="92.913,77.2385 108.913,77.2385" style="fill:none;stroke:black;stroke-width:1" />
+    <text dominant-baseline="hanging" text-anchor="start" transform="translate(112.913,82.265)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">POT Exact Data</text>
+    <ellipse cx="100.913" cy="87.2915" rx="3" ry="3" style="fill:rgb(0,0,0);fill-opacity:0.25098039215686274;stroke:rgb(0,0,0);stroke-width:1;stroke-opacity:0.5019607843137255" shape-rendering="geometricPrecision" />
+    <text dominant-baseline="hanging" text-anchor="start" transform="translate(112.913,92.318)" font-family="Segoe UI" font-size="12" font-weight="400" fill="black">AMS Exact Data</text>
+    <ellipse cx="100.913" cy="97.3445" rx="3" ry="3" style="fill:black;stroke:black;stroke-width:1" shape-rendering="geometricPrecision" />
+  </g>
+  <defs>
+    <clipPath id="clipPath5">
+      <rect x="0" y="0" width="1000" height="650" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clipPath5)" />
+</svg>

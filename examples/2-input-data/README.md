@@ -24,10 +24,10 @@ MGBT low-outlier flags remain attached to the saved exact-series rows. The selec
 
 1. Open a working copy and inspect the source record described in the tutorial.
 2. Confirm variable, units, date convention, completeness and observation method.
-3. Read the extraction settings and compare the saved input grid with chronology.
-4. Inspect frequency and, for POT inputs, the threshold diagnostics. Five-step separation is an extraction rule, not proof of independence.
+3. Select the named element under **Input Data** in the **Project Explorer**. Read **Properties**, then open **Data Frame > Exact Data** and **Chronology Plot**.
+4. Select **Frequency Plot** and, for POT inputs, **POT Diagnostics**. Switch the latter with **Mean Residual Life**, **Modified Scale**, and **Shape** below the plot. Five-step separation is an extraction rule, not proof of independence.
 5. Record the chosen sample and observation exposure before creating an analysis.
 
 Annual maxima and POT peaks need different probability interpretations. A daily-mean maximum also differs from an instantaneous annual peak. For a POT model, count years with no events when they were observed, and distinguish missing coverage from a zero event count. Current extraction retains the source calendar-year span, while the older Orestimba snapshot lacks that field; its tutorial documents the resulting saved-rate difference.
 
-Continue to [Chapter 4](../4-univariate-distribution-analysis/README.md) for Bayesian and Bulletin 17C analyses. Use the [figure instructions](../README.md#reproducing-the-figures) to reproduce these Python figures from the saved source geometry.
+Continue to [Chapter 4](../4-univariate-distribution-analysis/README.md) for Bayesian and Bulletin 17C analyses. Use the [figure instructions](../README.md#reproducing-the-figures) for the Python SVG and plot-data companions. The tutorials also include native desktop plot exports and current panel captures for navigation.

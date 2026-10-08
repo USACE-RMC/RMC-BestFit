@@ -50,6 +50,8 @@ The two RSkew alternatives disable default flat priors and use a Normal prior on
 
 Every copula uses InferenceFromMargins. AMH's point estimate is about 0.999995, near its upper bound; good-looking scalar diagnostics do not resolve that boundary behavior or establish tail suitability. The saved copula query at (0,0) returns probability one and is not a useful flood-return-period result.
 
+In **Project Explorer**, select **Normal Copula - Conditional**, then **Distribution Results > X-Y Plot**. Use **Plot Type = Scatter Plot** and **Axis Type = Value** for the native scatter below; the Probability axis and contour views answer different questions. Select **CFA - Normal - Conditional** to inspect **Bivariate Response**, **Frequency Plot** and **Tabular Results**. **Properties > General** identifies the **Bivariate Analysis** and saved X/Y ordinates; **Properties > Output > Z Bins** identifies its response discretization. Each table row fixes **Response Value** and reports probability estimates and bounds, rather than fixing AEP and reporting a response quantile. Inspect **MCMC Report** and **Markov Chain Traces** on the upstream marginals and copula. Preserve the supplied response surface until its physical definition is established.
+
 ## Saved results and diagnostics
 
 The current MCMC fits retain DEMCzs, seed 12345, 1,750 warmup iterations, 3,500 iterations, 10,000 output draws and 90% interval width. Chain/thinning and selected point-parameter estimates are listed below. Inspect actual prior bounds, every parameter trace and autocorrelation, and uncertainty in the quantity needed for the study. R-hat and ESS summarize the saved run; successful completion alone does not establish adequacy. Composite and coincident-frequency wrappers propagate upstream results and do not represent separate MCMC fits.
@@ -112,9 +114,9 @@ The conditional CFA saves 10,000 output draws and 90% probability bounds at fixe
 
 *Conditional joint-exceedance contours in marginal-CDF space.* [SVG](images/waimea-river-stage-frequency-conditional-joint-exceedance.svg) · [Plot data](images/waimea-river-stage-frequency-conditional-joint-exceedance.plotspec.json.gz)
 
-![Saved probability bounds at fixed response Z; physical quantity and units await source confirmation.](images/waimea-river-stage-frequency-conditional-response.png)
+![Saved probability bounds at fixed response Z; physical quantity and units await source confirmation.](screenshots/waimea-conditional-response.png)
 
-*Saved probability bounds at fixed response Z; physical quantity and units await source confirmation.* [SVG](images/waimea-river-stage-frequency-conditional-response.svg) · [Plot data](images/waimea-river-stage-frequency-conditional-response.plotspec.json.gz)
+*Saved probability bounds at fixed response Z; physical quantity and units await source confirmation.* [SVG](images/waimea-river-stage-frequency-conditional-response.svg) · [Plot data](images/waimea-river-stage-frequency-conditional-response.plotspec.json.gz) [Native SVG](screenshots/waimea-conditional-response.svg) [Capture data](screenshots/waimea-conditional-response.json.gz)
 
 ## Retained legacy material and unresolved evidence
 
@@ -124,8 +126,12 @@ The separate fitting analysis 16031000_WaimeaPk binds the current Waimea input a
 
 The author follow-up log records the prior sources, regional applicability, Makaweli units, conditional selection, hydraulic response definition, Simulated Proof role and legacy-result conflicts. These are necessary study decisions before design interpretation. A readable saved curve does not supply the missing evidence.
 
+![Normal Copula - Conditional: native Value-space simulated scatter and eligible observations. Makaweli units and conditional-event provenance remain unresolved.](screenshots/waimea-conditional-scatter.png)
+
+*Normal Copula - Conditional: native Value-space simulated scatter and eligible observations. Makaweli units and conditional-event provenance remain unresolved.* [Native SVG](screenshots/waimea-conditional-scatter.svg) [Capture data](screenshots/waimea-conditional-scatter.json.gz)
+
 ## Reproduce and check
 
-These Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only waimea-river-stage-frequency`. SVG and compressed PlotSpec links preserve the display and its source identity.
+The conditional copula scatter and CFA figure under `screenshots/` export the native views of the current named elements. The remaining Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only waimea-river-stage-frequency`. SVG and compressed PlotSpec links preserve the display and its source identity.
 
 Explain which observations support each fit, what its point curve and band represent, and which assumptions need independent study evidence before reuse.

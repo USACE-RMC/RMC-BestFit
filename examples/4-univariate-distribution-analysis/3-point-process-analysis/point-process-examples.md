@@ -2,6 +2,12 @@
 
 Open [point-process-examples.bestfit](point-process-examples.bestfit) and save a working copy. This project compares annual-maxima GEV models with point-process models that use multiple threshold exceedances per year. The seasonal model allows two event populations within the block year.
 
+## Find these results in BestFit
+
+Select **USC00040741 - Point Process** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Location (ξ)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
 ## Inspect the rainfall records and extraction
 
 NOAA's [GHCN-D station catalog](https://www.ncei.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt) identifies USC00040741 as **Big Bear Lake** and USC00042402 as **De Sabla**, California. Both saved precipitation series use inches.
@@ -63,9 +69,9 @@ Quantiles and limits are inches of daily precipitation. These are annual frequen
 
 *Big Bear annual-maxima GEV result.* [SVG](images/point-process-examples-big-bear-ams.svg) · [Plot data](images/point-process-examples-big-bear-ams.plotspec.json.gz)
 
-![Big Bear point-process annualized frequency curve with POT plotting positions.](images/point-process-examples-big-bear-point-process.png)
+![USC00040741 - Point Process: Big Bear point-process annualized frequency curve with POT plotting positions.](screenshots/point-process-frequency.png)
 
-*Big Bear point-process annualized frequency curve with POT plotting positions.* [SVG](images/point-process-examples-big-bear-point-process.svg) · [Plot data](images/point-process-examples-big-bear-point-process.plotspec.json.gz)
+*USC00040741 - Point Process: Big Bear point-process annualized frequency curve with POT plotting positions.* Native BestFit plot export. Python companion: [SVG](images/point-process-examples-big-bear-point-process.svg) · [Plot data](images/point-process-examples-big-bear-point-process.plotspec.json.gz) [Native SVG](screenshots/point-process-frequency.svg) [Capture data](screenshots/point-process-frequency.json.gz)
 
 ![De Sabla annual-maxima GEV result using its saved September block start.](images/point-process-examples-de-sabla-ams.png)
 
@@ -79,6 +85,20 @@ Quantiles and limits are inches of daily precipitation. These are annual frequen
 
 *Big Bear two-season model, its component curves and annual combination with an August block start.* [SVG](images/point-process-examples-big-bear-seasonal.svg) · [Plot data](images/point-process-examples-big-bear-seasonal.plotspec.json.gz)
 
+## Inspect the selected result and parameter views
+
+![USC00040741 - Point Process: posterior kernel density for Location (ξ).](screenshots/point-process-kernel-density-location.png)
+
+*USC00040741 - Point Process: posterior kernel density for Location (ξ).* Native BestFit plot export. [Native SVG](screenshots/point-process-kernel-density-location.svg) [Capture data](screenshots/point-process-kernel-density-location.json.gz)
+
+![USC00040741 - Point Process: saved Markov-chain traces for Location (ξ), with warmup excluded.](screenshots/point-process-trace-location.png)
+
+*USC00040741 - Point Process: saved Markov-chain traces for Location (ξ), with warmup excluded.* Native BestFit plot export. [Native SVG](screenshots/point-process-trace-location.svg) [Capture data](screenshots/point-process-trace-location.json.gz)
+
+![USC00040741 - Point Process: autocorrelation for Location (ξ); inspect the other sampled parameters as well.](screenshots/point-process-autocorrelation-location.png)
+
+*USC00040741 - Point Process: autocorrelation for Location (ξ); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/point-process-autocorrelation-location.svg) [Capture data](screenshots/point-process-autocorrelation-location.json.gz)
+
 ## Interpretation and references
 
 Threshold choice trades event count against the applicability of an extreme-value tail model. Declustering and exposure accounting are separate decisions. Consult the [point-process technical reference](../../../docs/technical-reference/distributions/point-process.md), and document why each choice represents the site's rainfall process before transferring these settings.
@@ -87,6 +107,6 @@ The open study questions concern threshold/separation rationale, gaps and partia
 
 ## Reproduce and check your understanding
 
-The shared Python renderer uses BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
+The additional Python figures and companion links use BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each Python figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
 
 Before using a result in a study, explain the target variable, the represented observation period, the information added through thresholds or priors, and what the plotted interval means. Separate a teaching example's saved settings from a justified engineering choice for another site.

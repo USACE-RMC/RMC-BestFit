@@ -17,7 +17,7 @@ OUTPUT = ROOT / "artifacts/example-documentation/site"
 CSS = """body{font:17px/1.6 system-ui,sans-serif;color:#202830;background:#f8f9fb;margin:0}
 main{max-width:1000px;margin:auto;padding:42px 42px 70px;background:white}
 h1{font-size:34px;line-height:1.2}h2{font-size:25px;margin-top:36px}h3{font-size:21px}
-a{color:#165786}img{display:block;width:100%;height:auto;margin:24px auto 10px}
+a{color:#165786}img{display:block;max-width:100%;width:auto;height:auto;margin:24px auto 10px}
 table{border-collapse:collapse;font-size:14px;width:100%;margin:22px 0}
 td,th{border:1px solid #cad2d9;padding:9px;text-align:left;overflow-wrap:normal}
 th{background:#edf2f6}pre{padding:16px;background:#f2f5f7;overflow:auto;font-size:14px}

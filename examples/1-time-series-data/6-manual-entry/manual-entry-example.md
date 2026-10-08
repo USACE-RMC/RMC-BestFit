@@ -6,6 +6,20 @@ Use three familiar datasets to practise importing values and assigning dates. Th
 
 Open [manual-entry-example.bestfit](manual-entry-example.bestfit) in RMC-BestFit and save a working copy before importing or editing data. The figures use the saved snapshot; downloading again may change the record. You do not need to run an analysis to follow this exercise.
 
+## Find the controls
+
+Expand **Time Series Data** in the **Project Explorer** and select **Airline Passengers**. In **Properties**, read **Data Entry Method = Manual Entry**, **Time Interval = 1-Month**, and **Start Date**. The **Time Series** tab contains the **Time Series Data** grid and chronological plot; **Summary Statistics** is beside the grid. Use the left-side **Seasonality Plot**, **ACF Plot**, and **PACF Plot** tabs for the corresponding views.
+
+For a new source in a working copy, right-click **Time Series Data**, choose **New Time Series...**, enter a name, and configure **Properties** before importing or downloading.
+
+![Project Explorer for this saved project, with Airline Passengers selected.](screenshots/manual-entry-project-explorer-current.png)
+
+*Project Explorer for this saved project, with Airline Passengers selected.* [Capture data](screenshots/manual-entry-project-explorer-current.json.gz)
+
+![Properties for Airline Passengers. Check the source and settings before changing a working copy.](screenshots/manual-entry-properties-current.png)
+
+*Properties for Airline Passengers. Check the source and settings before changing a working copy.* [Capture data](screenshots/manual-entry-properties-current.json.gz)
+
 ## Source and saved records
 
 The supplied CSV files are [airline-passengers.csv](airline-passengers.csv), [nile-river-flow.csv](nile-river-flow.csv), and [mauna-loa-co2.csv](mauna-loa-co2.csv). They contain monthly airline passenger totals, annual Nile flow volumes, and monthly Mauna Loa carbon-dioxide concentrations. The saved project is the source of the figures below; the CSV files provide a separate date/value check.
@@ -21,25 +35,29 @@ The supplied CSV files are [airline-passengers.csv](airline-passengers.csv), [ni
 ## Work through the example
 
 1. Select **Airline Passengers** and inspect the date and value columns. The 144 monthly observations run from January 1949 through December 1960; values are thousands of passengers.
-2. Create a separate working element with **Entry Method = Manual**. Set the interval and first date before pasting values. Use one row per observation and verify the final date after import.
+2. Create a separate working element with **Data Entry Method = Manual Entry**. Set the interval and first date before pasting values. Use one row per observation and verify the final date after import.
 3. Repeat the checks with **Mauna Loa CO2**. Its 790 monthly values are concentrations in parts per million (ppm), not flow or precipitation.
 4. Inspect **Nile River Flows** and compare its first and last dates with `nile-river-flow.csv`. Read the date discrepancy below before interpreting when a change occurred.
-5. Review the **Time Series** and **Seasonality** views. Use the yearly Nile series for annual behaviour; monthly seasonality is not meaningful for a series containing only one dated value per year.
+5. Review the **Time Series**, **Seasonality Plot**, and **ACF Plot** views. Use the yearly Nile series for annual behaviour; monthly seasonality is not meaningful for a series containing only one dated value per year.
 6. Continue to the [classic time-series analysis example](../../7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.md) to examine saved fitted models and their diagnostic limitations.
 
 ## Read the plots
 
-![Monthly airline passenger totals, in thousands.](figures/manual-entry-example-airline.png)
+![Monthly airline passenger totals, in thousands.](screenshots/manual-entry-airline-ts-plot-native.png)
 
-*Figure 1. Monthly airline passenger totals, in thousands.* [SVG](figures/manual-entry-example-airline.svg) · [Plot data](figures/manual-entry-example-airline.plotspec.json.gz)
+*Figure 1. Monthly airline passenger totals, in thousands.* [Python SVG](figures/manual-entry-example-airline.svg) · [Python plot data](figures/manual-entry-example-airline.plotspec.json.gz) [Native SVG](screenshots/manual-entry-airline-ts-plot-native.svg) [Capture data](screenshots/manual-entry-airline-ts-plot-native.json.gz)
 
-![Monthly Mauna Loa CO2 concentrations, in ppm.](figures/manual-entry-example-co2.png)
+![Monthly Mauna Loa CO2 concentrations, in ppm.](screenshots/manual-entry-co2-ts-plot-native.png)
 
-*Figure 2. Monthly Mauna Loa CO2 concentrations, in ppm.* [SVG](figures/manual-entry-example-co2.svg) · [Plot data](figures/manual-entry-example-co2.plotspec.json.gz)
+*Figure 2. Monthly Mauna Loa CO2 concentrations, in ppm.* [Python SVG](figures/manual-entry-example-co2.svg) · [Python plot data](figures/manual-entry-example-co2.plotspec.json.gz) [Native SVG](screenshots/manual-entry-co2-ts-plot-native.svg) [Capture data](screenshots/manual-entry-co2-ts-plot-native.json.gz)
 
-![Nile values plotted against the project’s stored 1897–1996 dates. Source CSV dates differ by 26 years.](figures/manual-entry-example-nile-stored-dates.png)
+![Nile values plotted against the project’s stored 1897–1996 dates. Source CSV dates differ by 26 years.](screenshots/manual-entry-nile-ts-plot-native.png)
 
-*Figure 3. Nile values plotted against the project’s stored 1897–1996 dates. Source CSV dates differ by 26 years.* [SVG](figures/manual-entry-example-nile-stored-dates.svg) · [Plot data](figures/manual-entry-example-nile-stored-dates.plotspec.json.gz)
+*Figure 3. Nile values plotted against the project’s stored 1897–1996 dates. Source CSV dates differ by 26 years.* [Python SVG](figures/manual-entry-example-nile-stored-dates.svg) · [Python plot data](figures/manual-entry-example-nile-stored-dates.plotspec.json.gz) [Native SVG](screenshots/manual-entry-nile-ts-plot-native.svg) [Capture data](screenshots/manual-entry-nile-ts-plot-native.json.gz)
+
+![Airline Passengers ACF Plot from the unchanged monthly series. Persistent correlation can reflect the changing level and seasonality; it does not establish that an untransformed stationary model is adequate.](screenshots/manual-entry-airline-acf-native.png)
+
+*Airline Passengers ACF Plot from the unchanged monthly series. Persistent correlation can reflect the changing level and seasonality; it does not establish that an untransformed stationary model is adequate.* [Native SVG](screenshots/manual-entry-airline-acf-native.svg) [Capture data](screenshots/manual-entry-airline-acf-native.json.gz)
 
 ## Interpretation and limits
 
@@ -55,4 +73,4 @@ Enter five monthly values in a working element and verify their resulting dates.
 
 ## Figure reproducibility
 
-Figures are rendered with Python from BestFit.UI/App coordinates exported from the saved project. Use the repository [figure-generation instructions](../../README.md#reproducing-the-figures) with project filter `manual-entry-example`. The accompanying plot data records the source hash; a successful plot export is not validation of a statistical model.
+Native screenshots show the current desktop plots for the selected saved elements. The linked Python SVG and plot-data files remain companion exports from BestFit.UI/App coordinates; views without a native replacement retain their Python figure. Use the repository [figure-generation instructions](../../README.md#reproducing-the-figures) with project filter `manual-entry-example`. The accompanying plot data records the source hash; a successful plot export is not validation of a statistical model.

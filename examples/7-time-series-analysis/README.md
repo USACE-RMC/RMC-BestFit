@@ -14,9 +14,9 @@ Time-series models retain observation order and can describe trends, serial depe
 
 1. Open the project's linked file and save a working copy. Inspect the response's units, interval, dates and gaps under **Time Series Data**.
 2. Select the named analysis under **Time Series Analysis**. Read its actual trend, transformation and ARIMA orders; an element name may be an older label.
-3. Identify the training observations, withheld validation observations and future steps separately. The synthetic and classic projects have zero future steps; their held-out curves are validation predictions.
+3. Open **Time Series Results > Time Series Plot** and **Tabular Results**. Under **Properties > Output**, read **Training Steps**, **Validation Steps** and **Forecast Steps** separately. The synthetic and classic projects have zero future steps; their held-out curves are validation predictions.
 4. Inspect every parameter's trace, R-hat and effective sample size. The Airline example has weak saved diagnostics, which remain part of the lesson.
-5. Inspect residuals, autocorrelation and Q–Q views in their stated residual scale. A model can track a trend while leaving unexplained serial structure.
+5. Open **Residual Diagnostics > Residuals Plot**, **ACF Plot**, **PACF Plot** and **Normal Q-Q Plot** in their stated residual scale. The separate **Autocorrelation** tab shows a selected MCMC parameter's chain ACF; it does not test residual independence. A model can track a trend while leaving unexplained serial structure.
 6. For a future prediction with covariates, determine where future covariate values come from. Fixed means and bootstrap scenarios carry different assumptions, and separately bootstrapping covariates does not preserve their joint dependence.
 
 The plotted bands are prediction intervals: they include process/residual variability and parameter uncertainty. They are not just uncertainty about a mean trend. The vertical training boundary and the colors distinguish the fitted period from withheld or future prediction periods.

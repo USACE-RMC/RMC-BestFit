@@ -17,12 +17,14 @@ All three 7×7 response grids have X coordinates 65, 75, 90, 100, 110, 125, 135 
 ## Work through the example
 
 1. Open the two marginal fits and Normal Copula for nominal rho 0.0. Inspect their exact input bindings.
-2. Open CFA - Rho = 0.0. Confirm its selected copula, X+Y response input, grid and 20 response bins.
+2. Select **CFA - Rho = 0.0** in **Project Explorer**. Inspect **Bivariate Response** for the grid, **Frequency Plot** for the response curve and **Tabular Results** for its saved rows. In **Properties > General**, confirm **Bivariate Analysis**, **Input Data**, **PRIMARY (X) ORDINATES** and **SECONDARY (Y) ORDINATES**; **Properties > Output > Z Bins** retains 20 bins.
 3. Repeat for nominal −0.5 and +0.5; these use 50 bins. Preserve the differences when comparing discrete tabulated outputs.
 4. Read a CFA table row as **AEP at a fixed response Z**, not as a response quantile at a fixed AEP.
 5. Compare the plots' horizontal uncertainty bounds at the same Z. Upstream Bayesian fits retain 90% intervals, while the near-zero CFA result retains **95%** intervals and the negative/positive CFA results retain **90%** intervals.
 
 For jointly Normal variables, the sum's mean is muX + muY and its variance is sigmaX² + sigmaY² + 2 rho sigmaX sigmaY. This relationship explains the direction of dependence effects. It does not authorize replacing a saved finite-grid CFA result with an analytic curve.
+
+Select **Normal Copula - Rho = 0.0** and open **Distribution Results > X-Y Plot**, with **Plot Type = Scatter Plot** and **Axis Type = Value**, to inspect the fitted-model simulation and observed pairs upstream of CFA. Inspect marginal and copula **Markov Chain Traces** and **MCMC Report** there; CFA propagates their saved uncertainty and has no separate chain run. Editing ordinates or bins would change the response calculation, so preserve the saved grid while following this guide.
 
 ## Saved diagnostics and response rows
 
@@ -55,9 +57,9 @@ Rows are selected existing output positions, without interpolation. The interval
 
 ## Read the figures
 
-![CFA - Rho = 0.0: AEP at fixed sum response with 95% probability bounds.](images/sum-two-normals-near-zero-response.png)
+![CFA - Rho = 0.0: AEP at fixed sum response with 95% probability bounds.](screenshots/sum-near-zero-response.png)
 
-*CFA - Rho = 0.0: AEP at fixed sum response with 95% probability bounds.* [SVG](images/sum-two-normals-near-zero-response.svg) · [Plot data](images/sum-two-normals-near-zero-response.plotspec.json.gz)
+*CFA - Rho = 0.0: AEP at fixed sum response with 95% probability bounds.* [SVG](images/sum-two-normals-near-zero-response.svg) · [Plot data](images/sum-two-normals-near-zero-response.plotspec.json.gz) [Native SVG](screenshots/sum-near-zero-response.svg) [Capture data](screenshots/sum-near-zero-response.json.gz)
 
 ![CFA - Rho = -0.5: AEP at fixed sum response with 90% probability bounds.](images/sum-two-normals-negative-response.png)
 
@@ -75,8 +77,12 @@ Rows are selected existing output positions, without interpolation. The interval
 
 *Negative nominal scenario; its fitted rho is about −0.454.* [SVG](images/sum-two-normals-negative-scatter.svg) · [Plot data](images/sum-two-normals-negative-scatter.plotspec.json.gz)
 
+![Normal Copula - Rho = 0.0: native Value-space simulated scatter and observed pairs, upstream of the near-zero CFA.](screenshots/sum-near-zero-scatter.png)
+
+*Normal Copula - Rho = 0.0: native Value-space simulated scatter and observed pairs, upstream of the near-zero CFA.* [Native SVG](screenshots/sum-near-zero-scatter.svg) [Capture data](screenshots/sum-near-zero-scatter.json.gz)
+
 ## Reproduce and check
 
-These Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only sum-two-normals`. SVG and compressed PlotSpec links preserve the display and its source identity.
+The near-zero CFA and copula scatter under `screenshots/` export native BestFit views from the current project. The remaining Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only sum-two-normals`. SVG and compressed PlotSpec links preserve the display and its source identity.
 
 Explain which observations support each fit, what its point curve and band represent, and which assumptions need independent study evidence before reuse.

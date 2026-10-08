@@ -2,11 +2,17 @@
 
 Three saved Bayesian LP3 fits compare a systematic flood record with two ways of entering a MOVE.3 extension. The main lesson is to separate observed peaks from estimated peaks and to carry the supplied uncertainty explicitly when it is supported by the extension study.
 
+## Find these results in BestFit
+
+Select **LPIII - No Extension** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Mean (of log) (µ)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
 ## Open the saved project
 
 Open [sinnemahoning-move3-bayesian.bestfit](sinnemahoning-move3-bayesian.bestfit) with **File > Open** and save a separate working copy before editing or rerunning.
 
-The figures display saved BestFit results through the shared Python renderer; no analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
+The figures display saved BestFit results. The views identified as native exports use BestFit's plotting controls; Python companion links and the additional figures retain the shared renderer. No analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
 
 The point curve evaluates the distribution at the selected posterior mean or mode **parameter vector**. It is not necessarily the posterior median of each quantile. The curve labeled Posterior Predictive averages over parameter uncertainty. A credible band describes uncertainty about a quantile; it is not a band containing 90% of future floods.
 
@@ -68,9 +74,9 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 
 *Sinnemahoning chronology distinguishing uncertain extension years from exact systematic peaks.* [SVG](images/sinnemahoning-move3-bayesian-uncertain-chronology.svg) · [Plot data](images/sinnemahoning-move3-bayesian-uncertain-chronology.plotspec.json.gz)
 
-![Bayesian LP3 fit to the systematic record only.](images/sinnemahoning-move3-bayesian-no-extension.png)
+![LPIII - No Extension: Bayesian LP3 fit to the systematic record only.](screenshots/sinnemahoning-bayesian-frequency.png)
 
-*Bayesian LP3 fit to the systematic record only.* [SVG](images/sinnemahoning-move3-bayesian-no-extension.svg) · [Plot data](images/sinnemahoning-move3-bayesian-no-extension.plotspec.json.gz)
+*LPIII - No Extension: Bayesian LP3 fit to the systematic record only.* Native BestFit plot export. Python companion: [SVG](images/sinnemahoning-move3-bayesian-no-extension.svg) · [Plot data](images/sinnemahoning-move3-bayesian-no-extension.plotspec.json.gz) [Native SVG](screenshots/sinnemahoning-bayesian-frequency.svg) [Capture data](screenshots/sinnemahoning-bayesian-frequency.json.gz)
 
 ![Bayesian LP3 fit treating the supplied extension values as exact.](images/sinnemahoning-move3-bayesian-exact-extension.png)
 
@@ -83,6 +89,20 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 ![Saved parameter trace for the model with uncertain extension data.](images/sinnemahoning-move3-bayesian-trace.png)
 
 *Saved parameter trace for the model with uncertain extension data.* [SVG](images/sinnemahoning-move3-bayesian-trace.svg) · [Plot data](images/sinnemahoning-move3-bayesian-trace.plotspec.json.gz)
+
+## Inspect the selected result and parameter views
+
+![LPIII - No Extension: posterior kernel density for Mean (of log) (µ).](screenshots/sinnemahoning-bayesian-kernel-density-mean.png)
+
+*LPIII - No Extension: posterior kernel density for Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/sinnemahoning-bayesian-kernel-density-mean.svg) [Capture data](screenshots/sinnemahoning-bayesian-kernel-density-mean.json.gz)
+
+![LPIII - No Extension: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.](screenshots/sinnemahoning-bayesian-trace-mean.png)
+
+*LPIII - No Extension: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.* Native BestFit plot export. [Native SVG](screenshots/sinnemahoning-bayesian-trace-mean.svg) [Capture data](screenshots/sinnemahoning-bayesian-trace-mean.json.gz)
+
+![LPIII - No Extension: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.](screenshots/sinnemahoning-bayesian-autocorrelation-mean.png)
+
+*LPIII - No Extension: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/sinnemahoning-bayesian-autocorrelation-mean.svg) [Capture data](screenshots/sinnemahoning-bayesian-autocorrelation-mean.json.gz)
 
 ## Interpretation and limits
 

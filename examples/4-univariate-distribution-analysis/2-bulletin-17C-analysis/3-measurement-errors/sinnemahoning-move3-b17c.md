@@ -5,6 +5,13 @@ Open [sinnemahoning-move3-b17c.bestfit](sinnemahoning-move3-b17c.bestfit) and sa
 The computed curve comes from BestFit's Generalized Method of Moments (GMM) LP3 fit. Uncertainty is represented by a frequentist parameter ensemble or bootstrap. These are **confidence limits**, not Bayesian credible limits. Shared storage names such as BayesianAnalysis or ModeCurve do not change that interpretation. Some saved GMM reports also retain the legacy label “Credible Interval”; for these frequentist results, read it as the stated confidence level. This tutorial does not claim that BestFit ran the USGS Expected Moments Algorithm (EMA).
 
 Inspect GMM optimizer status, convergence, the objective and uncertainty diagnostics before interpreting a curve. R-hat, chain mixing and posterior ESS are not acceptance measures for these GMM ensembles. An empty or NaN diagnostic means it is unavailable or inapplicable, not zero.
+
+## Find these results in BestFit
+
+Select **B17C - LPIII - No Extension** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **GMM Report** for parameter summaries, optimizer status and uncertainty diagnostics. In **Kernel Density**, use **Select Parameter** to choose **B17C Mean (of log) (µ)**. This density summarizes the saved frequentist parameter ensemble; it is not a Bayesian posterior. **Parameter Sets** displays the ensemble. MCMC trace, R-hat and posterior ESS checks do not apply to this GMM result.
+
 ## Inspect the extension
 
 | Input element | Meaning | Exact rows and index span | Other saved input rows |
@@ -41,9 +48,9 @@ Magnitudes are cfs. All three parent fits report Success and convergence within 
 
 *Exact systematic peaks and uncertain reconstructed years in the GMM input.* [SVG](images/sinnemahoning-move3-b17c-uncertain-chronology.svg) · [Plot data](images/sinnemahoning-move3-b17c-uncertain-chronology.plotspec.json.gz)
 
-![B17C - LPIII - No Extension: computed GMM curve and linked-MVN confidence band.](images/sinnemahoning-move3-b17c-no-extension.png)
+![B17C - LPIII - No Extension: computed GMM curve and linked-MVN confidence band.](screenshots/sinnemahoning-b17c-frequency.png)
 
-*B17C - LPIII - No Extension: computed GMM curve and linked-MVN confidence band.* [SVG](images/sinnemahoning-move3-b17c-no-extension.svg) · [Plot data](images/sinnemahoning-move3-b17c-no-extension.plotspec.json.gz)
+*B17C - LPIII - No Extension: computed GMM curve and linked-MVN confidence band.* Native BestFit plot export. Python companion: [SVG](images/sinnemahoning-move3-b17c-no-extension.svg) · [Plot data](images/sinnemahoning-move3-b17c-no-extension.plotspec.json.gz) [Native SVG](screenshots/sinnemahoning-b17c-frequency.svg) [Capture data](screenshots/sinnemahoning-b17c-frequency.json.gz)
 
 ![B17C - LPIII - No Errors: computed GMM curve and linked-MVN confidence band.](images/sinnemahoning-move3-b17c-no-errors.png)
 
@@ -52,6 +59,12 @@ Magnitudes are cfs. All three parent fits report Success and convergence within 
 ![B17C - LPIII - With Errors: computed GMM curve and linked-MVN confidence band.](images/sinnemahoning-move3-b17c-with-errors.png)
 
 *B17C - LPIII - With Errors: computed GMM curve and linked-MVN confidence band.* [SVG](images/sinnemahoning-move3-b17c-with-errors.svg) · [Plot data](images/sinnemahoning-move3-b17c-with-errors.plotspec.json.gz)
+
+## Inspect the parameter ensemble
+
+![B17C - LPIII - No Extension: frequentist parameter-ensemble kernel density for B17C Mean (of log) (µ).](screenshots/sinnemahoning-b17c-kernel-density-mean.png)
+
+*B17C - LPIII - No Extension: frequentist parameter-ensemble kernel density for B17C Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/sinnemahoning-b17c-kernel-density-mean.svg) [Capture data](screenshots/sinnemahoning-b17c-kernel-density-mean.json.gz)
 
 ## Interpretation and checks
 
@@ -63,4 +76,4 @@ Explain why 104 rows do not mean 104 directly measured floods, which uncertainty
 
 AEP is annual exceedance probability; 0.01 means 1% per year under the model. Plotting positions summarize observations and are not fitted probabilities. A 90% confidence band describes uncertainty in a flood quantile, not the range containing 90% of future floods.
 
-The shared Python renderer draws coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The figures retain source hashes and exact display coordinates in their compressed PlotSpec files.
+The additional Python figures and companion links draw coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The Python figures retain source hashes and exact display coordinates in their compressed PlotSpec files.

@@ -2,6 +2,14 @@
 
 Open [nsffa-oc-fisher-dam.bestfit](nsffa-oc-fisher-dam.bestfit) and save a working copy. Five saved LP3 fits compare a stationary model with constant, linear, step and sinusoidal mean-of-log-flow trends. The example also shows why prior differences and incomplete outputs must be checked before interpreting a comparison.
 
+## Find these results in BestFit
+
+Select **SFFA** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Mean (of log) (µ)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
+The illustrated **SFFA** result is stationary. The separate NSFFA alternatives use Time Index 2021 and different prior means; select them deliberately when following the comparisons below.
+
 ## Inspect the evidence
 
 | Input element | Meaning | Exact rows and index span | Other saved input rows |
@@ -66,9 +74,9 @@ All saved nonstationary models set Alpha = 0.5. Their Chronology curve is the **
 
 *Saved long-period sinusoidal trend through the inflow record.* [SVG](images/nsffa-oc-fisher-dam-sinusoidal-chronology.svg) · [Plot data](images/nsffa-oc-fisher-dam-sinusoidal-chronology.plotspec.json.gz)
 
-![Stationary LP3 frequency curve and its enabled quantile priors.](images/nsffa-oc-fisher-dam-stationary-priors.png)
+![SFFA: Stationary LP3 frequency curve and its enabled quantile priors.](screenshots/nsffa-oc-fisher-frequency.png)
 
-*Stationary LP3 frequency curve and its enabled quantile priors.* [SVG](images/nsffa-oc-fisher-dam-stationary-priors.svg) · [Plot data](images/nsffa-oc-fisher-dam-stationary-priors.plotspec.json.gz)
+*SFFA: Stationary LP3 frequency curve and its enabled quantile priors.* Native BestFit plot export. Python companion: [SVG](images/nsffa-oc-fisher-dam-stationary-priors.svg) · [Plot data](images/nsffa-oc-fisher-dam-stationary-priors.plotspec.json.gz) [Native SVG](screenshots/nsffa-oc-fisher-frequency.svg) [Capture data](screenshots/nsffa-oc-fisher-frequency.json.gz)
 
 ![Conditional LP3 frequency at 2021 under the sinusoidal model.](images/nsffa-oc-fisher-dam-sinusoidal-frequency.png)
 
@@ -78,12 +86,26 @@ All saved nonstationary models set Alpha = 0.5. Their Chronology curve is the **
 
 *Saved first-parameter trace for the sinusoidal fit; inspect the other parameters in the app as well.* [SVG](images/nsffa-oc-fisher-dam-sinusoidal-trace.svg) · [Plot data](images/nsffa-oc-fisher-dam-sinusoidal-trace.plotspec.json.gz)
 
+## Inspect the selected result and parameter views
+
+![SFFA: posterior kernel density for Mean (of log) (µ).](screenshots/nsffa-oc-fisher-kernel-density-mean.png)
+
+*SFFA: posterior kernel density for Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/nsffa-oc-fisher-kernel-density-mean.svg) [Capture data](screenshots/nsffa-oc-fisher-kernel-density-mean.json.gz)
+
+![SFFA: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.](screenshots/nsffa-oc-fisher-trace-mean.png)
+
+*SFFA: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.* Native BestFit plot export. [Native SVG](screenshots/nsffa-oc-fisher-trace-mean.svg) [Capture data](screenshots/nsffa-oc-fisher-trace-mean.json.gz)
+
+![SFFA: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.](screenshots/nsffa-oc-fisher-autocorrelation-mean.png)
+
+*SFFA: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/nsffa-oc-fisher-autocorrelation-mean.svg) [Capture data](screenshots/nsffa-oc-fisher-autocorrelation-mean.json.gz)
+
 ## Interpretation
 
 A long-period fitted oscillation over a limited record does not establish a repeatable physical cycle. Require independent evidence for its mechanism and extrapolation. The missing composite output and unresolved prior sources are recorded for the project author; no output has been filled or replaced.
 
 ## Reproduce and check your understanding
 
-The shared Python renderer uses BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
+The additional Python figures and companion links use BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each Python figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
 
 Before using a result in a study, explain the target variable, the represented observation period, the information added through thresholds or priors, and what the plotted interval means. Separate a teaching example's saved settings from a justified engineering choice for another site.

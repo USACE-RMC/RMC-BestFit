@@ -2,6 +2,14 @@
 
 Open [mixture-distribution-examples.bestfit](mixture-distribution-examples.bestfit) and save a working copy. A mixture represents a population in which an observation comes from one of several component distributions. Component weights describe those alternatives within a model; they are not model-selection weights among the three saved analyses.
 
+## Find these results in BestFit
+
+Select **Mixture Distribution - 2 Normals** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Weight (w₁)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
+Here **Weight (w₁)** is the first continuous-component weight. Its KDE does not show component memberships, and a well-mixed weight trace alone does not establish stable component labels.
+
 ## Inspect the three datasets
 
 | Input | Meaning | Exact count (index span) | Other records |
@@ -51,9 +59,9 @@ The quantiles use generic Value units and the configured point-parameter vector,
 
 *Histogram includes the ten exact zeros in the input.* [SVG](images/mixture-distribution-examples-zero-input-histogram.svg) · [Plot data](images/mixture-distribution-examples-zero-input-histogram.plotspec.json.gz)
 
-![Saved two-Normal mixture frequency result.](images/mixture-distribution-examples-two-normal-frequency.png)
+![Mixture Distribution - 2 Normals: Saved two-Normal mixture frequency result.](screenshots/mixture-frequency.png)
 
-*Saved two-Normal mixture frequency result.* [SVG](images/mixture-distribution-examples-two-normal-frequency.svg) · [Plot data](images/mixture-distribution-examples-two-normal-frequency.plotspec.json.gz)
+*Mixture Distribution - 2 Normals: Saved two-Normal mixture frequency result.* Native BestFit plot export. Python companion: [SVG](images/mixture-distribution-examples-two-normal-frequency.svg) · [Plot data](images/mixture-distribution-examples-two-normal-frequency.plotspec.json.gz) [Native SVG](screenshots/mixture-frequency.svg) [Capture data](screenshots/mixture-frequency.json.gz)
 
 ![Saved three-Normal mixture result on its separate dataset.](images/mixture-distribution-examples-three-normal-frequency.png)
 
@@ -67,8 +75,22 @@ The quantiles use generic Value units and the configured point-parameter vector,
 
 *First saved parameter trace; inspect all component and weight parameters for mixing and label stability.* [SVG](images/mixture-distribution-examples-three-normal-trace.svg) · [Plot data](images/mixture-distribution-examples-three-normal-trace.plotspec.json.gz)
 
+## Inspect the selected result and parameter views
+
+![Mixture Distribution - 2 Normals: posterior kernel density for Weight (w₁).](screenshots/mixture-kernel-density-w1.png)
+
+*Mixture Distribution - 2 Normals: posterior kernel density for Weight (w₁).* Native BestFit plot export. [Native SVG](screenshots/mixture-kernel-density-w1.svg) [Capture data](screenshots/mixture-kernel-density-w1.json.gz)
+
+![Mixture Distribution - 2 Normals: saved Markov-chain traces for Weight (w₁), with warmup excluded.](screenshots/mixture-trace-w1.png)
+
+*Mixture Distribution - 2 Normals: saved Markov-chain traces for Weight (w₁), with warmup excluded.* Native BestFit plot export. [Native SVG](screenshots/mixture-trace-w1.svg) [Capture data](screenshots/mixture-trace-w1.json.gz)
+
+![Mixture Distribution - 2 Normals: autocorrelation for Weight (w₁); inspect the other sampled parameters as well.](screenshots/mixture-autocorrelation-w1.png)
+
+*Mixture Distribution - 2 Normals: autocorrelation for Weight (w₁); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/mixture-autocorrelation-w1.svg) [Capture data](screenshots/mixture-autocorrelation-w1.json.gz)
+
 ## Reproduce and check
 
-These Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only mixture-distribution-examples`. SVG and compressed PlotSpec links preserve the display and its source identity.
+The additional Python figures and companion links use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only mixture-distribution-examples`. SVG and compressed PlotSpec links preserve the display and its source identity.
 
 Explain which observations support each fit, what its point curve and band represent, and which assumptions need independent study evidence before reuse.

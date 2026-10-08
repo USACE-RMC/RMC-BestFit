@@ -5,6 +5,13 @@ This tutorial covers both [the imperial project](blakely-mountain-dam-b17c.bestf
 The computed curve comes from BestFit's Generalized Method of Moments (GMM) LP3 fit. Uncertainty is represented by a frequentist parameter ensemble or bootstrap. These are **confidence limits**, not Bayesian credible limits. Shared storage names such as BayesianAnalysis or ModeCurve do not change that interpretation. Some saved GMM reports also retain the legacy label “Credible Interval”; for these frequentist results, read it as the stated confidence level. This tutorial does not claim that BestFit ran the USGS Expected Moments Algorithm (EMA).
 
 Inspect GMM optimizer status, convergence, the objective and uncertainty diagnostics before interpreting a curve. R-hat, chain mixing and posterior ESS are not acceptance measures for these GMM ensembles. An empty or NaN diagnostic means it is unavailable or inapplicable, not zero.
+
+## Find these results in BestFit
+
+Select **Systematic** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **GMM Report** for parameter summaries, optimizer status and uncertainty diagnostics. In **Kernel Density**, use **Select Parameter** to choose **B17C Mean (of log) (µ)**. This density summarizes the saved frequentist parameter ensemble; it is not a Bayesian posterior. **Parameter Sets** displays the ensemble. MCMC trace, R-hat and posterior ESS checks do not apply to this GMM result.
+
 ## Source evidence and retained assumptions
 
 The supplied [Hydrologic Hazard Report, Appendix E2](Case%20Study/IES%20Appendix%20E2%20Hydrologic%20Hazard%20Report.pdf) and [Input-Data workbook](Case%20Study/Input-Data.xlsx) provide case-study material. The report includes one-day Bulletin 17C analyses and a separate three-day Bayesian information-expansion sequence. The settings below describe these saved one-day GMM teaching projects; they do not establish that each adopted penalty is justified for every flow duration.
@@ -72,9 +79,9 @@ Metric values are m³/s. Different fitted runs, ensemble sizes and input roundin
 
 *Full one-day input chronology in cfs, including paleoflood intervals and perception windows.* [SVG](images/blakely-mountain-dam-b17c-paleo-chronology.svg) · [Plot data](images/blakely-mountain-dam-b17c-paleo-chronology.plotspec.json.gz)
 
-![Imperial systematic GMM fit, including the represented five-year gap.](images/blakely-mountain-dam-b17c-systematic-frequency.png)
+![Systematic: Imperial systematic GMM fit, including the represented five-year gap.](screenshots/blakely-b17c-frequency.png)
 
-*Imperial systematic GMM fit, including the represented five-year gap.* [SVG](images/blakely-mountain-dam-b17c-systematic-frequency.svg) · [Plot data](images/blakely-mountain-dam-b17c-systematic-frequency.plotspec.json.gz)
+*Systematic: Imperial systematic GMM fit, including the represented five-year gap.* Native BestFit plot export. Python companion: [SVG](images/blakely-mountain-dam-b17c-systematic-frequency.svg) · [Plot data](images/blakely-mountain-dam-b17c-systematic-frequency.plotspec.json.gz) [Native SVG](screenshots/blakely-b17c-frequency.svg) [Capture data](screenshots/blakely-b17c-frequency.json.gz)
 
 ![Imperial one-day GMM fit after historical and paleoflood information.](images/blakely-mountain-dam-b17c-paleo-frequency.png)
 
@@ -88,6 +95,12 @@ Metric values are m³/s. Different fitted runs, ensemble sizes and input roundin
 
 *Metric final alternative with its own saved linked-MVN ensemble.* [SVG](Case%20Study/images/blakely-mountain-dam-b17c-metric-penalty-frequency.svg) · [Plot data](Case%20Study/images/blakely-mountain-dam-b17c-metric-penalty-frequency.plotspec.json.gz)
 
+## Inspect the parameter ensemble
+
+![Systematic: frequentist parameter-ensemble kernel density for B17C Mean (of log) (µ).](screenshots/blakely-b17c-kernel-density-mean.png)
+
+*Systematic: frequentist parameter-ensemble kernel density for B17C Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/blakely-b17c-kernel-density-mean.svg) [Capture data](screenshots/blakely-b17c-kernel-density-mean.json.gz)
+
 ## Interpretation and engineering questions
 
 Historical perception, paleoflood magnitude/age evidence, regional skew and rainfall-runoff-derived quantile information need separate sources and applicability decisions. The report provides study context, but the basis for transferring or constructing each saved one-day penalty must be explicit before design adoption. Do not count the same information twice through observations and penalties.
@@ -98,4 +111,4 @@ Explain why the stored one-day inflows cannot be compared directly with a publis
 
 AEP is annual exceedance probability; 0.01 means 1% per year under the model. Plotting positions summarize observations and are not fitted probabilities. A 90% confidence band describes uncertainty in a flood quantile, not the range containing 90% of future floods.
 
-The shared Python renderer draws coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The figures retain source hashes and exact display coordinates in their compressed PlotSpec files.
+The additional Python figures and companion links draw coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The Python figures retain source hashes and exact display coordinates in their compressed PlotSpec files.

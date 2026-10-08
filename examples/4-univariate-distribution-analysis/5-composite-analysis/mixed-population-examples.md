@@ -2,6 +2,12 @@
 
 Open [mixed-population-examples.bestfit](mixed-population-examples.bestfit) and save a working copy. This example distinguishes two formation rules. If independent processes both occur in a year and the annual flood is their maximum, its CDF is the product of their CDFs. If one type is selected for each observation, the mixture CDF is a weighted sum.
 
+## Find these results in BestFit
+
+Select **Competing Flood Types** in the Project Explorer. Open **Frequency Plot** to read its curve, and **Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Inspect the combination rule, dependence assumption and component selections in **Properties**. This composite propagates its saved component results; read each component analysis's **MCMC Report** for its own diagnostics. The composite has no separate MCMC run.
+
 ## Establish which data belong together
 
 | Input | Meaning | Exact count (index span) | Other records |
@@ -65,9 +71,9 @@ Full-record and component flow values are labeled cfs; the pooled mixture input 
 
 *Base-10 LogNormal fit to the full rain component.* [SVG](images/mixed-population-examples-rain-component.svg) · [Plot data](images/mixed-population-examples-rain-component.plotspec.json.gz)
 
-![Independent competing-maximum result and saved component curves.](images/mixed-population-examples-competing-maximum.png)
+![Competing Flood Types: Independent competing-maximum result and saved component curves.](screenshots/mixed-population-frequency.png)
 
-*Independent competing-maximum result and saved component curves.* [SVG](images/mixed-population-examples-competing-maximum.svg) · [Plot data](images/mixed-population-examples-competing-maximum.plotspec.json.gz)
+*Competing Flood Types: Independent competing-maximum result and saved component curves.* Native BestFit plot export. Python companion: [SVG](images/mixed-population-examples-competing-maximum.svg) · [Plot data](images/mixed-population-examples-competing-maximum.plotspec.json.gz) [Native SVG](screenshots/mixed-population-frequency.svg) [Capture data](screenshots/mixed-population-frequency.json.gz)
 
 ![Fixed 0.75/0.25 mixture from the separate sub-sample fits; the element formulation determines the curve.](images/mixed-population-examples-fixed-mixture.png)
 
@@ -79,6 +85,6 @@ Read the [competing-risks technical reference](../../../docs/technical-reference
 
 ## Reproduce and check
 
-These Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only mixed-population-examples`. SVG and compressed PlotSpec links preserve the display and its source identity.
+The additional Python figures and companion links use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only mixed-population-examples`. SVG and compressed PlotSpec links preserve the display and its source identity.
 
 Explain which observations support each fit, what its point curve and band represent, and which assumptions need independent study evidence before reuse.

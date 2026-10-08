@@ -35,10 +35,12 @@ AMH means Ali–Mikhail–Haq; its saved type is AliMikhailHaq. Each copula uses
 ## Work through the views
 
 1. Open the Normal marginal analyses and inspect their input bindings, parameters, priors and diagnostics.
-2. Open Normal Copula and start with the scatter plot in original value space. Then switch to marginal-CDF space, where each axis represents a probability between zero and one.
-3. Compare the log-density contours with joint-exceedance contours. In the original-value density view, contour labels are natural logarithms of joint density, so negative labels are expected. Log density is not an event probability; read each number with its selected plot type.
+2. Select Normal Copula in **Project Explorer**, then open **Distribution Results > X-Y Plot**. Set **Plot Type** to **Scatter Plot** and **Axis Type** to **Value**. Switch **Axis Type** to **Probability** for marginal-CDF space, where each axis represents a probability between zero and one.
+3. Switch **Plot Type** between **Density Contour Plot** and **Probability Contour Plot** to compare log-density and joint-exceedance contours. In the original-value density view, contour labels are natural logarithms of joint density, so negative labels are expected. Log density is not an event probability; read each number with its selected plot type.
 4. Repeat for the other five saved families. The datasets differ, so DIC/WAIC do not identify a winning family for a common observation set.
 5. Inspect the dependence trace and tail behavior as well as the scalar diagnostics. Exact generator parameters and seeds are not established by these saved fits, so this is not a new recovery verification.
+
+For a parameter view, select **AMH Copula** and open **Kernel Density** to inspect the posterior density of **Dependency (θ)**. Open **Markov Chain Traces** for its saved chains and **MCMC Report** for parameter summaries. These are parameter diagnostics; the **Distribution Results** scatter instead overlays observations with points simulated from the saved copula. Simulated points are a display of the fitted model, not additional measurements.
 
 ## Saved diagnostics
 
@@ -104,12 +106,24 @@ AMH marginal X retains six chains/thinning 30; the other marginals use four/20. 
 
 *Saved Normal dependence-parameter chains.* [SVG](images/bivariate-distribution-examples-normal-trace.svg) · [Plot data](images/bivariate-distribution-examples-normal-trace.plotspec.json.gz)
 
+![AMH Copula: native Scatter Plot in Value space, with simulated fitted-model points and its observed pairs.](screenshots/amh-copula-scatter.png)
+
+*AMH Copula: native Scatter Plot in Value space, with simulated fitted-model points and its observed pairs.* [Native SVG](screenshots/amh-copula-scatter.svg) [Capture data](screenshots/amh-copula-scatter.json.gz)
+
+![AMH Copula: posterior kernel density of Dependency (θ).](screenshots/amh-dependence-kde.png)
+
+*AMH Copula: posterior kernel density of Dependency (θ).* [Native SVG](screenshots/amh-dependence-kde.svg) [Capture data](screenshots/amh-dependence-kde.json.gz)
+
+![AMH Copula: saved Dependency (θ) Markov chain traces.](screenshots/amh-dependence-trace.png)
+
+*AMH Copula: saved Dependency (θ) Markov chain traces.* [Native SVG](screenshots/amh-dependence-trace.svg) [Capture data](screenshots/amh-dependence-trace.json.gz)
+
 ## Interpretation
 
 Specify the event before using a joint probability: both variables exceeding thresholds (AND), either exceeding (OR), and Kendall formulations are different questions. None is a generic scalar flood quantile. Continue to the [sum-of-two-Normals example](../2-coincident-frequency/sum-two-normals.md) to propagate dependence through a response function.
 
 ## Reproduce and check
 
-These Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only bivariate-distribution-examples`. SVG and compressed PlotSpec links preserve the display and its source identity.
+The figures under `screenshots/` export the native BestFit views for the named current elements. The remaining Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only bivariate-distribution-examples`. SVG and compressed PlotSpec links preserve the display and its source identity.
 
 Explain which observations support each fit, what its point curve and band represent, and which assumptions need independent study evidence before reuse.

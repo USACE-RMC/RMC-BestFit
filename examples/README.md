@@ -3,6 +3,8 @@
 > [!NOTE]
 > These example projects and tutorials are published for RMC-BestFit 2.0.0 and will continue to expand with additional screenshots, output tables, and validation notes.
 
+The current tutorials accompany RMC-BestFit 2.0.1. Inspect the named saved project and its documented limitations before refreshing data or estimating a new result.
+
 These tutorials teach how to inspect data, configure an analysis and interpret saved results in RMC-BestFit. Each project is a SQLite database with the `.bestfit` extension. Start with a working copy: refreshing a download or running an analysis can change the results you are comparing with the guide.
 
 ## Choose a starting point
@@ -32,11 +34,13 @@ The saved projects are teaching records, not accepted design studies. Known limi
 
 ## Reading the figures
 
-Figures are Python plots generated from BestFit desktop geometry. Their observations, curves, interval bounds and diagnostics come from BestFit.UI and BestFit.App. Matplotlib supplies the drawing, using the shared plotting package shipped with the frequency-analysis skill. PNG is embedded in each guide; SVG and compressed PlotSpec files accompany the figure for inspection and reuse.
+Figures under `screenshots/` are current native BestFit plot exports or captures of the current Project Explorer, Properties panel or DSS selector. They retain the app's presentation. Display-only corrections recorded in each capture make B17C sampling-density labels, fractional tick precision and short-record date ticks explicit; no plotted values change. The [screenshot manifest](screenshot-manifest.json) records the source project hash, exact selected element, plot ID and variant or UI panel, output hashes and compressed capture snapshot. It also records a disposition for every contributor PNG, including excluded images. Contributor screenshots are not presented as current saved-result evidence.
 
-Frequency plots distinguish a Bayesian credible interval from a Bulletin 17C confidence interval. Plotting positions describe the sample; they are not fitted probabilities. Logarithmic plots cannot display zero or negative magnitudes, so also inspect the chronology and the original data. Each figure's PlotSpec identifies its project hash and selected element.
+Additional Python figures retain broader scientific and diagnostic coverage. Their observations, curves, interval bounds and diagnostics come from BestFit.UI and BestFit.App; Matplotlib supplies the drawing through the shared plotting package. The [figure manifest](figure-manifest.json) identifies these views. Their SVG and compressed PlotSpec links accompany the figure for inspection and reuse. A Python companion linked beside a native PNG remains a separate rendering, not the source of that native image.
 
-Two source-preserving display exceptions are documented: the restored Back Creek GMM figure overlays its original saved arrays because the current app omits that legacy result format; regression residual figures pass saved coefficients to BestFit's residual method because covariate loading resets live model values. These do not repair the underlying app-loading issues or change any database result. Rating/time-series prediction bands include residual/process variation.
+Frequency plots distinguish a Bayesian credible interval from a Bulletin 17C confidence interval. Plotting positions describe the sample; they are not fitted probabilities. Logarithmic plots cannot display zero or negative magnitudes, so also inspect the chronology and the original data. Each native capture snapshot or Python PlotSpec identifies its project hash and selected element. Inspect whether a probability band is vertical quantile uncertainty or horizontal probability uncertainty at a fixed CFA response. An app legend label alone does not establish the scientific interval type.
+
+Two source-preserving display exceptions are documented: the restored Back Creek GMM figure overlays its original saved arrays because the current app omits that legacy result format; regression residual figures pass saved coefficients to BestFit's residual method because covariate loading resets live model values. These do not repair the underlying app-loading issues or change any database result. Rating/time-series prediction bands include residual/process variation as well as parameter uncertainty. Parameter-chain autocorrelation, residual autocorrelation and observed-series autocorrelation are distinct diagnostics.
 
 ## Reproducing the figures
 
@@ -46,12 +50,15 @@ From the repository root, on Windows with the .NET SDK required by this checkout
 python -m venv .venv-examples
 .venv-examples/Scripts/python -m pip install -r skills/bestfit-frequency/requirements.txt
 dotnet build tools/PlotReferenceExporter -c Debug -p:UseLocalRmcNumerics=false
+.venv-examples/Scripts/python tools/ExampleDocumentation/render_screenshots.py --refresh
 .venv-examples/Scripts/python tools/ExampleDocumentation/render_examples.py --refresh
 ```
 
-The [figure manifest](figure-manifest.json) selects each project, element and view. Add `--only usgs-download-example` to render one example. The exporter opens a disposable copy, checks the original file hash and captures the desktop plot coordinates. It does not rerun the saved analysis. Threshold-stability views do invoke the app's diagnostic GPD fits; these are plot calculations on the saved input, not replacement analysis results. Python does no distribution estimation or uncertainty reconstruction.
+The screenshot and figure manifests select each project, element and view. Add `--only usgs-download-example` to either renderer to limit the selection. `render_screenshots.py` verifies saved source/output hashes by default and overwrites captures only with `--refresh`. The exporter opens a disposable copy, checks the original file hash and captures the desktop plot coordinates. It does not rerun the saved analysis. Threshold-stability views do invoke the app's diagnostic GPD fits; these are plot calculations on the saved input, not replacement analysis results. Python does no distribution estimation or uncertainty reconstruction.
 
-Render receipts and original desktop snapshots are written under `artifacts/example-documentation/`. Use `--refresh` when the desktop runtime changes. To inspect saved descriptions and configuration without opening the app, run `tools/ExampleDocumentation/project_inventory.py`. The [maintenance guide](../tools/ExampleDocumentation/README.md) explains the metadata preservation audit.
+Native PNGs and compressed capture snapshots live alongside each tutorial under `screenshots/`, with source and output hashes in `screenshot-manifest.json`. Integration checks are recorded under `artifacts/sadie-integration/`. Python render receipts and original desktop snapshots are written under `artifacts/example-documentation/`. Use `--refresh` when the desktop runtime changes. To inspect saved descriptions and configuration without opening the app, run `tools/ExampleDocumentation/project_inventory.py`. The [maintenance guide](../tools/ExampleDocumentation/README.md) explains the metadata preservation audit.
+
+Sadie Niblett contributed the GUI walkthroughs and example views integrated here. The [integration record](../docs/SADIE-DOCUMENTATION-INTEGRATION.md) explains the retained contributions, scientific corrections and exclusions.
 
 ## Report an issue
 

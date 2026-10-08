@@ -27,7 +27,8 @@ internal static class Program
         try
         {
             var options = Parse(args);
-            Export(options);
+            if (options.ContainsKey("panel")) PanelExporter.Export(options);
+            else Export(options);
             return 0;
         }
         catch (Exception error)
@@ -46,7 +47,9 @@ internal static class Program
                 throw new ArgumentException("Expected --project, --element, --plot-id, --variant and --output values.");
             options[args[i][2..]] = args[i + 1];
         }
-        foreach (string name in new[] { "project", "element", "plot-id", "variant", "output" })
+        foreach (string name in options.ContainsKey("panel")
+            ? new[] { "project", "element", "panel", "output" }
+            : new[] { "project", "element", "plot-id", "variant", "output" })
             if (!options.ContainsKey(name)) throw new ArgumentException($"Missing --{name}.");
         return options;
     }
@@ -89,6 +92,14 @@ internal static class Program
             Type controlType = typeof(RMC_BestFit.InputDataControl).Assembly.GetType("RMC_BestFit." + controlName)
                 ?? throw new NotSupportedException($"App control {controlName} was not found.");
             IElement element = FindElement(project, options["element"], controlType, sharedDiagnostic);
+            // Evaluation indices are assertions, never requests to reprocess saved results.
+            if (options.TryGetValue("time-index", out string? requestedTime))
+            {
+                object distribution = element.GetType().GetProperty("UnivariateDistribution")!.GetValue(element)!;
+                double actualTime = Convert.ToDouble(distribution.GetType().GetProperty("ParameterTimeIndex")!.GetValue(distribution));
+                if (actualTime != double.Parse(requestedTime, CultureInfo.InvariantCulture))
+                    throw new ArgumentException($"Saved evaluation index {actualTime} differs from requested {requestedTime}.");
+            }
             var displayCorrections = new List<string>();
             object plotOwner = sharedDiagnostic
                 ? element.GetType().GetProperty("BayesianPlots")?.GetValue(element)
@@ -96,6 +107,8 @@ internal static class Program
                 : element;
             Plot plot = ResetFactoryPlot(plotOwner, factory, propertyName);
             object control = Activator.CreateInstance(controlType)!;
+            if (element is B17CAnalysis && options["plot-id"] == "shared_diagnostics.kde")
+                controlType.GetProperty("SimpleView")!.SetValue(control, true);
             if (sharedDiagnostic)
             {
                 controlType.GetMethod("SetPlot")?.Invoke(control, new object[] { plot });
@@ -139,6 +152,24 @@ internal static class Program
                 loaded.Invoke(control, new object?[] { control, new RoutedEventArgs() });
                 variantSelection = ConfigureVariant(control, element, options["plot-id"], options["variant"], variants);
             }
+            var displaySelection = new Dictionary<string, object?>();
+            if (sharedDiagnostic && options.TryGetValue("parameter-index", out string? requestedParameter))
+            {
+                ComboBox selector = ControlMember<ComboBox>(control, "ParameterComboBox");
+                int index = int.Parse(requestedParameter, CultureInfo.InvariantCulture);
+                if (index < 0 || index >= selector.Items.Count)
+                    throw new ArgumentException($"Parameter index {index} is outside the saved parameter list.");
+                selector.SelectedIndex = index;
+                displaySelection["parameterIndex"] = index;
+                displaySelection["parameterName"] = selector.SelectedValue?.ToString();
+                if (options["plot-id"] == "shared_diagnostics.trace")
+                {
+                    ControlMember<ComboBox>(control, "ChainComboBox").SelectedIndex = 0;
+                    ControlMember<CheckBox>(control, "IncludeWarmUpCheckBox").IsChecked = options["variant"] == "warmup";
+                    displaySelection["chain"] = "all";
+                    displaySelection["includeWarmup"] = options["variant"] == "warmup";
+                }
+            }
             if (options["plot-id"].StartsWith("rating.residual", StringComparison.Ordinal)
                 || options["plot-id"].StartsWith("time_series_analysis.residual", StringComparison.Ordinal))
             {
@@ -164,6 +195,26 @@ internal static class Program
                 ? Type.Missing
                 : throw new NotSupportedException($"{controlName}.{updateMethod} needs an explicit {parameter.Name} argument.")).ToArray();
             method.Invoke(control, arguments);
+            if (options.TryGetValue("alternative-element", out string? alternativeName))
+            {
+                if (control is not RMC_BestFit.TimeSeriesControl)
+                    throw new ArgumentException("Explicit time-series alternatives require a time-series data control.");
+                var alternative = (TimeSeriesElement)FindElement(project, alternativeName, controlType, false);
+                var item = new RMC_BestFit.TimeSeriesAlternativeItem(alternative);
+                controlType.GetMethod("AlternativeTimeSeriesSelector_TimeSeriesAdded", InstanceMembers)!
+                    .Invoke(control, new object[] { item });
+                displaySelection["alternativeElement"] = alternativeName;
+            }
+
+            // B17C uses a frequentist MVN sampling ensemble in the shared density control.
+            // Correct only the disposable figure labels, never its values or the application.
+            if (element is B17CAnalysis && options["plot-id"] == "shared_diagnostics.kde")
+            {
+                plot.Title = plot.Title.Replace("Posterior", "Sampling");
+                foreach (var item in plot.Series)
+                    if (item.Title != null) item.Title = item.Title.Replace("Posterior", "Sampling");
+                displayCorrections.Add("B17C MVN density labelled as a sampling distribution, not a posterior.");
+            }
 
             plot.Measure(new Size(1000, 650));
             plot.Arrange(new Rect(0, 0, 1000, 650));
@@ -171,7 +222,26 @@ internal static class Program
             plot.InvalidatePlot(true);
             PlotModel model = plot.ActualModel as PlotModel
                 ?? throw new InvalidOperationException("App plot population did not create an OxyPlot model.");
+            model.Background = OxyColors.White;
+            displayCorrections.Add("Opaque white export background keeps native black labels legible outside a white document page.");
             ((IPlotModel)model).Update(true);
+            foreach (var axis in model.Axes)
+            {
+                double span = axis.ActualMaximum - axis.ActualMinimum;
+                if (axis.StringFormat == "N0" && span > 0 && span < 10)
+                {
+                    axis.StringFormat = "G4";
+                    displayCorrections.Add($"{axis.Key}: fractional tick precision avoids repeated integer labels; coordinates unchanged.");
+                }
+                if (options["plot-id"] == "time_series_data.series" && axis is OxyPlot.Axes.DateTimeAxis dates && span > 0 && span < 731)
+                {
+                    dates.IntervalType = span > 120 ? OxyPlot.Axes.DateTimeIntervalType.Months : OxyPlot.Axes.DateTimeIntervalType.Days;
+                    dates.MajorStep = double.NaN;
+                    dates.IntervalLength = 100;
+                    dates.StringFormat = span > 120 ? "MMM yyyy" : "dd MMM yyyy";
+                    displayCorrections.Add($"{axis.Key}: short-record calendar ticks made explicit; source dates unchanged.");
+                }
+            }
             using (var svg = File.Create(output + ".svg"))
                 new OxyPlot.SvgExporter { Width = 1000, Height = 650, IsDocument = true }.Export(model, svg);
             using (var png = File.Create(output + ".png"))
@@ -182,6 +252,8 @@ internal static class Program
                 type = axis.GetType().Name,
                 axis.Key,
                 axis.Title,
+                axis.StringFormat,
+                MajorStep = Finite(axis.MajorStep),
                 position = axis.Position.ToString(),
                 Minimum = Finite(axis.Minimum),
                 Maximum = Finite(axis.Maximum),
@@ -257,6 +329,15 @@ internal static class Program
                 plotId = options["plot-id"],
                 variant = options["variant"],
                 variantSelection,
+                displaySelection,
+                savedDisplaySettings = new
+                {
+                    analysis = element.GetType().GetProperty("BayesianAnalysis")?.GetValue(element) is object savedAnalysis
+                        ? SnapshotScalars(savedAnalysis, "PointEstimator", "CredibleIntervalWidth", "NumberOfChains") : null,
+                    distribution = element.GetType().GetProperty("UnivariateDistribution")?.GetValue(element) is object savedDistribution
+                        ? SnapshotScalars(savedDistribution, "ParameterTimeIndex", "EnableQuantilePriors") : null,
+                },
+                sourceSha256After = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(sourcePath))).ToLowerInvariant(),
                 appFactory = slot.GetProperty("appFactory").GetString(),
                 factoryReset = true,
                 displayCorrections,
@@ -272,6 +353,8 @@ internal static class Program
         finally
         {
             Directory.Delete(copyDir, recursive: true);
+            if (hash != Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(sourcePath))).ToLowerInvariant())
+                throw new InvalidOperationException("Original source changed during native export.");
         }
     }
 

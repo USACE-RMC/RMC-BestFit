@@ -2,11 +2,17 @@
 
 This project uses seven familiar U.S. flood records to teach systematic, historical, censored and paleoflood evidence. Six alternatives are Bayesian LP3 fits. B17C Example #3 is the existing Back Creek GMM fit with multivariate-normal uncertainty. It has been restored to the project tree with the author's approval; its inputs, settings and saved results are unchanged. Identify the estimator before interpreting an interval or a diagnostic.
 
+## Find these results in BestFit
+
+Select **Bayes Example #1** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Mean (of log) (µ)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
 ## Open the saved project
 
 Open [bulletin-17c-bayesian-examples.bestfit](bulletin-17c-bayesian-examples.bestfit) with **File > Open** and save a separate working copy before editing or rerunning.
 
-The figures display saved BestFit results through the shared Python renderer; no analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
+The figures display saved BestFit results. The views identified as native exports use BestFit's plotting controls; Python companion links and the additional figures retain the shared renderer. No analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
 
 For the Bayesian fits, the point curve evaluates the distribution at the selected posterior mean or mode **parameter vector**. It is not necessarily the posterior median of each quantile. The curve labeled Posterior Predictive averages over parameter uncertainty. A credible band describes uncertainty about a quantile; it is not a band containing 90% of future floods.
 
@@ -79,9 +85,9 @@ The current app loader expects a newer model-column name than this legacy Back C
 
 *Back Creek GMM: original saved curves and 90% confidence bounds over desktop observation positions; the current app does not yet restore this legacy fit.* [SVG](images/bulletin-17c-bayesian-examples-back-creek-gmm.svg) · [Plot data](images/bulletin-17c-bayesian-examples-back-creek-gmm.plotspec.json.gz)
 
-![Moose River Bayesian LP3 fit with a 90% credible band.](images/bulletin-17c-bayesian-examples-moose.png)
+![Bayes Example #1: Moose River Bayesian LP3 fit with a 90% credible band.](screenshots/bulletin-17c-bayesian-frequency.png)
 
-*Moose River Bayesian LP3 fit with a 90% credible band.* [SVG](images/bulletin-17c-bayesian-examples-moose.svg) · [Plot data](images/bulletin-17c-bayesian-examples-moose.plotspec.json.gz)
+*Bayes Example #1: Moose River Bayesian LP3 fit with a 90% credible band.* Native BestFit plot export. Python companion: [SVG](images/bulletin-17c-bayesian-examples-moose.svg) · [Plot data](images/bulletin-17c-bayesian-examples-moose.plotspec.json.gz) [Native SVG](screenshots/bulletin-17c-bayesian-frequency.svg) [Capture data](screenshots/bulletin-17c-bayesian-frequency.json.gz)
 
 ![Orestimba Bayesian LP3 fit; low-outlier marks retain their desktop classification.](images/bulletin-17c-bayesian-examples-orestimba.png)
 
@@ -95,9 +101,19 @@ The current app loader expects a newer model-column name than this legacy Back C
 
 *American River Bayesian fit combining systematic and historical/paleoflood information.* [SVG](images/bulletin-17c-bayesian-examples-american-frequency.svg) · [Plot data](images/bulletin-17c-bayesian-examples-american-frequency.plotspec.json.gz)
 
-![Saved Moose River baseline parameter trace.](images/bulletin-17c-bayesian-examples-trace.png)
+![Bayes Example #1: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.](screenshots/bulletin-17c-bayesian-trace-mean.png)
 
-*Saved Moose River baseline parameter trace.* [SVG](images/bulletin-17c-bayesian-examples-trace.svg) · [Plot data](images/bulletin-17c-bayesian-examples-trace.plotspec.json.gz)
+*Bayes Example #1: saved Markov-chain traces for Mean (of log) (µ), with warmup excluded.* Native BestFit plot export. Python companion: [SVG](images/bulletin-17c-bayesian-examples-trace.svg) · [Plot data](images/bulletin-17c-bayesian-examples-trace.plotspec.json.gz) [Native SVG](screenshots/bulletin-17c-bayesian-trace-mean.svg) [Capture data](screenshots/bulletin-17c-bayesian-trace-mean.json.gz)
+
+## Inspect the selected result and parameter views
+
+![Bayes Example #1: posterior kernel density for Mean (of log) (µ).](screenshots/bulletin-17c-bayesian-kernel-density-mean.png)
+
+*Bayes Example #1: posterior kernel density for Mean (of log) (µ).* Native BestFit plot export. [Native SVG](screenshots/bulletin-17c-bayesian-kernel-density-mean.svg) [Capture data](screenshots/bulletin-17c-bayesian-kernel-density-mean.json.gz)
+
+![Bayes Example #1: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.](screenshots/bulletin-17c-bayesian-autocorrelation-mean.png)
+
+*Bayes Example #1: autocorrelation for Mean (of log) (µ); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/bulletin-17c-bayesian-autocorrelation-mean.svg) [Capture data](screenshots/bulletin-17c-bayesian-autocorrelation-mean.json.gz)
 
 ## Interpretation and limits
 

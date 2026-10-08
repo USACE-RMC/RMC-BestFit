@@ -2,6 +2,14 @@
 
 Open [nsffa-brays-bayou-texas.bestfit](nsffa-brays-bayou-texas.bestfit) and save a working copy. This example compares seven log-Pearson Type III (LP3) models for USGS 08075000. Its purpose is to show how assumptions about time-varying parameters affect a frequency curve at a specified year.
 
+## Find these results in BestFit
+
+Select **NSFFA - Constant** in the Project Explorer. Open **Distribution Results > Frequency Plot** to read its curve, and **Distribution Results > Tabular Results** for the saved probability ordinates and limits. Use the selected element name to distinguish the illustrated result from the other alternatives in this project.
+
+Open **MCMC Report** for the parameter summaries, R-hat and effective sample size. In **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**, use **Select Parameter** to choose **Mean (of log) (µ) (α)** for the diagnostic views below. Review the sampler settings, priors, point estimator and interval width in **Properties**, then repeat the diagnostic inspection for every sampled parameter. A parameter density describes uncertainty in that parameter; it is not a density of observations.
+
+For this illustration, **Properties > Options > Time Index** is **2024**. Keep that conditioning index explicit when comparing frequency ordinates. The selected constant trend still uses the nonstationary model wrapper.
+
 ## Understand the observations
 
 | Input element | Meaning | Exact rows and index span | Other saved input rows |
@@ -76,12 +84,30 @@ All saved nonstationary models set Alpha = 0.5. Their Chronology curve is the **
 
 *DIC-weighted frequency result for the three selected nonstationary alternatives at 2024; this element is a model average.* [SVG](images/nsffa-brays-bayou-texas-model-average.svg) · [Plot data](images/nsffa-brays-bayou-texas-model-average.plotspec.json.gz)
 
+## Inspect the selected result and parameter views
+
+![NSFFA - Constant: saved frequency curve and 90% credible limits, conditional on index 2024.](screenshots/nsffa-brays-bayou-frequency.png)
+
+*NSFFA - Constant: saved frequency curve and 90% credible limits, conditional on index 2024.* Native BestFit plot export. [Native SVG](screenshots/nsffa-brays-bayou-frequency.svg) [Capture data](screenshots/nsffa-brays-bayou-frequency.json.gz)
+
+![NSFFA - Constant: posterior kernel density for Mean (of log) (µ) (α).](screenshots/nsffa-brays-bayou-kernel-density-mean.png)
+
+*NSFFA - Constant: posterior kernel density for Mean (of log) (µ) (α).* Native BestFit plot export. [Native SVG](screenshots/nsffa-brays-bayou-kernel-density-mean.svg) [Capture data](screenshots/nsffa-brays-bayou-kernel-density-mean.json.gz)
+
+![NSFFA - Constant: saved Markov-chain traces for Mean (of log) (µ) (α), with warmup excluded.](screenshots/nsffa-brays-bayou-trace-mean.png)
+
+*NSFFA - Constant: saved Markov-chain traces for Mean (of log) (µ) (α), with warmup excluded.* Native BestFit plot export. [Native SVG](screenshots/nsffa-brays-bayou-trace-mean.svg) [Capture data](screenshots/nsffa-brays-bayou-trace-mean.json.gz)
+
+![NSFFA - Constant: autocorrelation for Mean (of log) (µ) (α); inspect the other sampled parameters as well.](screenshots/nsffa-brays-bayou-autocorrelation-mean.png)
+
+*NSFFA - Constant: autocorrelation for Mean (of log) (µ) (α); inspect the other sampled parameters as well.* Native BestFit plot export. [Native SVG](screenshots/nsffa-brays-bayou-autocorrelation-mean.svg) [Capture data](screenshots/nsffa-brays-bayou-autocorrelation-mean.json.gz)
+
 ## Interpretation
 
 A fitted change near an estimated date does not establish urbanization, channel change or another cause. Compare trend shapes with independent physical evidence and study purpose. A nonstationary AEP depends on time; a constant “100-year return period” interpretation becomes misleading when annual risk changes.
 
 ## Reproduce and check your understanding
 
-The shared Python renderer uses BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
+The additional Python figures and companion links use BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each Python figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
 
 Before using a result in a study, explain the target variable, the represented observation period, the information added through thresholds or priors, and what the plotted interval means. Separate a teaching example's saved settings from a justified engineering choice for another site.
