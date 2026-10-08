@@ -42,14 +42,14 @@ namespace RMC.BestFit.Api.Tests.Mappers
                 Name = analysis.Name,
                 Kind = analysis.Kind,
                 Bulletin17C = analysis.Bulletin17C,
-                CreationWarnings = new[] { "uncertain observations are ignored" }
+                CreationWarnings = new[] { "example creation warning" }
             };
 
             var summary = AnalysisMapper.ToSummary(resource);
 
             Assert.IsNotNull(summary.Warnings);
             Assert.AreEqual(1, summary.Warnings.Count);
-            StringAssert.Contains(summary.Warnings[0], "ignored");
+            Assert.AreEqual("example creation warning", summary.Warnings[0]);
         }
 
         /// <summary>

@@ -100,5 +100,31 @@ namespace RMC.BestFit.Analyses
         /// systematically over- or under-predict across the region.
         /// </remarks>
         public double MeanBias { get; set; }
+
+        /// <summary>
+        /// Gets or sets the outcome of each leave-one-site-out fold (one entry per site).
+        /// </summary>
+        /// <remarks>
+        /// A fold that did not succeed stores NaN in <see cref="SitePredictionErrors"/>,
+        /// <see cref="SiteRMSE"/>, and <see cref="SiteBias"/> and is excluded from
+        /// <see cref="MeanAbsoluteError"/>, <see cref="RootMeanSquareError"/>, and <see cref="MeanBias"/>.
+        /// </remarks>
+        public SpatialGEVCrossValidationFoldStatus[] FoldStatus { get; set; } = Array.Empty<SpatialGEVCrossValidationFoldStatus>();
+
+        /// <summary>
+        /// Gets or sets the diagnostic message of each fold; empty for a successful fold.
+        /// </summary>
+        public string[] FoldMessages { get; set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Gets or sets the number of folds that produced a prediction; the aggregate metrics average
+        /// these folds only.
+        /// </summary>
+        public int SuccessfulFolds { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of folds attempted, one per site.
+        /// </summary>
+        public int TotalFolds { get; set; }
     }
 }

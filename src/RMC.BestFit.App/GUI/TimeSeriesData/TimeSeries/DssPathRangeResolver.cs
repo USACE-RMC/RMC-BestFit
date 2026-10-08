@@ -1,4 +1,5 @@
 using Hec.Dss;
+using RMC.BestFit.UI;
 using System;
 using System.Collections.Generic;
 
@@ -28,6 +29,31 @@ namespace RMC_BestFit
         /// Lock used to protect cache access from background range-resolution tasks.
         /// </summary>
         private readonly object _cacheLock = new object();
+
+        /// <summary>
+        /// Creates a selector range resolver using the complete-series import reader.
+        /// </summary>
+        /// <param name="filename">The DSS file containing the selector's catalog.</param>
+        /// <exception cref="ArgumentNullException">Thrown when filename is null.</exception>
+        internal DssPathRangeResolver(string filename)
+            : this(path => ReadTimeSeries(filename, path))
+        {
+            if (filename == null) throw new ArgumentNullException(nameof(filename));
+        }
+
+        /// <summary>
+        /// Opens a short-lived reader and retrieves the entire logical series for display.
+        /// </summary>
+        /// <param name="filename">The DSS filename.</param>
+        /// <param name="path">The catalog, concrete, or dateless pathname.</param>
+        /// <returns>The complete raw time series used to determine the display range.</returns>
+        private static TimeSeries ReadTimeSeries(string filename, DssPath path)
+        {
+            using (var reader = new DssReader(filename))
+            {
+                return DssTimeSeriesReader.Read(reader, path);
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DssPathRangeResolver"/> class.

@@ -140,7 +140,7 @@ namespace RMC.BestFit.Api.Mappers
         /// <returns>The response DTO.</returns>
         public static AnalysisResourceResponse ToResourceResponse(AnalysisResource resource)
         {
-            return new AnalysisResourceResponse { Analysis = ToSummary(resource) };
+            return new AnalysisResourceResponse { Analysis = ToSummary(resource), Configuration = FrequencyConfigurationMapper.Map(resource) };
         }
 
         /// <summary>

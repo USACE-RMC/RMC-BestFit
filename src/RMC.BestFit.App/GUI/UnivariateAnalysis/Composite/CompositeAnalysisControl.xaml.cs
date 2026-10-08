@@ -77,7 +77,7 @@ namespace RMC_BestFit
                     oldElement.PropertyChanged -= thisControl.Element_PropertyChanged;
                     thisControl.FrequencyPlotHost.Content = null;
                     thisControl.FrequencyPlotToolbar.Plot = null;
-                    // NOTE: PropertiesCalled is wired in XAML — no programmatic -= needed.
+                    // NOTE: PropertiesCalled is wired in XAML â€” no programmatic -= needed.
                 }
             }
 
@@ -89,7 +89,7 @@ namespace RMC_BestFit
             newElement.PropertyChanged += thisControl.Element_PropertyChanged;
 
             // Attach plot, wire toolbar, and bind axis titles inside a bridge-suspension
-            // block. PropertiesCalled is wired in XAML — no programmatic += needed.
+            // block. PropertiesCalled is wired in XAML â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.FrequencyPlotHost.Content = newElement.FrequencyPlot;
@@ -256,7 +256,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
@@ -432,8 +432,8 @@ namespace RMC_BestFit
                         // Add Curves
                         if (Element.IsEstimated == true && Element.AnalysisResults != null)
                         {
-                            // Add sub-distributions (dynamic count — per filtered distribution;
-                            // documented exception to the lookup-or-create rule — series count depends
+                            // Add sub-distributions (dynamic count â€” per filtered distribution;
+                            // documented exception to the lookup-or-create rule â€” series count depends
                             // on runtime state).
                             if (Element.AnalysesValid == true && SubDistCheckbox.IsChecked == true)
                             {
@@ -783,10 +783,26 @@ namespace RMC_BestFit
                     var max = pointDist.Maximum;
                     summaryStats.Add(new SummaryStatistic("Minimum", min < -1E12 ? double.NegativeInfinity : min));
                     summaryStats.Add(new SummaryStatistic("Maximum", max > 1E12 ? double.PositiveInfinity : max));
-                    summaryStats.Add(new SummaryStatistic("Mean", pointDist.Mean));
-                    summaryStats.Add(new SummaryStatistic("Std Dev", pointDist.StandardDeviation));
-                    summaryStats.Add(new SummaryStatistic("Skewness", pointDist.Skewness));
-                    summaryStats.Add(new SummaryStatistic("Kurtosis", pointDist.Kurtosis));
+
+                    try
+                    {
+
+                        var moments = pointDist.CentralMoments(1E-6);
+                        summaryStats.Add(new SummaryStatistic("Mean", moments[0]));
+                        summaryStats.Add(new SummaryStatistic("Std Dev", moments[1]));
+                        summaryStats.Add(new SummaryStatistic("Skewness", moments[2]));
+                        summaryStats.Add(new SummaryStatistic("Kurtosis", moments[3]));
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the exception and continue with NaN values for summary statistics
+                        Console.WriteLine($"Error computing summary statistics: {ex.Message}");
+
+                        summaryStats.Add(new SummaryStatistic("Mean", double.NaN));
+                        summaryStats.Add(new SummaryStatistic("Std Dev", double.NaN));
+                        summaryStats.Add(new SummaryStatistic("Skewness", double.NaN));
+                        summaryStats.Add(new SummaryStatistic("Kurtosis", double.NaN));
+                    }
                 }
                 else
                 {

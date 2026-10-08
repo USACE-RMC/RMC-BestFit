@@ -2,6 +2,10 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using Numerics.Sampling.MCMC;
 using RMC.BestFit.Api.Mappers;
+using RMC.BestFit.Api.Tests.Support;
+using RMC.BestFit.Estimation;
+using RMC.BestFit.Models;
+using System.Reflection;
 
 namespace RMC.BestFit.Api.Tests.Mappers
 {
@@ -149,6 +153,121 @@ namespace RMC.BestFit.Api.Tests.Mappers
         {
             var summaries = ResultsMapper.BuildParameterSummaries(new List<string> { "Mu" }, null, includeChainDiagnostics: true);
             Assert.AreEqual(0, summaries.Count);
+        }
+
+        /// <summary>
+        /// Verifies mixture API diagnostics label K-1 stored coordinates without shifting component names.
+        /// </summary>
+        [TestMethod]
+        public async Task ToFrequencyResults_MixtureKMinusOneResults_UsesSampledNames()
+        {
+            var resource = TestAnalyses.CreateMixtureResource();
+            var analysis = resource.Mixture!;
+            var model = analysis.MixtureDistribution;
+            double[] center = model.Parameters.Select(parameter => parameter.Value)
+                .Where((_, index) => index != 1)
+                .ToArray();
+            var output = Enumerable.Range(0, 20)
+                .Select(drawIndex =>
+                {
+                    double[] values = center.ToArray();
+                    values[0] = 0.35 + drawIndex * 0.01;
+                    double[] physicalValues = new[] { values[0], 1.0 - values[0] }
+                        .Concat(values.Skip(1))
+                        .ToArray();
+                    return new ParameterSet(values, model.LogLikelihood(physicalValues));
+                })
+                .ToList();
+            var results = new MCMCResults(
+                output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+                output,
+                alpha: 0.10);
+            analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+            await analysis.CreateFrequencyAnalysisResultsAsync();
+
+            var response = ResultsMapper.ToFrequencyResults(resource);
+            string[] names = response.ParameterSummaries
+                .Select(summary => summary.Name ?? string.Empty)
+                .ToArray();
+
+            Assert.AreEqual(model.NumberOfParameters - 1, names.Length);
+            Assert.AreEqual(model.Parameters[0].DisplayName, names[0]);
+            Assert.AreEqual(model.Parameters[2].DisplayName, names[1]);
+            Assert.IsFalse(names.Contains(model.Parameters[1].DisplayName));
+        }
+
+        /// <summary>
+        /// Verifies legacy full-K stored mixture results keep every component's name (the shared
+        /// shape test used to decide K-1 versus full-K,
+        /// <see cref="RMC.BestFit.Models.MixtureModel.IsSampledWeightVectorLength"/>, must not strip
+        /// a name when the stored coordinate count already matches the full public parameter count).
+        /// </summary>
+        [TestMethod]
+        public async Task ToFrequencyResults_MixtureLegacyFullKResults_KeepsAllNames()
+        {
+            var resource = TestAnalyses.CreateMixtureResource();
+            var analysis = resource.Mixture!;
+            var model = analysis.MixtureDistribution;
+            double[] fullK = model.Parameters.Select(parameter => parameter.Value).ToArray();
+            var output = Enumerable.Range(0, 20)
+                .Select(drawIndex =>
+                {
+                    double[] values = fullK.ToArray();
+                    values[0] = 0.35 + drawIndex * 0.01;
+                    values[1] = 1.0 - values[0];
+                    return new ParameterSet(values, model.LogLikelihood(values));
+                })
+                .ToList();
+            var results = new MCMCResults(
+                output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+                output,
+                alpha: 0.10);
+            analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+            await analysis.CreateFrequencyAnalysisResultsAsync();
+
+            var response = ResultsMapper.ToFrequencyResults(resource);
+            string[] names = response.ParameterSummaries
+                .Select(summary => summary.Name ?? string.Empty)
+                .ToArray();
+
+            Assert.AreEqual(model.NumberOfParameters, names.Length);
+            CollectionAssert.AreEqual(
+                model.Parameters.Select(parameter => parameter.DisplayName).ToArray(),
+                names);
+        }
+
+        /// <summary>
+        /// Verifies the shape-test guard cannot index past the end of an unpopulated name list:
+        /// when the mixture's own <c>Parameters</c> is empty (no data frame was ever set) but a
+        /// stored result's length coincides with the mixture's structural K-1 length, the method
+        /// must return the same empty list base did instead of throwing from <c>RemoveAt</c>.
+        /// </summary>
+        /// <remarks>
+        /// <c>ResultsMapper.GetSampledParameterNames</c> is private, so it is reached here by
+        /// reflection rather than through <see cref="ResultsMapper.ToFrequencyResults"/>, which
+        /// would additionally require an unpopulated model to complete an unrelated async
+        /// estimation step.
+        /// </remarks>
+        [TestMethod]
+        public void GetSampledParameterNames_UnpopulatedParametersWithStructuralKMinusOneLength_ReturnsEmptyWithoutThrowing()
+        {
+            var model = new MixtureModel(
+                null!,
+                new List<UnivariateDistributionType> { UnivariateDistributionType.Normal, UnivariateDistributionType.Normal });
+            Assert.AreEqual(0, model.Parameters.Count, "Fixture precondition: no data frame, so Parameters is unpopulated.");
+            Assert.IsTrue(model.IsSampledWeightVectorLength(5), "Fixture precondition: 5 is the structural K-1 length for this mixture.");
+            var bayesian = new BayesianAnalysis(model);
+            var output = Enumerable.Range(0, 5)
+                .Select(drawIndex => new ParameterSet(new double[] { 0.3, 1.0, 1.0, 2.0, 2.0 }, -drawIndex))
+                .ToList();
+            bayesian.SetCustomMCMCResults(new MCMCResults(output[0], output, alpha: 0.10), skipInformationCriteria: true);
+
+            MethodInfo method = typeof(ResultsMapper).GetMethod(
+                "GetSampledParameterNames",
+                BindingFlags.NonPublic | BindingFlags.Static)!;
+            var names = (List<string>)method.Invoke(null, new object[] { bayesian, model.Parameters })!;
+
+            Assert.AreEqual(0, names.Count, "Base returned the (empty) name list unmodified; the shape test must not attempt RemoveAt on it.");
         }
 
         /// <summary>

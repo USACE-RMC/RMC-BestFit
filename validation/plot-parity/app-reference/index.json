@@ -1,0 +1,682 @@
+[
+  {
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "source": "examples\\1-time-series-data\\6-manual-entry\\manual-entry-example.bestfit",
+    "element": "Airline Passengers",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "time_series_data.seasonality",
+    "variant": "default",
+    "source": "examples\\1-time-series-data\\6-manual-entry\\manual-entry-example.bestfit",
+    "element": "Airline Passengers",
+    "status": "exported",
+    "detail": "6 model series"
+  },
+  {
+    "plotId": "time_series_data.acf",
+    "variant": "default",
+    "source": "examples\\1-time-series-data\\6-manual-entry\\manual-entry-example.bestfit",
+    "element": "Airline Passengers",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "time_series_data.pacf",
+    "variant": "default",
+    "source": "examples\\1-time-series-data\\6-manual-entry\\manual-entry-example.bestfit",
+    "element": "Airline Passengers",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.chronology",
+    "variant": "calendar_year",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.chronology",
+    "variant": "water_year",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Water Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.frequency",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.frequency",
+    "variant": "exact",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #1 - Data",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.frequency",
+    "variant": "interval",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #4 - Data",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "input_data.frequency",
+    "variant": "uncertain",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\4-measurement-errors\\sinnemahoning-move3-bayesian.bestfit",
+    "element": "Sinnemahoning - MOVE.3 - With Errors",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "input_data.frequency",
+    "variant": "low_outlier",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #2 - Data",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "input_data.seasonality",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.density",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.histogram",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.qq",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.qq",
+    "variant": "real",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.qq",
+    "variant": "log10",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.acf",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.pacf",
+    "variant": "default",
+    "source": "examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "input_data.mean_residual_life",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - POT",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "input_data.modified_scale",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - POT",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "input_data.shape",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - POT",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "fitting.frequency",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "16 model series"
+  },
+  {
+    "plotId": "fitting.frequency",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "16 model series"
+  },
+  {
+    "plotId": "fitting.pdf",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "16 model series"
+  },
+  {
+    "plotId": "fitting.pdf",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "16 model series"
+  },
+  {
+    "plotId": "fitting.cdf",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "16 model series"
+  },
+  {
+    "plotId": "fitting.cdf",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "16 model series"
+  },
+  {
+    "plotId": "fitting.pp",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "15 model series"
+  },
+  {
+    "plotId": "fitting.pp",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "15 model series"
+  },
+  {
+    "plotId": "fitting.qq",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "15 model series"
+  },
+  {
+    "plotId": "fitting.qq",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "Fit - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "15 model series"
+  },
+  {
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "univariate.frequency",
+    "variant": "nonstationary",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\5-nonstationary-ffa\\nsffa-brays-bayou-texas.bestfit",
+    "element": "NSFFA - Linear",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "univariate.frequency",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "7 model series"
+  },
+  {
+    "plotId": "univariate.frequency",
+    "variant": "quantile_prior",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001) + 3 Quantile Priors",
+    "status": "exported",
+    "detail": "5 model series"
+  },
+  {
+    "plotId": "univariate.chronology",
+    "variant": "stationary",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "app_conditional_empty",
+    "detail": "App UpdateChronologyPlot populates only IsNonstationary != false analyses"
+  },
+  {
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\5-nonstationary-ffa\\nsffa-brays-bayou-texas.bestfit",
+    "element": "NSFFA - Linear",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #1",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "b17c.frequency",
+    "variant": "bcb",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #1 - BCB",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "b17c.frequency",
+    "variant": "historical_interval",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #4",
+    "status": "exported",
+    "detail": "5 model series"
+  },
+  {
+    "plotId": "b17c.frequency",
+    "variant": "low_outlier",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #2",
+    "status": "exported",
+    "detail": "5 model series"
+  },
+  {
+    "plotId": "point_process.frequency",
+    "variant": "pot",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - Point Process",
+    "status": "exported",
+    "detail": "5 model series"
+  },
+  {
+    "plotId": "point_process.frequency",
+    "variant": "ams",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - Point Process",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "point_process.frequency",
+    "variant": "seasonal",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - Seasonal Point Process",
+    "status": "exported",
+    "detail": "7 model series"
+  },
+  {
+    "plotId": "point_process.frequency",
+    "variant": "comparison",
+    "source": "examples\\4-univariate-distribution-analysis\\3-point-process-analysis\\point-process-examples.bestfit",
+    "element": "USC00040741 - Point Process",
+    "status": "exported",
+    "detail": "8 model series"
+  },
+  {
+    "plotId": "mixture.frequency",
+    "variant": "mixture",
+    "source": "examples\\4-univariate-distribution-analysis\\4-mixture-analysis\\mixture-distribution-examples.bestfit",
+    "element": "Mixture Distribution - 2 Normals",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "mixture.frequency",
+    "variant": "zero_inflated",
+    "source": "examples\\4-univariate-distribution-analysis\\4-mixture-analysis\\mixture-distribution-examples.bestfit",
+    "element": "Mixture Distribution - 2 Normals - Zero-Inflated",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "composite.frequency",
+    "variant": "competing_risk",
+    "source": "examples\\4-univariate-distribution-analysis\\5-composite-analysis\\mixed-population-examples.bestfit",
+    "element": "Competing Flood Types",
+    "status": "exported",
+    "detail": "6 model series"
+  },
+  {
+    "plotId": "composite.frequency",
+    "variant": "component",
+    "source": "examples\\4-univariate-distribution-analysis\\5-composite-analysis\\mixed-population-examples.bestfit",
+    "element": "Competing Flood Types",
+    "status": "exported",
+    "detail": "6 model series"
+  },
+  {
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_values",
+    "source": "examples\\5-bivariate-distribution-analysis\\1-bivariate-distributions\\bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "source": "examples\\5-bivariate-distribution-analysis\\1-bivariate-distributions\\bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "bivariate.distribution",
+    "variant": "density_values",
+    "source": "examples\\5-bivariate-distribution-analysis\\1-bivariate-distributions\\bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "bivariate.distribution",
+    "variant": "density_cdf",
+    "source": "examples\\5-bivariate-distribution-analysis\\1-bivariate-distributions\\bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "bivariate.distribution",
+    "variant": "joint_exceedance_values",
+    "source": "examples\\5-bivariate-distribution-analysis\\1-bivariate-distributions\\bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "bivariate.distribution",
+    "variant": "joint_exceedance_cdf",
+    "source": "examples\\5-bivariate-distribution-analysis\\1-bivariate-distributions\\bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "coincident.frequency",
+    "variant": "default",
+    "source": "examples\\5-bivariate-distribution-analysis\\2-coincident-frequency\\sum-two-normals.bestfit",
+    "element": "CFA - Rho = 0.0",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "coincident.frequency",
+    "variant": "comparison",
+    "source": "examples\\5-bivariate-distribution-analysis\\2-coincident-frequency\\sum-two-normals.bestfit",
+    "element": "CFA - Rho = 0.0",
+    "status": "exported",
+    "detail": "7 model series"
+  },
+  {
+    "plotId": "coincident.frequency",
+    "variant": "linear_response",
+    "source": "examples\\5-bivariate-distribution-analysis\\2-coincident-frequency\\sum-two-normals.bestfit",
+    "element": "CFA - Rho = 0.0",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "rating.curve",
+    "variant": "default",
+    "source": "examples\\6-rating-curve-analysis\\usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "rating.curve",
+    "variant": "segmented",
+    "source": "examples\\6-rating-curve-analysis\\synthetic-rating-curve-examples.bestfit",
+    "element": "2 Segment Rating Curve",
+    "status": "exported",
+    "detail": "4 model series"
+  },
+  {
+    "plotId": "rating.residuals",
+    "variant": "default",
+    "source": "examples\\6-rating-curve-analysis\\usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "rating.residual_histogram",
+    "variant": "default",
+    "source": "examples\\6-rating-curve-analysis\\usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "rating.residual_qq",
+    "variant": "default",
+    "source": "examples\\6-rating-curve-analysis\\usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "time_series_analysis.series",
+    "variant": "training",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "5 model series"
+  },
+  {
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "5 model series"
+  },
+  {
+    "plotId": "time_series_analysis.residuals",
+    "variant": "default",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "time_series_analysis.residual_histogram",
+    "variant": "default",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "time_series_analysis.residual_qq",
+    "variant": "default",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "time_series_analysis.residual_acf",
+    "variant": "default",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "time_series_analysis.residual_pacf",
+    "variant": "default",
+    "source": "examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "6 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.trace",
+    "variant": "warmup",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "6 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.histogram",
+    "variant": "posterior",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.histogram",
+    "variant": "prior",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.kde",
+    "variant": "posterior",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.acf",
+    "variant": "parameter",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.mean_log_likelihood",
+    "variant": "default",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.pair_heatmap",
+    "variant": "parameter_pair",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.influence",
+    "variant": "bayesian_leverage",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.influence",
+    "variant": "bayesian_fit",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.influence",
+    "variant": "bayesian_variance",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.influence",
+    "variant": "gmm_fit",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #1",
+    "status": "exported",
+    "detail": "1 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.influence",
+    "variant": "gmm_variance",
+    "source": "examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+    "element": "Example #1",
+    "status": "exported",
+    "detail": "2 model series"
+  },
+  {
+    "plotId": "shared_diagnostics.influence",
+    "variant": "leave_one_out",
+    "source": "examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "status": "exported",
+    "detail": "1 model series"
+  }
+]

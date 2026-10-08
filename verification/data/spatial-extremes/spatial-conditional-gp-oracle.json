@@ -1,0 +1,218 @@
+{
+  "metadata": {
+    "generated": "2026-08-22",
+    "generator": "verification/r/spatial-extremes/generate_spatial_conditional_gp_oracle.R",
+    "generator_sha256": "ec1738d3337f0553ed78af3bc5736a66cda004716098a387591ddfd4f4986215",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "jsonlite": "2.0.0",
+    "digest": "0.6.39",
+    "sites": 5,
+    "distance_metric": "Euclidean on projected coordinates (Numerics Tools.Distance)",
+    "correlation_function": "exponential rho(h) = exp(-h / range) with rho(0) = 1; covariance sigma^2 rho(h)",
+    "predictor": "simple kriging: mean k*' K^-1 eps, variance sigma^2 - k*' K^-1 k*; dense solve in R",
+    "location_link": "log link: conditional location exp(intercept + conditional mean) with intercept log(100)",
+    "tolerances": {
+      "conditional_mean": 1e-10,
+      "conditional_variance": 1e-10
+    }
+  },
+  "network": {
+    "coordinates": [
+      [0, 0],
+      [12, 3],
+      [25, 0],
+      [8, 18],
+      [30, 22]
+    ],
+    "targets": [
+      [10, 10],
+      [0, 0],
+      [40, 35],
+      [18, 8],
+      [-5, 12]
+    ]
+  },
+  "location_intercept": 4.60517018598809,
+  "cases": [
+    {
+      "parameter_set": "moderate",
+      "sigma": 0.06,
+      "range": 20,
+      "errors": [0.05, -0.03, 0.02, -0.04, 0.01],
+      "target": [10, 10],
+      "target_is_site": false,
+      "distances_to_sites": [14.142135623731, 7.28010988928052, 18.0277563773199, 8.24621125123532, 23.3238075793812],
+      "conditional_mean": -0.023671450543656,
+      "conditional_variance": 0.0012972134850747,
+      "conditional_location_log_link": 97.6606520595314
+    },
+    {
+      "parameter_set": "moderate",
+      "sigma": 0.06,
+      "range": 20,
+      "errors": [0.05, -0.03, 0.02, -0.04, 0.01],
+      "target": [0, 0],
+      "target_is_site": true,
+      "distances_to_sites": [0, 12.369316876853, 25, 19.6977156035922, 37.2021504754766],
+      "conditional_mean": 0.05,
+      "conditional_variance": 0,
+      "conditional_location_log_link": 105.127109637602
+    },
+    {
+      "parameter_set": "moderate",
+      "sigma": 0.06,
+      "range": 20,
+      "errors": [0.05, -0.03, 0.02, -0.04, 0.01],
+      "target": [40, 35],
+      "target_is_site": false,
+      "distances_to_sites": [53.1507290636732, 42.5205832509386, 38.0788655293195, 36.2353418639869, 16.4012194668567],
+      "conditional_mean": 0.00369793674026508,
+      "conditional_variance": 0.00289976198883418,
+      "conditional_location_log_link": 100.370478254418
+    },
+    {
+      "parameter_set": "moderate",
+      "sigma": 0.06,
+      "range": 20,
+      "errors": [0.05, -0.03, 0.02, -0.04, 0.01],
+      "target": [18, 8],
+      "target_is_site": false,
+      "distances_to_sites": [19.6977156035922, 7.81024967590665, 10.6301458127346, 14.142135623731, 18.4390889145858],
+      "conditional_mean": -0.014331139292764,
+      "conditional_variance": 0.00148674497401756,
+      "conditional_location_log_link": 98.5771062677882
+    },
+    {
+      "parameter_set": "moderate",
+      "sigma": 0.06,
+      "range": 20,
+      "errors": [0.05, -0.03, 0.02, -0.04, 0.01],
+      "target": [-5, 12],
+      "target_is_site": false,
+      "distances_to_sites": [13, 19.2353840616713, 32.310988842807, 14.3178210632764, 36.4005494464026],
+      "conditional_mean": 0.00412517228822724,
+      "conditional_variance": 0.00225476721129188,
+      "conditional_location_log_link": 100.413369252322
+    },
+    {
+      "parameter_set": "short_range",
+      "sigma": 0.15,
+      "range": 6,
+      "errors": [0.1, -0.12, 0.08, 0.03, -0.07],
+      "target": [10, 10],
+      "target_is_site": false,
+      "distances_to_sites": [14.142135623731, 7.28010988928052, 18.0277563773199, 8.24621125123532, 23.3238075793812],
+      "conditional_mean": -0.0200983786476512,
+      "conditional_variance": 0.0192425706103338,
+      "conditional_location_log_link": 98.0102247430048
+    },
+    {
+      "parameter_set": "short_range",
+      "sigma": 0.15,
+      "range": 6,
+      "errors": [0.1, -0.12, 0.08, 0.03, -0.07],
+      "target": [0, 0],
+      "target_is_site": true,
+      "distances_to_sites": [0, 12.369316876853, 25, 19.6977156035922, 37.2021504754766],
+      "conditional_mean": 0.1,
+      "conditional_variance": 0,
+      "conditional_location_log_link": 110.517091807565
+    },
+    {
+      "parameter_set": "short_range",
+      "sigma": 0.15,
+      "range": 6,
+      "errors": [0.1, -0.12, 0.08, 0.03, -0.07],
+      "target": [40, 35],
+      "target_is_site": false,
+      "distances_to_sites": [53.1507290636732, 42.5205832509386, 38.0788655293195, 36.2353418639869, 16.4012194668567],
+      "conditional_mean": -0.0044960670255518,
+      "conditional_variance": 0.0224049531315521,
+      "conditional_location_log_link": 99.5514025153095
+    },
+    {
+      "parameter_set": "short_range",
+      "sigma": 0.15,
+      "range": 6,
+      "errors": [0.1, -0.12, 0.08, 0.03, -0.07],
+      "target": [18, 8],
+      "target_is_site": false,
+      "distances_to_sites": [19.6977156035922, 7.81024967590665, 10.6301458127346, 14.142135623731, 18.4390889145858],
+      "conditional_mean": -0.0192519266820891,
+      "conditional_variance": 0.0202310056851901,
+      "conditional_location_log_link": 98.0932208115209
+    },
+    {
+      "parameter_set": "short_range",
+      "sigma": 0.15,
+      "range": 6,
+      "errors": [0.1, -0.12, 0.08, 0.03, -0.07],
+      "target": [-5, 12],
+      "target_is_site": false,
+      "distances_to_sites": [13, 19.2353840616713, 32.310988842807, 14.3178210632764, 36.4005494464026],
+      "conditional_mean": 0.0109959208262567,
+      "conditional_variance": 0.022022545883706,
+      "conditional_location_log_link": 101.105659816078
+    },
+    {
+      "parameter_set": "long_range",
+      "sigma": 0.3,
+      "range": 80,
+      "errors": [-0.2, -0.15, 0.25, 0.1, 0.05],
+      "target": [10, 10],
+      "target_is_site": false,
+      "distances_to_sites": [14.142135623731, 7.28010988928052, 18.0277563773199, 8.24621125123532, 23.3238075793812],
+      "conditional_mean": -0.0364108493699217,
+      "conditional_variance": 0.00846627222453958,
+      "conditional_location_log_link": 96.4244053029489
+    },
+    {
+      "parameter_set": "long_range",
+      "sigma": 0.3,
+      "range": 80,
+      "errors": [-0.2, -0.15, 0.25, 0.1, 0.05],
+      "target": [0, 0],
+      "target_is_site": true,
+      "distances_to_sites": [0, 12.369316876853, 25, 19.6977156035922, 37.2021504754766],
+      "conditional_mean": -0.2,
+      "conditional_variance": 0,
+      "conditional_location_log_link": 81.8730753077982
+    },
+    {
+      "parameter_set": "long_range",
+      "sigma": 0.3,
+      "range": 80,
+      "errors": [-0.2, -0.15, 0.25, 0.1, 0.05],
+      "target": [40, 35],
+      "target_is_site": false,
+      "distances_to_sites": [53.1507290636732, 42.5205832509386, 38.0788655293195, 36.2353418639869, 16.4012194668567],
+      "conditional_mean": 0.0650779886914249,
+      "conditional_variance": 0.0301204539423411,
+      "conditional_location_log_link": 106.724225396549
+    },
+    {
+      "parameter_set": "long_range",
+      "sigma": 0.3,
+      "range": 80,
+      "errors": [-0.2, -0.15, 0.25, 0.1, 0.05],
+      "target": [18, 8],
+      "target_is_site": false,
+      "distances_to_sites": [19.6977156035922, 7.81024967590665, 10.6301458127346, 14.142135623731, 18.4390889145858],
+      "conditional_mean": 0.0395968599003081,
+      "conditional_variance": 0.00986042213937831,
+      "conditional_location_log_link": 104.039126619905
+    },
+    {
+      "parameter_set": "long_range",
+      "sigma": 0.3,
+      "range": 80,
+      "errors": [-0.2, -0.15, 0.25, 0.1, 0.05],
+      "target": [-5, 12],
+      "target_is_site": false,
+      "distances_to_sites": [13, 19.2353840616713, 32.310988842807, 14.3178210632764, 36.4005494464026],
+      "conditional_mean": -0.0740306842230892,
+      "conditional_variance": 0.0180008199913207,
+      "conditional_location_log_link": 92.8643198709035
+    }
+  ]
+}

@@ -7,7 +7,7 @@ namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
 /// Fast structural unit tests for the <c>BayesianAnalysis</c> class.
-/// MCMC-running tests live in RMC.BestFit.Verification/ModelEstimation/BayesianAnalysisMCMCTests.cs.
+/// MCMC recovery tests live in RMC.BestFit.Verification/ModelEstimation/BayesianAnalysisRecoveryTests.cs.
 /// </summary>
 [TestClass]
 public class BayesianAnalysisTests

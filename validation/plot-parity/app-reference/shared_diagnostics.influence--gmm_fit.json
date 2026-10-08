@@ -1,0 +1,247 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "2e55826d0492643cbb340ac9785a15161dbac0771048a932f51e88db0b2098a3",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\4-univariate-distribution-analysis\\2-bulletin-17C-analysis\\1-bulletin17C-examples\\bulletin-17c-examples.bestfit",
+  "element": "Example #1",
+  "plotId": "shared_diagnostics.influence",
+  "variant": "gmm_fit",
+  "variantSelection": "Mode=GMM;ViewComboBox=1",
+  "appFactory": "src/RMC.BestFit.UI/Elements/Support/BayesianController.cs::CreateDefaultInfluenceDiagnosticsPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/Support/Controls/InfluenceDiagnosticsControl.xaml.cs::UpdatePlot",
+  "title": "Fit Influence (Cook\u0027s Distance)",
+  "axes": [
+    {
+      "type": "CategoryAxis",
+      "Key": null,
+      "Title": "",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -0.5,
+      "ActualMaximum": 19.5,
+      "labels": [
+        "Exact - 1950 - 2940",
+        "Exact - 2001 - 2950",
+        "Exact - 1984 - 2950",
+        "Exact - 1971 - 1490",
+        "Exact - 1970 - 3010",
+        "Exact - 1949 - 1480",
+        "Exact - 1980 - 1460",
+        "Exact - 1978 - 1460",
+        "Exact - 2011 - 3140",
+        "Exact - 1985 - 1380",
+        "Exact - 2012 - 1370",
+        "Exact - 1957 - 1370",
+        "Exact - 1990 - 3430",
+        "Exact - 1975 - 1250",
+        "Exact - 1987 - 4180",
+        "Exact - 2014 - 4250",
+        "Exact - 1965 - 1190",
+        "Exact - 1995 - 4536",
+        "Exact - 1959 - 1160",
+        "Exact - 1973 - 4940"
+      ]
+    },
+    {
+      "type": "LinearAxis",
+      "Key": null,
+      "Title": "Fit Influence",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -1.1589658481579486E-05,
+      "ActualMaximum": 0.0011705555066395283,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "",
+      "type": "BarSeries",
+      "Title": "Observations",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [
+        {
+          "Value": 9.084824200203032E-05,
+          "CategoryIndex": 0
+        },
+        {
+          "Value": 9.256408940438406E-05,
+          "CategoryIndex": 1
+        },
+        {
+          "Value": 9.256408940438406E-05,
+          "CategoryIndex": 2
+        },
+        {
+          "Value": 0.00010199093408981928,
+          "CategoryIndex": 3
+        },
+        {
+          "Value": 0.00010347212293335673,
+          "CategoryIndex": 4
+        },
+        {
+          "Value": 0.00010737344290757902,
+          "CategoryIndex": 5
+        },
+        {
+          "Value": 0.00011962948130217635,
+          "CategoryIndex": 6
+        },
+        {
+          "Value": 0.00011962948130217635,
+          "CategoryIndex": 7
+        },
+        {
+          "Value": 0.000130685400932931,
+          "CategoryIndex": 8
+        },
+        {
+          "Value": 0.00019511734715749402,
+          "CategoryIndex": 9
+        },
+        {
+          "Value": 0.00020843492815963294,
+          "CategoryIndex": 10
+        },
+        {
+          "Value": 0.00020843492815963294,
+          "CategoryIndex": 11
+        },
+        {
+          "Value": 0.00020889873778760147,
+          "CategoryIndex": 12
+        },
+        {
+          "Value": 0.0004797006580389008,
+          "CategoryIndex": 13
+        },
+        {
+          "Value": 0.0005373960925441964,
+          "CategoryIndex": 14
+        },
+        {
+          "Value": 0.0005797755111829877,
+          "CategoryIndex": 15
+        },
+        {
+          "Value": 0.0007354289982367332,
+          "CategoryIndex": 16
+        },
+        {
+          "Value": 0.0007808096559757795,
+          "CategoryIndex": 17
+        },
+        {
+          "Value": 0.0009102053801028575,
+          "CategoryIndex": 18
+        },
+        {
+          "Value": 0.0011589658481579487,
+          "CategoryIndex": 19
+        }
+      ],
+      "actualItems": [
+        {
+          "Value": 9.084824200203032E-05,
+          "CategoryIndex": 0
+        },
+        {
+          "Value": 9.256408940438406E-05,
+          "CategoryIndex": 1
+        },
+        {
+          "Value": 9.256408940438406E-05,
+          "CategoryIndex": 2
+        },
+        {
+          "Value": 0.00010199093408981928,
+          "CategoryIndex": 3
+        },
+        {
+          "Value": 0.00010347212293335673,
+          "CategoryIndex": 4
+        },
+        {
+          "Value": 0.00010737344290757902,
+          "CategoryIndex": 5
+        },
+        {
+          "Value": 0.00011962948130217635,
+          "CategoryIndex": 6
+        },
+        {
+          "Value": 0.00011962948130217635,
+          "CategoryIndex": 7
+        },
+        {
+          "Value": 0.000130685400932931,
+          "CategoryIndex": 8
+        },
+        {
+          "Value": 0.00019511734715749402,
+          "CategoryIndex": 9
+        },
+        {
+          "Value": 0.00020843492815963294,
+          "CategoryIndex": 10
+        },
+        {
+          "Value": 0.00020843492815963294,
+          "CategoryIndex": 11
+        },
+        {
+          "Value": 0.00020889873778760147,
+          "CategoryIndex": 12
+        },
+        {
+          "Value": 0.0004797006580389008,
+          "CategoryIndex": 13
+        },
+        {
+          "Value": 0.0005373960925441964,
+          "CategoryIndex": 14
+        },
+        {
+          "Value": 0.0005797755111829877,
+          "CategoryIndex": 15
+        },
+        {
+          "Value": 0.0007354289982367332,
+          "CategoryIndex": 16
+        },
+        {
+          "Value": 0.0007808096559757795,
+          "CategoryIndex": 17
+        },
+        {
+          "Value": 0.0009102053801028575,
+          "CategoryIndex": 18
+        },
+        {
+          "Value": 0.0011589658481579487,
+          "CategoryIndex": 19
+        }
+      ],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "FillColor": "#4bdc143c",
+        "StrokeThickness": 1,
+        "StrokeColor": "#ffff0000"
+      }
+    }
+  ],
+  "annotations": []
+}

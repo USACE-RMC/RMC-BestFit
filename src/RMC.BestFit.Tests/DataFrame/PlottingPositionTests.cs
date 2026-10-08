@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -412,7 +413,7 @@ public class PlottingPositionTests
     /// and assigns only open-interval plotting positions.
     /// </summary>
     /// <remarks>
-    /// The arranged counts intentionally reproduce the former K=43/K=6 condition that
+    /// The arranged counts intentionally reproduce the K=43/K=6 condition that
     /// made the prior recurrence calculate Q=1 at the 743-cfs level. Two observations
     /// fall below their own perception thresholds and are classified as censored only
     /// for plotting; they remain exact observations with their original values.
@@ -457,6 +458,7 @@ public class PlottingPositionTests
                     data.PlottingPosition > 0d &&
                     data.PlottingPosition < 1d));
         Assert.IsTrue(dataFrame.ExactSeries.Any(data => data.PlottingPosition > 0.98d));
+        AssertMagnitudeOrdered(dataFrame);
         Assert.IsTrue(dataFrame.ExactSeries.SuppressCollectionChanged,
             "CalculatePlottingPositions must restore the caller's prior suppression state.");
         Assert.IsTrue(dataFrame.ThresholdSeries.SuppressCollectionChanged,
@@ -523,7 +525,7 @@ public class PlottingPositionTests
 
         const int higherValueIndex = 1975;
         const int lowerValueIndex = 1998;
-        const double expectedCenter = 0.97714285714285709d;
+        // Independent, unmodified Fortran ARRANGE2/PPLOT2 with explicit values observed.
         Data higherValueEvent = source.ExactSeries.Single(data => data.Index == higherValueIndex);
         Data lowerValueEvent = source.ExactSeries.Single(data => data.Index == lowerValueIndex);
 
@@ -531,11 +533,9 @@ public class PlottingPositionTests
         Assert.IsTrue(
             higherValueEvent.PlottingPosition < lowerValueEvent.PlottingPosition,
             $"Higher event {higherValueEvent.PlottingPosition:G17}; lower event {lowerValueEvent.PlottingPosition:G17}.");
-        Assert.AreEqual(
-            expectedCenter,
-            (higherValueEvent.PlottingPosition + lowerValueEvent.PlottingPosition) / 2d,
-            1E-15,
-            "Separating a tie must preserve its original H-S probability center.");
+        Assert.AreEqual(0.97d, higherValueEvent.PlottingPosition, 1E-15);
+        Assert.AreEqual(0.99d, lowerValueEvent.PlottingPosition, 1E-15);
+        AssertMagnitudeOrdered(source);
 
         for (int i = 1; i < positions.Length; i++)
         {
@@ -551,14 +551,14 @@ public class PlottingPositionTests
     }
 
     /// <summary>
-    /// Verifies explicit values below their own thresholds use the ARRANGE2 censored branch.
+    /// Verifies explicit values below their own thresholds remain observed.
     /// </summary>
     /// <remarks>
-    /// With one detection and one censored observation at a common threshold, Weibull
+    /// With two explicit observations at a common threshold, Weibull
     /// plotting positions are 0.25 and 0.75 exceedance probability, respectively.
     /// </remarks>
     [TestMethod]
-    public void Test_PlottingPositions_ValueBelowOwnThreshold_UsesCensoredBranch()
+    public void Test_PlottingPositions_ValueBelowOwnThreshold_RemainsObserved()
     {
         var dataFrame = new BestFitDataFrame();
         dataFrame.ExactSeries.SuppressCollectionChanged = true;
@@ -681,5 +681,419 @@ public class PlottingPositionTests
             $"Plotting {observationCount:N0} observations took {stopwatch.Elapsed.TotalMilliseconds:N0} ms.");
         Assert.IsTrue(dataFrame.ExactSeries.All(
             data => data.PlottingPosition > 0d && data.PlottingPosition < 1d));
+    }
+    /// <summary>
+    /// The MGBT low-outlier setter leaves the frame's plotting positions computed.
+    /// </summary>
+    /// <remarks>
+    /// The setter flips the IsLowOutlier flags under suppressed collection notifications, which also
+    /// gates the data-edit handlers that normally refresh the Hirsch-Stedinger positions; before the
+    /// fix a headless caller was left with every position at its 0.0 default (complement 1.0), and
+    /// the Bulletin 17C censored-data (ROS) initial estimate then regressed on infinite normal
+    /// scores. The setter now refreshes the positions itself before raising "LowOutliers".
+    /// </remarks>
+    [TestMethod]
+    public void Test_SetLowOutliersFromMGBT_RecomputesPlottingPositions()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPositionComplement == 1.0),
+            "Fixture precondition: plotting positions start at their defaults.");
+
+        frame.SetLowOutliersFromMGBT();
+
+        Assert.IsTrue(frame.NumberOfLowOutliers >= 1, "Fixture precondition: the two extreme lows are flagged.");
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0),
+            "The setter must leave the Hirsch-Stedinger positions computed for every observation.");
+    }
+
+    /// <summary>
+    /// The threshold low-outlier setter leaves the positions computed, and a subsequent manual
+    /// recompute reproduces them bitwise.
+    /// </summary>
+    /// <remarks>
+    /// The bitwise comparison against a follow-up <c>CalculatePlottingPositions()</c> call pins the
+    /// idempotency the verification fixtures rely on: they historically paired every setter call with
+    /// a manual recompute, which is now a benign repeat of the same deterministic computation.
+    /// </remarks>
+    [TestMethod]
+    public void Test_SetLowOutliersFromThreshold_RecomputesPlottingPositions()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        frame.LowOutlierThreshold = 100.0;
+
+        frame.SetLowOutliersFromThreshold();
+
+        Assert.AreEqual(2, frame.NumberOfLowOutliers);
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0));
+
+        var firstPass = frame.ExactSeries.Select(d => d.PlottingPosition).ToArray();
+        frame.CalculatePlottingPositions();
+        var secondPass = frame.ExactSeries.Select(d => d.PlottingPosition).ToArray();
+        for (int i = 0; i < firstPass.Length; i++)
+            Assert.AreEqual(firstPass[i], secondPass[i], 0d, "A manual recompute must be a bitwise repeat.");
+    }
+
+    /// <summary>
+    /// An unsuppressed ClearLowOutliers refreshes the positions and raises a single "LowOutliers" change.
+    /// </summary>
+    [TestMethod]
+    public void Test_ClearLowOutliers_Unsuppressed_RecomputesPositionsAndRaisesLowOutliers()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        // End the bulk-load window here: the low-outlier setters restore the caller's suppression
+        // state rather than clearing it, so the clear under test runs unsuppressed only if the
+        // fixture unsuppresses.
+        frame.ExactSeries.SuppressCollectionChanged = false;
+        frame.LowOutlierThreshold = 100.0;
+        frame.SetLowOutliersFromThreshold();
+        Assert.AreEqual(2, frame.NumberOfLowOutliers, "Fixture precondition: low outliers flagged.");
+
+        int lowOutlierRaises = 0;
+        frame.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == "LowOutliers")
+                lowOutlierRaises++;
+        };
+
+        frame.ClearLowOutliers();
+
+        Assert.AreEqual(0, frame.NumberOfLowOutliers);
+        Assert.AreEqual(1, lowOutlierRaises, "Exactly one LowOutliers change is raised for the whole clear.");
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0));
+    }
+
+    /// <summary>
+    /// Under caller suppression, ClearLowOutliers restores the flag and stays silent.
+    /// </summary>
+    /// <remarks>
+    /// The save-and-restore contract protects SetLowOutliersFromMGBT, which calls ClearLowOutliers
+    /// inside its own suppression window: an unconditional un-suppress there would break the MGBT
+    /// batch, and a raise would notify listeners of a half-updated state. A caller that suppressed
+    /// notifications owns the refresh itself.
+    /// </remarks>
+    [TestMethod]
+    public void Test_ClearLowOutliers_UnderCallerSuppression_RestoresFlagAndStaysSilent()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+
+        int lowOutlierRaises = 0;
+        frame.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == "LowOutliers")
+                lowOutlierRaises++;
+        };
+
+        frame.ClearLowOutliers();
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must be restored.");
+        Assert.AreEqual(0, lowOutlierRaises, "A suppressed clear must not raise LowOutliers.");
+        Assert.AreEqual(0, frame.NumberOfLowOutliers);
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPositionComplement == 1.0),
+            "A suppressed clear must not compute plotting positions; the caller owns the refresh.");
+    }
+
+    /// <summary>
+    /// Builds an exact-only frame and leaves its exact series at the caller's suppression state.
+    /// </summary>
+    /// <param name="flows">The exact annual peaks, indexed from one.</param>
+    /// <param name="callerSuppressed">The notification-suppression state the caller holds when it runs a setter.</param>
+    /// <returns>The data frame.</returns>
+    /// <remarks>
+    /// The values are loaded under suppression so no plotting positions are computed by the load
+    /// itself, then the flag is set to the state under test.
+    /// </remarks>
+    private static BestFitDataFrame CreateLowOutlierFrame(double[] flows, bool callerSuppressed)
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        frame.ExactSeries.SuppressCollectionChanged = callerSuppressed;
+        return frame;
+    }
+
+    /// <summary>
+    /// Seventeen annual peaks with two extreme low floods (50 and 80) that both setters flag.
+    /// </summary>
+    private static readonly double[] LowOutlierFlows =
+        { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+
+    /// <summary>
+    /// Runs one of the two low-outlier setters, using a 100 cfs threshold for the threshold setter.
+    /// </summary>
+    /// <param name="frame">The data frame to test.</param>
+    /// <param name="useMgbt">True to run the Multiple Grubbs-Beck setter; false to run the threshold setter.</param>
+    private static void RunLowOutlierSetter(BestFitDataFrame frame, bool useMgbt)
+    {
+        if (useMgbt)
+        {
+            frame.SetLowOutliersFromMGBT();
+        }
+        else
+        {
+            frame.LowOutlierThreshold = 100.0;
+            frame.SetLowOutliersFromThreshold();
+        }
+    }
+
+    /// <summary>
+    /// A caller that suppressed notifications gets its flag back from either low-outlier setter,
+    /// and the setter still refreshes the positions and raises one "LowOutliers" change.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    /// <remarks>
+    /// The setters formerly forced the flag to false on return, silently ending a caller's
+    /// suppression window. The refresh and the raise after the window are unconditional by design,
+    /// so they are pinned here to show that restoring the flag leaves them unchanged.
+    /// </remarks>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_CallerSuppressed_RestoresFlagAndStillRefreshes(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows, callerSuppressed: true);
+        int lowOutlierRaises = 0;
+        frame.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == "LowOutliers")
+                lowOutlierRaises++;
+        };
+
+        RunLowOutlierSetter(frame, useMgbt);
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must be restored.");
+        Assert.IsTrue(frame.NumberOfLowOutliers >= 1, "Fixture precondition: the extreme low floods are flagged.");
+        Assert.AreEqual(1, lowOutlierRaises, "The setter still raises exactly one LowOutliers change.");
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0),
+            "The setter still refreshes the Hirsch-Stedinger positions.");
+    }
+
+    /// <summary>
+    /// A caller that did not suppress notifications finds the flag still false after either setter.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_CallerUnsuppressed_LeavesFlagFalse(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows, callerSuppressed: false);
+
+        RunLowOutlierSetter(frame, useMgbt);
+
+        Assert.IsFalse(frame.ExactSeries.SuppressCollectionChanged, "The caller's unsuppressed state must be kept.");
+        Assert.IsTrue(frame.NumberOfLowOutliers >= 1, "Fixture precondition: the extreme low floods are flagged.");
+    }
+
+    /// <summary>
+    /// A precondition guard that rejects the call leaves a suppressing caller's flag untouched.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    /// <remarks>
+    /// Nine exact values fail the ten-value guard of both setters, which throws before the
+    /// suppression window opens.
+    /// </remarks>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_GuardThrowUnderCallerSuppression_KeepsFlag(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows.Take(9).ToArray(), callerSuppressed: true);
+
+        Assert.ThrowsException<ArgumentException>(() => RunLowOutlierSetter(frame, useMgbt));
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must survive a rejected call.");
+    }
+
+    /// <summary>
+    /// A failure inside the suppression window restores a suppressing caller's flag instead of
+    /// clearing it.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    /// <remarks>
+    /// A listener on the 50 cfs flood throws when both setters flag it as a low outlier, which
+    /// happens inside the window, so the setter's finally block is the only code that restores the
+    /// flag before the exception propagates.
+    /// </remarks>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_ThrowInsideSuppressionWindow_RestoresCallerFlag(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows, callerSuppressed: true);
+        var lowestFlood = frame.ExactSeries.Single(d => d.Value == 50);
+        lowestFlood.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(ExactData.IsLowOutlier))
+                throw new InvalidOperationException("Probe listener failure.");
+        };
+
+        Assert.ThrowsException<InvalidOperationException>(() => RunLowOutlierSetter(frame, useMgbt));
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must be restored after a failure.");
+    }
+
+
+    /// <summary>Checks the analytical five-year example for exact and mixed observations.</summary>
+    /// <remarks>One exceedance in five years gives pe=1/5; two observed lower values divide the remaining mass into thirds.</remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_BelowThreshold_AnalyticalMixedAndExact()
+    {
+        foreach (bool mixed in new[] { false, true })
+        {
+            var frame = CreateSuppressedFrame();
+            frame.ExactSeries.Add(new ExactData(0, 80) { IsLowOutlier = true });
+            if (mixed)
+            {
+                frame.UncertainSeries.Add(new UncertainData(3, new Normal(50, 2)));
+                frame.IntervalSeries.Add(new IntervalData(4, 190, 200, 210));
+            }
+            else
+            {
+                frame.ExactSeries.Add(new ExactData(3, 50));
+                frame.ExactSeries.Add(new ExactData(4, 200));
+            }
+            frame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100));
+            frame.ProcessThresholdSeries();
+            var before = SourceXml(frame);
+            frame.CalculatePlottingPositions();
+            var observations = frame.ExactSeries.Concat(frame.UncertainSeries).Concat(frame.IntervalSeries).ToDictionary(d => d.Index);
+            Assert.AreEqual(7d / 15, observations[0].PlottingPosition, 1E-15);
+            Assert.AreEqual(11d / 15, observations[3].PlottingPosition, 1E-15);
+            Assert.AreEqual(1d / 10, observations[4].PlottingPosition, 1E-15);
+            Assert.AreEqual(before, SourceXml(frame));
+            AssertMagnitudeOrdered(frame);
+        }
+    }
+
+    /// <summary>Checks threshold equality, ties, multiple levels and row-order independence.</summary>
+    /// <remarks>Equality remains detected; lower explicit values use their magnitude ranks.</remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_ThresholdEqualityTiesAndReorderedRows()
+    {
+        var frame = CreateSuppressedFrame();
+        frame.ExactSeries.Add(new ExactData(0, 80));
+        frame.ExactSeries.Add(new ExactData(3, 80));
+        frame.ExactSeries.Add(new ExactData(4, 100));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100));
+        frame.CalculatePlottingPositions();
+        Assert.AreEqual(0.1, frame.ExactSeries[2].PlottingPosition, 1E-15);
+        var tied = frame.ExactSeries.Take(2).Select(d => d.PlottingPosition).Order().ToArray();
+        Assert.AreEqual(7d / 15, tied[0], 1E-15);
+        Assert.AreEqual(11d / 15, tied[1], 1E-15);
+        frame.ExactSeries.Add(new ExactData(6, 250));
+        frame.ExactSeries.Add(new ExactData(8, 120));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(5, 9, 200));
+        frame.CalculatePlottingPositions();
+        var reversed = CreateSuppressedFrame();
+        foreach (var observation in frame.ExactSeries.Reverse())
+            reversed.ExactSeries.Add(new ExactData(observation.Index, observation.Value));
+        foreach (BestFitThresholdData threshold in frame.ThresholdSeries.Reverse())
+            reversed.ThresholdSeries.Add(new BestFitThresholdData(threshold.StartIndex, threshold.EndIndex, threshold.Value));
+        reversed.CalculatePlottingPositions();
+        foreach (var group in frame.ExactSeries.GroupBy(d => d.Value))
+            CollectionAssert.AreEqual(group.Select(d => d.PlottingPosition).Order().ToArray(),
+                reversed.ExactSeries.Where(d => d.Value == group.Key).Select(d => d.PlottingPosition).Order().ToArray());
+        AssertMagnitudeOrdered(frame);
+    }
+
+    /// <summary>Checks the saved Chatfield RainOnSnow observations against independent conditional ranks.</summary>
+    /// <remarks>There are 27 exceedances in 84 years and 20 observed values below 1000. Broad and segmented windows represent the same record.</remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_Chatfield_BroadAndSegmentedAgree()
+    {
+        int[] years = [1942,1943,1944,1946,1947,1948,1949,1952,1956,1957,1958,1959,1960,1962,1964,1969,1970,1972,1973,1974,1979,1980,1981,1983,1985,1986,1987,1991,1992,1993,1994,1996,1997,1998,1999,2003,2005,2007,2010,2014,2015,2016,2018,2021,2023,2024,2025];
+        double[] values = [7940,520,1750,663,2910,2930,5590,772,712,2080,2140,690,1190,1060,740,4910,4610,736,6550,765,1610,3155,375,3370,2270,870,2800,602,561,594,865,703,1365,1467,2191,580,873,2122,1099,1123,3896,1520,242,419,2163,1072,342];
+        (int Start, int End)[] windows = [(1945,1946),(1950,1952),(1953,1956),(1961,1962),(1963,1964),(1965,1969),(1971,1972),(1975,1979),(1982,1983),(1984,1985),(1988,1991),(1995,1996),(2000,2003),(2004,2005),(2006,2007),(2008,2010),(2011,2014),(2017,2018),(2019,2021),(2022,2023)];
+        var broad = CreateSuppressedFrame();
+        var segmented = CreateSuppressedFrame();
+        for (int i = 0; i < years.Length; i++)
+        {
+            broad.ExactSeries.Add(new ExactData(years[i], values[i]));
+            segmented.ExactSeries.Add(new ExactData(years[i], values[i]));
+        }
+        broad.ThresholdSeries.Add(new BestFitThresholdData(1942, 2025, 1000));
+        foreach (var window in windows)
+            segmented.ThresholdSeries.Add(new BestFitThresholdData(window.Start, window.End, 1000));
+        broad.CalculatePlottingPositions();
+        segmented.CalculatePlottingPositions();
+        double pe = 27d / 84;
+        int aboveRank = 0, belowRank = 0;
+        foreach (var observation in broad.ExactSeries.OrderByDescending(d => d.Value))
+        {
+            double expected = observation.Value > 1000 ? pe * ++aboveRank / 28 : pe + (1 - pe) * ++belowRank / 21;
+            Assert.AreEqual(expected, observation.PlottingPosition, 1E-15, $"Year {observation.Index}");
+            Assert.AreEqual(observation.PlottingPosition, segmented.ExactSeries.Single(d => d.Index == observation.Index).PlottingPosition, 1E-15);
+        }
+        Assert.AreEqual(27, aboveRank);
+        Assert.AreEqual(20, belowRank);
+        AssertMagnitudeOrdered(broad);
+        AssertMagnitudeOrdered(segmented);
+    }
+
+    /// <summary>Preserves supplied positions when constructing directly from XML.</summary>
+    [TestMethod]
+    public void Test_PlottingPositions_DirectXml_PreservesSuppliedPositions()
+    {
+        var frame = CreateSuppressedFrame();
+        frame.ExactSeries.Add(new ExactData(0, 80, 0.123));
+        frame.UncertainSeries.Add(new UncertainData(3, new Normal(50, 2), 0.456));
+        frame.IntervalSeries.Add(new IntervalData(4, 190, 200, 210, 0.789));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100));
+        frame.ProcessThresholdSeries();
+        var xml = frame.ToXElement();
+        var restored = new BestFitDataFrame(xml);
+        Assert.AreEqual(xml.ToString(), restored.ToXElement().ToString());
+    }
+
+    /// <summary>Creates an inline fixture without automatic recalculation while adding rows.</summary>
+    /// <returns>A frame with all collection notifications suppressed.</returns>
+    private static BestFitDataFrame CreateSuppressedFrame()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        frame.UncertainSeries.SuppressCollectionChanged = true;
+        frame.IntervalSeries.SuppressCollectionChanged = true;
+        frame.ThresholdSeries.SuppressCollectionChanged = true;
+        return frame;
+    }
+
+    /// <summary>Serializes source attributes excluding derived plotting positions.</summary>
+    /// <param name="frame">The source frame.</param>
+    /// <returns>XML containing all other source and processed threshold attributes.</returns>
+    private static string SourceXml(BestFitDataFrame frame)
+    {
+        var xml = frame.ToXElement();
+        foreach (var attribute in xml.Descendants().Attributes("PlottingPosition").ToArray())
+            attribute.Remove();
+        return xml.ToString();
+    }
+
+    /// <summary>Checks finite, distinct, interior probabilities and descending-magnitude ordering.</summary>
+    /// <param name="frame">The frame to check.</param>
+    private static void AssertMagnitudeOrdered(BestFitDataFrame frame)
+    {
+        var observations = frame.ExactSeries.Concat(frame.UncertainSeries).Concat(frame.IntervalSeries)
+            .OrderByDescending(d => d.Value).ThenBy(d => d.PlottingPosition).ToArray();
+        Assert.IsTrue(observations.All(d => double.IsFinite(d.PlottingPosition) && d.PlottingPosition > 0 && d.PlottingPosition < 1));
+        for (int i = 1; i < observations.Length; i++)
+            Assert.IsTrue(observations[i - 1].PlottingPosition < observations[i].PlottingPosition,
+                $"Values {observations[i - 1].Value}, {observations[i].Value} have reversed or duplicate probabilities.");
     }
 }

@@ -303,18 +303,19 @@ public class GeneralLinearFunctionTests
         model.PredictWithCovariates(new double[] { 5.0 });
     }
 
-    /// <summary>Verifies that predict with covariates returns intercept when null or empty.</summary>
+    /// <summary>
+    /// Verifies that a covariate trend evaluated with null or empty covariates throws instead of
+    /// returning the intercept (TR-052): the fitted trend cannot be evaluated without its covariates.
+    /// </summary>
     [TestMethod]
-    public void Test_PredictWithCovariates_NullOrEmpty_ReturnsIntercept()
+    public void Test_PredictWithCovariates_NullOrEmpty_Throws()
     {
         double[,] covariates = new double[,] { { 1.0 } }; // 1 covariate defined
         var model = new GeneralLinearFunction("Location", covariates);
         model.Parameters[0].Value = 100.0;
 
-        // Null or empty returns intercept (design decision to be lenient)
-        // Note: This behavior may throw in strict mode
-        double result = model.PredictWithCovariates(null);
-        Assert.AreEqual(100.0, result, 1e-10);
+        Assert.ThrowsException<ArgumentException>(() => model.PredictWithCovariates(null));
+        Assert.ThrowsException<ArgumentException>(() => model.PredictWithCovariates(Array.Empty<double>()));
     }
 
     /// <summary>Verifies that predict with covariates spatial prediction.</summary>

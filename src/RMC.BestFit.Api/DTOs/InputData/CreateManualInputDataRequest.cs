@@ -11,6 +11,14 @@ namespace RMC.BestFit.Api.DTOs
     public class CreateManualInputDataRequest
     {
         /// <summary>
+        /// Runs the model's Multiple Grubbs-Beck Test after populating all observations.
+        /// Defaults to false. Requires at least ten exact observations and cannot be combined
+        /// with an explicit low-outlier threshold or preflagged exact observations.
+        /// </summary>
+        [JsonPropertyName("useMultipleGrubbsBeckTest")]
+        public bool UseMultipleGrubbsBeckTest { get; set; }
+
+        /// <summary>
         /// Optional display name for the resource. Defaults to "Manual input data".
         /// </summary>
         [JsonPropertyName("name")]
@@ -62,8 +70,21 @@ namespace RMC.BestFit.Api.DTOs
         public double? PlottingParameter { get; set; }
 
         /// <summary>
-        /// Optional low-outlier threshold: exact observations at or below this magnitude are
-        /// flagged as low outliers and censored during fitting.
+        /// Optional manual low-outlier threshold, applied with
+        /// <see cref="RMC.BestFit.Models.DataFrame.SetLowOutliersFromThreshold"/> after the exact
+        /// series is populated: every exact observation strictly below the threshold is flagged as
+        /// a low outlier, and every observation at or above it is unflagged, regardless of any
+        /// <see cref="ExactObservationDto.IsLowOutlier"/> supplied on it. Requires at least ten
+        /// exact observations and a threshold that censors no more than half the record (above the
+        /// sorted upper-middle value); violating either is a 400 with the data frame's message and
+        /// stores nothing. An observation preflagged <see cref="ExactObservationDto.IsLowOutlier"/>
+        /// = true with a value at or above this threshold is rejected as contradictory before
+        /// anything is built - a preflag on a value already below the threshold agrees and is
+        /// accepted. Cannot be combined with <see cref="UseMultipleGrubbsBeckTest"/>. Required
+        /// whenever any exact observation is preflagged <see cref="ExactObservationDto.IsLowOutlier"/>
+        /// = true: omitting this while a preflag is present is rejected, because the flags would
+        /// otherwise be stored with no censoring threshold to define them. Omitting this is
+        /// unaffected when no observation is preflagged.
         /// </summary>
         [JsonPropertyName("lowOutlierThreshold")]
         public double? LowOutlierThreshold { get; set; }

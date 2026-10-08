@@ -77,7 +77,7 @@ namespace RMC_BestFit
                     oldElement.PropertyChanged -= thisControl.Element_PropertyChanged;
                     thisControl.FrequencyPlotHost.Content = null;
                     thisControl.FrequencyPlotToolbar.Plot = null;
-                    // NOTE: PropertiesCalled is wired in XAML — no programmatic -= needed.
+                    // NOTE: PropertiesCalled is wired in XAML â€” no programmatic -= needed.
                 }
             }
 
@@ -90,7 +90,7 @@ namespace RMC_BestFit
 
             // Attach plots, wire toolbars, bind axis titles, and wire Bayesian sub-control
             // plots inside a bridge-suspension block. PropertiesCalled / PlotPropertiesCalled
-            // are wired in XAML — no programmatic += needed.
+            // are wired in XAML â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.FrequencyPlotHost.Content = newElement.FrequencyPlot;
@@ -249,7 +249,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
@@ -851,13 +851,29 @@ namespace RMC_BestFit
 
                 var min = Element.MixtureDistribution.Mixture.Minimum;
                 var max = Element.MixtureDistribution.Mixture.Maximum;
-
                 summaryStats.Add(new SummaryStatistic("Minimum", min < -1E12 ? double.NegativeInfinity : min));
                 summaryStats.Add(new SummaryStatistic("Maximum", max > 1E12 ? double.PositiveInfinity : max));
-                summaryStats.Add(new SummaryStatistic("Mean", Element.MixtureDistribution.Mixture.Mean));
-                summaryStats.Add(new SummaryStatistic("Std Dev", Element.MixtureDistribution.Mixture.StandardDeviation));
-                summaryStats.Add(new SummaryStatistic("Skewness", Element.MixtureDistribution.Mixture.Skewness));
-                summaryStats.Add(new SummaryStatistic("Kurtosis", Element.MixtureDistribution.Mixture.Kurtosis));
+
+                try
+                {
+
+                    var moments = Element.MixtureDistribution.Mixture.CentralMoments(1E-6);
+                    summaryStats.Add(new SummaryStatistic("Mean", moments[0]));
+                    summaryStats.Add(new SummaryStatistic("Std Dev", moments[1]));
+                    summaryStats.Add(new SummaryStatistic("Skewness", moments[2]));
+                    summaryStats.Add(new SummaryStatistic("Kurtosis", moments[3]));
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception and continue with NaN values for summary statistics
+                    Console.WriteLine($"Error computing summary statistics: {ex.Message}");
+
+                    summaryStats.Add(new SummaryStatistic("Mean", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Std Dev", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Skewness", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Kurtosis", double.NaN));
+                }
+
                 summaryStats.Add(new SummaryStatistic("AIC", Element.AnalysisResults.AIC));
                 summaryStats.Add(new SummaryStatistic("BIC", Element.AnalysisResults.BIC));
                 summaryStats.Add(new SummaryStatistic("DIC", Element.AnalysisResults.DIC));

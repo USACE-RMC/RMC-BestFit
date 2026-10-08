@@ -1,0 +1,107 @@
+{
+  "metadata": {
+    "artifact_id": "TS-PHASE5-ARIMAX-MLE-001",
+    "finding": "PHASE5-RECOVERY-ARIMAX-MLE",
+    "generator": "verification/r/time-series/generate_phase5_arimax_mle_oracle.R",
+    "generator_sha256": "f1feb2f94691f7b8cac8f7587f10b2a145a42de336a526c6e2d1cba1e87118fd",
+    "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
+    "input_fixture_sha256": "efc4c3eeaef40ab162671f2cccf34e19cfe19650f46cc8711edd956c2f39ed9c",
+    "source_commit": "503fd9cddce02d40d0bb3206a0db68238528c550",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "jsonlite_version": "2.0.0",
+    "digest_version": "0.6.39",
+    "generated_utc": "2026-09-01 17:16:06 UTC",
+    "tolerances": {
+      "log_likelihood_absolute": 1e-05,
+      "posterior_log_likelihood_absolute": 1e-05,
+      "deterministic_recurrence_absolute": 1e-12
+    },
+    "optimizer_acceptance": {
+      "method": "joint-likelihood-ratio",
+      "confidence_level": 0.95,
+      "degrees_of_freedom": 4,
+      "maximum_two_log_likelihood_difference": 9.48772903678115,
+      "rationale": "Wilks joint profile-likelihood region for optimizer parity and generating-point recovery; no coordinate-wise optimizer delta."
+    }
+  },
+  "fixture": {
+    "seed": 51038,
+    "burn_in": 110,
+    "raw_sample_size": 1000,
+    "difference_count": 999,
+    "conditional_likelihood_count": 998,
+    "transform": "None",
+    "differencing_order": 1,
+    "ar_order": 1,
+    "ma_order": 0,
+    "covariate_lag_order": 0,
+    "include_intercept": true,
+    "truth": {
+      "intercept": 0.25,
+      "beta": 1.5,
+      "phi": 0.4,
+      "sigma": 0.5
+    }
+  },
+  "default_parameter_state": {
+    "intercept": 0.242709512787434,
+    "beta": 0,
+    "phi": 0,
+    "sigma": 1.3384085904249,
+    "lower": [0.01, -10, -2, 2.22044604925031e-16],
+    "upper": [10, 10, 2, 100]
+  },
+  "conditional_mle": {
+    "intercept": 0.236896678521822,
+    "beta": 1.54037088921619,
+    "phi": 0.364772089115024,
+    "sigma": 0.505264570723146,
+    "data_log_likelihood": -734.792917833545,
+    "start_default_function_evaluations": 17,
+    "start_default_convergence": 0,
+    "start_truth_convergence": 0
+  },
+  "conditional_posterior_map": {
+    "intercept": 0.236896678521822,
+    "beta": 1.54037088921619,
+    "phi": 0.364772089115024,
+    "sigma": 0.505011622236343,
+    "data_log_likelihood": -734.793168167337,
+    "prior_log_likelihood": -10.6056075776802,
+    "posterior_log_likelihood": -745.398775745017,
+    "intercept_prior": "Uniform(0.01,10)",
+    "covariate_prior": "Uniform(-10,10)",
+    "ar_prior": "Uniform(-2,2)",
+    "scale_prior": "Uniform(.Machine$double.eps,100)",
+    "jeffreys_scale_prior": true
+  },
+  "same_point_truth": {
+    "intercept": 0.25,
+    "beta": 1.5,
+    "phi": 0.4,
+    "sigma": 0.5,
+    "data_log_likelihood": -736.59510901955
+  },
+  "diagnosis": {
+    "r_nelder_mead_from_default": {
+      "parameters": [0.236896681543286, 1.54037091029567, 0.364772064691937],
+      "convergence": 0,
+      "function_evaluations": 284
+    },
+    "r_nelder_mead_from_truth": {
+      "parameters": [0.236896703303593, 1.54037095540235, 0.364772043257778],
+      "convergence": 0,
+      "function_evaluations": 144
+    },
+    "r_full_nelder_mead_from_default": {
+      "parameters": [0.236896646746597, 1.54037084838498, 0.364772016359127, 0.505264565309248],
+      "convergence": 0,
+      "function_evaluations": 539
+    },
+    "r_full_nelder_mead_from_truth": {
+      "parameters": [0.236896674486922, 1.54037090978781, 0.364772089340332, 0.505264555605168],
+      "convergence": 0,
+      "function_evaluations": 389
+    }
+  }
+}

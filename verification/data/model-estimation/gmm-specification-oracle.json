@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "artifact_id": "ME-GMM-SPECIFICATION-001",
+    "generated_utc": "2026-07-27",
+    "command": "Rscript -e \"renv::load(project='verification/r'); source('verification/r/model-estimation/generate_gmm_specification_oracle.R')\"",
+    "generator": "verification/r/model-estimation/generate_gmm_specification_oracle.R",
+    "generator_sha256": "ff79e8f0f5b61d0c0d75e4ceb8d5654f6145b6ea6f3b198f1f98e91e456c926c",
+    "bestfit_source_commit": "adb49200e87004db499d668a8163af9e8dec088c",
+    "numerics_source_commit": "5c693a85ad0382edece66e10c0004a85ef065c05",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "gmm_version": "1.9.1",
+    "jsonlite_version": "2.0.0",
+    "fixture": "One parameter and two moment restrictions: g1_i=x_i-theta and g2_i=z_i*(x_i-theta).",
+    "parameter_absolute_tolerance": 1e-05,
+    "objective_absolute_tolerance": 1e-08,
+    "covariance_absolute_tolerance": 1e-08,
+    "j_statistic_absolute_tolerance": 1e-07,
+    "p_value_absolute_tolerance": 1e-08,
+    "tolerance_rationale": "The deterministic linear fixture has an analytical constant Jacobian. The parameter tolerance permits minor optimizer termination differences; the objective and covariance use 1e-8 absolute tolerances, and J=n*Q propagates the objective tolerance by the deterministic sample size n=10 to 1e-7."
+  },
+  "data": [
+    {
+      "x": 0.2,
+      "z": 0.5
+    },
+    {
+      "x": 0.5,
+      "z": 1
+    },
+    {
+      "x": 0.7,
+      "z": 1.5
+    },
+    {
+      "x": 1.1,
+      "z": 2
+    },
+    {
+      "x": 1.4,
+      "z": 2.5
+    },
+    {
+      "x": 1.8,
+      "z": 3
+    },
+    {
+      "x": 2.1,
+      "z": 3.5
+    },
+    {
+      "x": 2.6,
+      "z": 4
+    },
+    {
+      "x": 3.2,
+      "z": 4.5
+    },
+    {
+      "x": 4,
+      "z": 5
+    }
+  ],
+  "initial_parameter": 1.5,
+  "formulas": {
+    "moments": "g1_i=x_i-theta; g2_i=z_i*(x_i-theta)",
+    "objective": "Q(theta)=gBar(theta)'*W*gBar(theta)",
+    "hansen_j": "For the efficient two-step fit, J=n*Q(thetaHat)",
+    "fixed_weight_specification": "R gmm::specTest robust statistic; not n*Q for an arbitrary fixed weight",
+    "covariance": "Sandwich covariance reported by stats::vcov(gmm fit)",
+    "degrees_of_freedom": "q-p=1"
+  },
+  "fixed_weight": {
+    "parameter": 2.28992700729929,
+    "objective": 0.317956204379562,
+    "mean_moments": [-0.529927007299293, 0.192700729926944],
+    "objective_weighting_matrix": [
+      [1, 0],
+      [0, 1]
+    ],
+    "covariance_weighting_matrix": [
+      [1, 0],
+      [0, 1]
+    ],
+    "covariance": [
+      [0.14565239213809]
+    ],
+    "standard_error": 0.381644326746894,
+    "degrees_of_freedom": 1,
+    "r_specification_statistic": 11.0187881164159,
+    "r_specification_p_value": 0.000901930179064623
+  },
+  "two_step": {
+    "parameter": 1.935484547505,
+    "objective": 1.00755078518454,
+    "mean_moments": [-0.175484547505002, 1.16741749436124],
+    "objective_weighting_matrix": [
+      [3.17461881126257, -0.961228325312716],
+      [-0.961228325312716, 0.378575894162961]
+    ],
+    "covariance_weighting_matrix": [
+      [4.45793416301057, -1.25455641761399],
+      [-1.25455641761399, 0.422647458232094]
+    ],
+    "covariance": [
+      [0.132600447299456]
+    ],
+    "standard_error": 0.364143443301477,
+    "degrees_of_freedom": 1,
+    "j_statistic": 10.0755078518454,
+    "p_value": 0.00150253202968641
+  },
+  "interpretation": "A positive-definite fixed weighting matrix is valid for overidentified GMM estimation. The chi-square Hansen J interpretation requires an asymptotically efficient/consistent weight such as the second-step inverse moment covariance; a generic fixed-weight objective is recorded for fitting parity but should not automatically be labeled Hansen J.",
+  "status": "Independent R oracle"
+}

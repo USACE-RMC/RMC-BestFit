@@ -36,25 +36,47 @@ namespace RMC.BestFit.Models.SpatialExtremes
     {
         private double[,] _coordinates;
         private CorrelationFunctionType _correlationFunctionType;
+        private readonly SpatialDistanceMetric _distanceMetric;
         private ICorrelationModel _correlationFunction = null!;
         private CachedMultivariateNormal _mvn;
         private double[,] _distanceMatrix = null!;
 
         /// <summary>
-        /// Creates a new spatial regression errors model.
+        /// Creates a new spatial regression errors model on projected (X, Y) coordinates with the Cartesian
+        /// distance metric.
         /// </summary>
-        /// <param name="coordinates">The coordinates (X, Y) or (Lat, Lon) of the sites.</param>
+        /// <param name="coordinates">The projected coordinates (X, Y) of the sites in a common linear unit.</param>
         /// <param name="correlationType">The spatial correlation function type.</param>
         /// <param name="maxError">Maximum error bound for initialization. Default = 10.</param>
         public SpatialRegressionErrors(double[,] coordinates, CorrelationFunctionType correlationType, double maxError = 10)
+            : this(coordinates, correlationType, maxError, SpatialDistanceMetric.Cartesian)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new spatial regression errors model with an explicit distance metric.
+        /// </summary>
+        /// <param name="coordinates">The site coordinates [sites × 2]: projected (X, Y) in a common linear
+        /// unit for <see cref="SpatialDistanceMetric.Cartesian"/>, or (latitude, longitude) in decimal
+        /// degrees for <see cref="SpatialDistanceMetric.Geodesic"/>.</param>
+        /// <param name="correlationType">The spatial correlation function type.</param>
+        /// <param name="maxError">Maximum error bound for initialization.</param>
+        /// <param name="distanceMetric">The distance metric used to build the site separations, the kriging
+        /// distances, and the inverse-distance fallback.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="coordinates"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the coordinates are not an n×2 array, are not finite, or
+        /// are outside the latitude/longitude ranges for the geodesic metric.</exception>
+        public SpatialRegressionErrors(double[,] coordinates, CorrelationFunctionType correlationType, double maxError, SpatialDistanceMetric distanceMetric)
         {
             if (coordinates == null)
                 throw new ArgumentNullException(nameof(coordinates));
             if (coordinates.GetLength(1) != 2)
-                throw new ArgumentException("Coordinates must be n×2 array (X,Y) or (Lat,Lon).", nameof(coordinates));
+                throw new ArgumentException("Coordinates must be an n×2 array: (X, Y) for the Cartesian metric or (latitude, longitude) for the geodesic metric.", nameof(coordinates));
+            SpatialDistances.ValidateCoordinates(coordinates, distanceMetric, nameof(coordinates));
 
             _coordinates = coordinates;
             _correlationFunctionType = correlationType;
+            _distanceMetric = distanceMetric;
 
             // Initialize correlation function
             if (_correlationFunctionType == CorrelationFunctionType.Exponential)
@@ -76,6 +98,11 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// Gets the number of sites in the spatial model.
         /// </summary>
         public int Sites => _coordinates.GetLength(0);
+
+        /// <summary>
+        /// Gets the distance metric that builds the site separations and the prediction distances.
+        /// </summary>
+        public SpatialDistanceMetric DistanceMetric => _distanceMetric;
 
         /// <summary>
         /// Gets the spatial correlation function.
@@ -113,7 +140,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
                     }
                     else
                     {
-                        _distanceMatrix[i, j] = Tools.Distance(
+                        _distanceMatrix[i, j] = SpatialDistances.Distance(
+                            _distanceMetric,
                             _coordinates[i, 0], _coordinates[i, 1],
                             _coordinates[j, 0], _coordinates[j, 1]);
                     }
@@ -256,7 +284,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <summary>
         /// Predicts the error at an ungauged location using simple kriging (conditional Gaussian process).
         /// </summary>
-        /// <param name="newCoordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
+        /// <param name="newCoordinates">The coordinates of the ungauged location in the metric of this model: [X, Y]
+        /// for the Cartesian metric or [latitude, longitude] in decimal degrees for the geodesic metric.</param>
         /// <returns>A tuple containing (predicted mean, prediction variance).</returns>
         /// <remarks>
         /// <para>
@@ -290,7 +319,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
             var distToNew = new double[Sites];
             for (int i = 0; i < Sites; i++)
             {
-                distToNew[i] = Tools.Distance(
+                distToNew[i] = SpatialDistances.Distance(
+                    _distanceMetric,
                     newCoordinates[0], newCoordinates[1],
                     _coordinates[i, 0], _coordinates[i, 1]);
             }
@@ -362,7 +392,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <summary>
         /// Predicts the error at an ungauged location using inverse-distance weighting.
         /// </summary>
-        /// <param name="newCoordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
+        /// <param name="newCoordinates">The coordinates of the ungauged location in the metric of this model: [X, Y]
+        /// for the Cartesian metric or [latitude, longitude] in decimal degrees for the geodesic metric.</param>
         /// <returns>The predicted error value.</returns>
         /// <remarks>
         /// This is a simpler alternative to kriging that doesn't require matrix inversion.
@@ -380,7 +411,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
 
             for (int i = 0; i < Sites; i++)
             {
-                double dist = Tools.Distance(
+                double dist = SpatialDistances.Distance(
+                    _distanceMetric,
                     newCoordinates[0], newCoordinates[1],
                     _coordinates[i, 0], _coordinates[i, 1]);
                 dist = Math.Max(dist, 1e-10); // Avoid division by zero
@@ -535,7 +567,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
         public SpatialRegressionErrors Clone()
         {
             var clone = new SpatialRegressionErrors(_coordinates, _correlationFunctionType,
-                Parameters[0].UpperBound);
+                Parameters[0].UpperBound, _distanceMetric);
 
             // Copy all parameter values and bounds
             for (int i = 0; i < Parameters.Count; i++)

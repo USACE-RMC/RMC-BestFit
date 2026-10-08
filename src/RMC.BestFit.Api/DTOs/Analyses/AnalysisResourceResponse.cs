@@ -12,5 +12,9 @@ namespace RMC.BestFit.Api.DTOs
         /// </summary>
         [JsonPropertyName("analysis")]
         public AnalysisSummaryDto? Analysis { get; set; }
+
+        /// <summary>Effective stationary univariate or B17C configuration; omitted for other analysis kinds.</summary>
+        [JsonPropertyName("configuration")]
+        public FrequencyConfigurationDto? Configuration { get; set; }
     }
 }

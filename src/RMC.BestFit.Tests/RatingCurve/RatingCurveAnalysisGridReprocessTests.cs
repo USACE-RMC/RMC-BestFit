@@ -5,7 +5,7 @@ using RMC.BestFit.Estimation;
 namespace RMC.BestFit.Tests.RatingCurve;
 
 /// <summary>
-/// Phase 3a unit tests for the <c>RatingCurveAnalysis</c> grid setters.
+/// Unit tests for the <c>RatingCurveAnalysis</c> grid setters.
 /// Verifies that <c>MinStage</c>, <c>MaxStage</c>, and <c>StageBins</c> changes
 /// reprocess the uncertainty grid without wiping the MCMC fit. These are
 /// programmatic event-wiring tests — no MCMC chain is run. Chain-running parity
@@ -15,8 +15,8 @@ namespace RMC.BestFit.Tests.RatingCurve;
 /// <para>
 /// The contract: changing the evaluation grid on an estimated analysis preserves
 /// <c>BayesianAnalysis.Results</c> (the MCMC chain output) and only reprocesses
-/// <c>AnalysisResults</c>. Before Phase 3a the setter called <c>ClearResults()</c>,
-/// forcing the user to rerun chains just to widen the grid. After Phase 3a it
+/// <c>AnalysisResults</c>. The setters do not call <c>ClearResults()</c>, which would
+/// force the user to rerun chains just to widen the grid; instead each
 /// fires-and-forgets <c>CreateUncertaintyAnalysisResultsAsync</c> at the new grid.
 /// </para>
 /// </remarks>

@@ -202,7 +202,8 @@ namespace RMC.BestFit.Diagnostics
 
                     // Clone model and set parameters
                     var modelClone = _model.Clone();
-                    modelClone.SetParameterValues(posteriorParams.Values);
+                    double[] modelParameters = GetModelParameterValues(modelClone, posteriorParams.Values);
+                    modelClone.SetParameterValues(modelParameters);
 
                     // Generate replicate data using the model's ISimulatable interface
                     var simulatable = (ISimulatable<double[]>)modelClone;
@@ -222,6 +223,27 @@ namespace RMC.BestFit.Diagnostics
 
             // Filter out null entries (failed replicates)
             return result.Where(r => r != null).ToList();
+        }
+
+        /// <summary>
+        /// Converts stored posterior coordinates to the public model parameter vector.
+        /// </summary>
+        /// <param name="model">The cloned fitted model.</param>
+        /// <param name="storedParameters">The stored posterior coordinates.</param>
+        /// <returns>The public model parameter vector.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when stored mixture coordinates are invalid.</exception>
+        private static double[] GetModelParameterValues(IModel model, double[] storedParameters)
+        {
+            if (model is not MixtureModel mixtureModel)
+                return storedParameters;
+
+            if (!mixtureModel.TryGetPhysicalParameters(storedParameters, out double[] physicalParameters))
+            {
+                throw new InvalidOperationException(
+                    "The stored mixture result does not match the K-1 sampled or full-K public parameterization.");
+            }
+
+            return physicalParameters;
         }
 
         /// <summary>

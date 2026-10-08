@@ -1,0 +1,479 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "98785e3f8b7de3da3102a61d5c2cd86c37af7080507dd659f3caef727e838db7",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "6886eb92b275aa2e8ccc9d3eb577eb572845ffe3f6be0e796e1b41776fb33fea",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\1-time-series-data\\6-manual-entry\\manual-entry-example.bestfit",
+  "element": "Airline Passengers",
+  "plotId": "time_series_data.seasonality",
+  "variant": "default",
+  "variantSelection": "app control defaults and saved element data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/TimeSeriesData/TimeSeriesElement.cs::CreateDefaultSeasonalityPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/TimeSeriesData/TimeSeries/TimeSeriesControl.xaml.cs::UpdateSeasonalityPlot",
+  "title": "Seasonality",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "Passengers (thousands)",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 104.782,
+      "ActualMaximum": 586.0179999999999,
+      "labels": null
+    },
+    {
+      "type": "DateTimeAxis",
+      "Key": "Xaxis",
+      "Title": "Month",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 43827.65,
+      "ActualMaximum": 44169.35,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "ConfidenceInterval",
+      "type": "AreaSeries",
+      "Title": "90% Confidence Interval",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 43831,
+          "Y": 113.65
+        },
+        {
+          "X": 43862,
+          "Y": 122.4
+        },
+        {
+          "X": 43891,
+          "Y": 136.95
+        },
+        {
+          "X": 43922,
+          "Y": 132.3
+        },
+        {
+          "X": 43952,
+          "Y": 123.2
+        },
+        {
+          "X": 43983,
+          "Y": 142.7
+        },
+        {
+          "X": 44013,
+          "Y": 160.1
+        },
+        {
+          "X": 44044,
+          "Y": 160.1
+        },
+        {
+          "X": 44075,
+          "Y": 148.1
+        },
+        {
+          "X": 44105,
+          "Y": 126.7
+        },
+        {
+          "X": 44136,
+          "Y": 109.5
+        },
+        {
+          "X": 44166,
+          "Y": 130.1
+        }
+      ],
+      "points2": [
+        {
+          "X": 43831,
+          "Y": 385.65
+        },
+        {
+          "X": 43862,
+          "Y": 364.04999999999995
+        },
+        {
+          "X": 43891,
+          "Y": 411.84999999999997
+        },
+        {
+          "X": 43922,
+          "Y": 425.24999999999994
+        },
+        {
+          "X": 43952,
+          "Y": 443.4
+        },
+        {
+          "X": 43983,
+          "Y": 500.34999999999997
+        },
+        {
+          "X": 44013,
+          "Y": 581.3
+        },
+        {
+          "X": 44044,
+          "Y": 580.15
+        },
+        {
+          "X": 44075,
+          "Y": 483.24999999999994
+        },
+        {
+          "X": 44105,
+          "Y": 431.29999999999995
+        },
+        {
+          "X": 44136,
+          "Y": 374.59999999999997
+        },
+        {
+          "X": 44166,
+          "Y": 417.15
+        }
+      ],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "Color": "#ff353b7a",
+        "Fill": "#4a688caf",
+        "MarkerFill": "#00ffffff",
+        "MarkerStroke": "#00000001",
+        "MarkerType": "None",
+        "MarkerSize": 3,
+        "LineStyle": "Automatic",
+        "StrokeThickness": 1
+      }
+    },
+    {
+      "name": "InnerConfidenceInterval",
+      "type": "AreaSeries",
+      "Title": "50% Confidence Interval",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 43831,
+          "Y": 164.5
+        },
+        {
+          "X": 43862,
+          "Y": 172.5
+        },
+        {
+          "X": 43891,
+          "Y": 189.25
+        },
+        {
+          "X": 43922,
+          "Y": 176.5
+        },
+        {
+          "X": 43952,
+          "Y": 180.25
+        },
+        {
+          "X": 43983,
+          "Y": 208
+        },
+        {
+          "X": 44013,
+          "Y": 222.25
+        },
+        {
+          "X": 44044,
+          "Y": 231.25
+        },
+        {
+          "X": 44075,
+          "Y": 202.75
+        },
+        {
+          "X": 44105,
+          "Y": 183.75
+        },
+        {
+          "X": 44136,
+          "Y": 165.5
+        },
+        {
+          "X": 44166,
+          "Y": 187
+        }
+      ],
+      "points2": [
+        {
+          "X": 43831,
+          "Y": 321.25
+        },
+        {
+          "X": 43862,
+          "Y": 305.25
+        },
+        {
+          "X": 43891,
+          "Y": 357.5
+        },
+        {
+          "X": 43922,
+          "Y": 348
+        },
+        {
+          "X": 43952,
+          "Y": 357
+        },
+        {
+          "X": 43983,
+          "Y": 425.25
+        },
+        {
+          "X": 44013,
+          "Y": 471.5
+        },
+        {
+          "X": 44044,
+          "Y": 476.5
+        },
+        {
+          "X": 44075,
+          "Y": 404
+        },
+        {
+          "X": 44105,
+          "Y": 350
+        },
+        {
+          "X": 44136,
+          "Y": 306.25
+        },
+        {
+          "X": 44166,
+          "Y": 336.25
+        }
+      ],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "Color": "#ff353b7a",
+        "Fill": "#7529d372",
+        "MarkerFill": "#00ffffff",
+        "MarkerStroke": "#00000001",
+        "MarkerType": "None",
+        "MarkerSize": 3,
+        "LineStyle": "Automatic",
+        "StrokeThickness": 1
+      }
+    },
+    {
+      "name": "MedianLine",
+      "type": "LineSeries",
+      "Title": "Median",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 43831,
+          "Y": 223
+        },
+        {
+          "X": 43862,
+          "Y": 214.5
+        },
+        {
+          "X": 43891,
+          "Y": 251.5
+        },
+        {
+          "X": 43922,
+          "Y": 252
+        },
+        {
+          "X": 43952,
+          "Y": 252
+        },
+        {
+          "X": 43983,
+          "Y": 289.5
+        },
+        {
+          "X": 44013,
+          "Y": 333
+        },
+        {
+          "X": 44044,
+          "Y": 320
+        },
+        {
+          "X": 44075,
+          "Y": 285.5
+        },
+        {
+          "X": 44105,
+          "Y": 251.5
+        },
+        {
+          "X": 44136,
+          "Y": 220
+        },
+        {
+          "X": 44166,
+          "Y": 253.5
+        }
+      ],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "Color": "#ff0000ff",
+        "MarkerFill": "#00ffffff",
+        "MarkerStroke": "#00000001",
+        "MarkerType": "None",
+        "MarkerSize": 3,
+        "LineStyle": "Solid",
+        "StrokeThickness": 2
+      }
+    },
+    {
+      "name": "MeanLine",
+      "type": "LineSeries",
+      "Title": "Mean",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 43831,
+          "Y": 241.75
+        },
+        {
+          "X": 43862,
+          "Y": 235
+        },
+        {
+          "X": 43891,
+          "Y": 270.1666666666667
+        },
+        {
+          "X": 43922,
+          "Y": 267.0833333333333
+        },
+        {
+          "X": 43952,
+          "Y": 271.8333333333333
+        },
+        {
+          "X": 43983,
+          "Y": 311.6666666666667
+        },
+        {
+          "X": 44013,
+          "Y": 351.3333333333333
+        },
+        {
+          "X": 44044,
+          "Y": 351.0833333333333
+        },
+        {
+          "X": 44075,
+          "Y": 302.4166666666667
+        },
+        {
+          "X": 44105,
+          "Y": 266.5833333333333
+        },
+        {
+          "X": 44136,
+          "Y": 232.83333333333334
+        },
+        {
+          "X": 44166,
+          "Y": 261.8333333333333
+        }
+      ],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "Color": "#ff0000ff",
+        "MarkerFill": "#00ffffff",
+        "MarkerStroke": "#00000001",
+        "MarkerType": "None",
+        "MarkerSize": 3,
+        "LineStyle": "DashDot",
+        "StrokeThickness": 2
+      }
+    },
+    {
+      "name": "MinLine",
+      "type": "LineSeries",
+      "Title": "Minimum",
+      "IsVisible": false,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "Color": "#ff000000",
+        "MarkerFill": "#00ffffff",
+        "MarkerStroke": "#00000001",
+        "MarkerType": "None",
+        "MarkerSize": 3,
+        "LineStyle": "Dot",
+        "StrokeThickness": 2
+      }
+    },
+    {
+      "name": "MaxLine",
+      "type": "LineSeries",
+      "Title": "Maximum",
+      "IsVisible": false,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "Color": "#ff000000",
+        "MarkerFill": "#00ffffff",
+        "MarkerStroke": "#00000001",
+        "MarkerType": "None",
+        "MarkerSize": 3,
+        "LineStyle": "Dot",
+        "StrokeThickness": 2
+      }
+    }
+  ],
+  "annotations": []
+}

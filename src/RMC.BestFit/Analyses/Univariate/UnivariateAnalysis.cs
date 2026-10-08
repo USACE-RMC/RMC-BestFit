@@ -316,15 +316,15 @@ namespace RMC.BestFit.Analyses
         /// Routes each notification to one of three branches per the canonical
         /// property-change classification:
         /// <list type="bullet">
-        /// <item><description><b>Clear results</b> — structurally destructive changes
+        /// <item><description><b>Clear results</b> â€” structurally destructive changes
         /// (data, distribution, parameters, trend models, prior toggles) call
         /// <see cref="ClearResults"/> to invalidate the fit.</description></item>
-        /// <item><description><b>Re-process if estimated</b> — <c>ParameterTimeIndex</c>
+        /// <item><description><b>Re-process if estimated</b> â€” <c>ParameterTimeIndex</c>
         /// re-runs <see cref="CreateFrequencyAnalysisResultsAsync"/> against the existing
         /// MCMC fit; <c>Alpha</c> re-runs <see cref="CreateChronologyResultsAsync"/>.
         /// Both are post-fit selectors of which time-slice / exceedance probability the
-        /// displayed curves are evaluated at — cheap to recompute, no MCMC re-run needed.</description></item>
-        /// <item><description><b>Propagate only</b> — every other notification flows through
+        /// displayed curves are evaluated at â€” cheap to recompute, no MCMC re-run needed.</description></item>
+        /// <item><description><b>Propagate only</b> â€” every other notification flows through
         /// <see cref="ModelBase.RaisePropertyChange"/> for UI binding.</description></item>
         /// </list>
         /// </summary>
@@ -371,7 +371,7 @@ namespace RMC.BestFit.Analyses
                     // or past the data's last index. The Chronology plot always covers the full
                     // period of record; when TimeIndex > maxIndex it extends a forecast tail to
                     // the new index. So re-process Chronology only when at least one of (old, new)
-                    // is past the data's last index — i.e. the forecast tail just appeared,
+                    // is past the data's last index â€” i.e. the forecast tail just appeared,
                     // disappeared, or changed extent. When both old and new are inside the POR,
                     // the chronology output is unchanged and a re-process would be wasted work.
                     int? maxIndex = TryGetMaxDataIndex();
@@ -460,13 +460,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results),
         /// <see cref="ChronologyAnalysisResults"/>, and <c>IsEstimated</c> intact.
-        /// Called when ordinates become invalid — the fit survives and can be reused once
+        /// Called when ordinates become invalid â€” the fit survives and can be reused once
         /// valid ordinates are restored.
         /// </remarks>
         public void ClearFrequencyAnalysisResults()
@@ -501,7 +501,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults â€”
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -635,9 +635,13 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// This method recalculates the mode curve and goodness-of-fit metrics (AIC, BIC, DIC, RMSE)
-        /// based on either the posterior mean or MAP estimate.
+        /// based on either the posterior mean or MAP estimate. For a nonstationary model it also
+        /// replaces the chronology's point-estimate curve and parent distribution in place, keeping its
+        /// mean and intervals, and raises <see cref="ChronologyAnalysisResults"/>; when the curve's
+        /// extent no longer matches those intervals, the chronology is left for its own reprocess.
         /// </para>
         /// </remarks>
+        /// <returns>A task that completes when the point-estimate results have been refreshed.</returns>
         public async Task UpdatePointEstimateResultsAsync()
         {
             if (BayesianAnalysis == null || BayesianAnalysis.IsEstimated == false || 
@@ -646,6 +650,8 @@ namespace RMC.BestFit.Analyses
                 return;
             }
 
+            var chronologyResults = UnivariateDistribution.IsNonstationary ? ChronologyAnalysisResults : null;
+            bool chronologyRefreshed = false;
             await Task.Run(() =>
             {
                 // Set the point estimator
@@ -663,13 +669,24 @@ namespace RMC.BestFit.Analyses
                 for (int i = 0; i < ProbabilityOrdinates.Count; i++)
                     AnalysisResults.ModeCurve[i] = UnivariateDistribution.Distribution.InverseCDF(1 - ProbabilityOrdinates[i]);
 
-                // Information criteria. AIC/BIC are computed at the MAP estimate
-                // using the full log-likelihood (data + prior) — with uniform priors
-                // this matches the conventional MLE-based AIC/BIC; with informative
-                // priors the metric reflects the prior contribution as well, which
-                // is intentional in a Bayesian-first framework where model
-                // comparison includes the priors.
-                var logL = UnivariateDistribution.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // Retain posterior uncertainty while refreshing the chronology's selected point estimate.
+                // A time index moved past the record changes the curve's extent; the chronology reprocess
+                // queued with that change rebuilds the intervals, so the old ones are not paired with it.
+                if (chronologyResults != null)
+                {
+                    var chronologyMode = UnivariateDistribution.GetNonstationaryReturnLevel()!;
+                    if (chronologyResults.MeanCurve?.Length == chronologyMode.Length &&
+                        chronologyResults.ConfidenceIntervals?.GetLength(0) == chronologyMode.Length)
+                    {
+                        chronologyResults.ParentDistribution = UnivariateDistribution.Distribution.Clone();
+                        chronologyResults.ModeCurve = chronologyMode;
+                        chronologyRefreshed = true;
+                    }
+                }
+
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                var logL = UnivariateDistribution.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 var k = UnivariateDistribution.NumberOfParameters;
                 var n = UnivariateDistribution.DataFrame.TotalRecordLength();
                 var aic = GoodnessOfFit.AIC(k, logL);
@@ -683,7 +700,8 @@ namespace RMC.BestFit.Analyses
                 var probs = UnivariateDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
                 probs.AddRange(UnivariateDistribution.DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                 probs.AddRange(UnivariateDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
-                var rmse = GoodnessOfFit.RMSE(values, probs, UnivariateDistribution.Distribution);
+                // RMSE is undefined when the residual degrees of freedom are not positive.
+                var rmse = GoodnessOfFitGuards.RmseOrNaN(values, probs, UnivariateDistribution.Distribution);
 
                 AnalysisResults.AIC = aic;
                 AnalysisResults.BIC = bic;
@@ -692,6 +710,7 @@ namespace RMC.BestFit.Analyses
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
+            if (chronologyRefreshed) RaisePropertyChange(nameof(ChronologyAnalysisResults));
         }
 
         /// <summary>
@@ -780,12 +799,14 @@ namespace RMC.BestFit.Analyses
                     UnivariateDistribution.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
                 }
 
-                ChronologyAnalysisResults = new UncertaintyAnalysisResults();
-                ChronologyAnalysisResults.ParentDistribution = UnivariateDistribution.Distribution.Clone();
-                ChronologyAnalysisResults.ModeCurve = UnivariateDistribution.GetNonstationaryReturnLevel()!;
+                // Views redraw the chronology from change notifications raised while this rebuild runs,
+                // so the results are published only after the mean and intervals are complete.
+                var results = new UncertaintyAnalysisResults();
+                results.ParentDistribution = UnivariateDistribution.Distribution.Clone();
+                results.ModeCurve = UnivariateDistribution.GetNonstationaryReturnLevel()!;
 
                 int realz = BayesianAnalysis.OutputLength;
-                int length = ChronologyAnalysisResults.ModeCurve.Length;
+                int length = results.ModeCurve.Length;
                 var ts = new double[realz, length];
 
                 Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
@@ -808,9 +829,9 @@ namespace RMC.BestFit.Analyses
                     ci[idx, 1] = Statistics.Percentile(data, 1 - a, true);
                 });
 
-                ChronologyAnalysisResults.MeanCurve = mean;
-                ChronologyAnalysisResults.ConfidenceIntervals = ci;
-
+                results.MeanCurve = mean;
+                results.ConfidenceIntervals = ci;
+                ChronologyAnalysisResults = results;
             });
 
             RaisePropertyChange(nameof(ChronologyAnalysisResults));

@@ -74,11 +74,19 @@ namespace RMC.BestFit.Api.DTOs
 
         /// <summary>
         /// Optional variance-stabilizing transform applied before modeling: "none",
-        /// "logarithmic", "boxCox", or "yeoJohnson". Transform parameters (e.g., the Box-Cox
-        /// lambda) are fitted automatically. Leave null for the model default.
+        /// "logarithmic", "boxCox", or "yeoJohnson". Transform parameters are fitted
+        /// automatically unless <see cref="TransformLambda"/> is supplied. Leave null for the
+        /// model default.
         /// </summary>
         [JsonPropertyName("transformType")]
         public Transform? TransformType { get; set; }
+
+        /// <summary>
+        /// Optional manual Box-Cox or Yeo-Johnson exponent. When omitted, the exponent is fitted
+        /// from the training prefix. This field requires a matching <see cref="TransformType"/>.
+        /// </summary>
+        [JsonPropertyName("transformLambda")]
+        public double? TransformLambda { get; set; }
 
         /// <summary>
         /// Optional deterministic trend for "arimax": "none", "linear", "quadratic", or "cubic".
@@ -111,7 +119,9 @@ namespace RMC.BestFit.Api.DTOs
 
         /// <summary>
         /// Optional number of time steps used for training (the remainder validates the fit).
-        /// Leave null for the model default (80% of the series).
+        /// Leave null for the model default: 80% of the series, but at least d + K + k + 10 steps
+        /// (the differencing order, the conditioning order, and ten more fitted steps than the k
+        /// parameters). A series shorter than that minimum fails validation under the default.
         /// </summary>
         [Range(1, int.MaxValue)]
         [JsonPropertyName("trainingTimeSteps")]

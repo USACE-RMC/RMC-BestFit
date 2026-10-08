@@ -160,7 +160,9 @@ namespace RMC_BestFit
                 // CredibleIntervalWidth at plot time. Refresh the plot when alpha changes.
                 UpdatePlot();
             }
-            if (e.PropertyName == nameof(Analysis.Model) || e.PropertyName == nameof(Analysis.ParameterNames))
+            if (e.PropertyName == nameof(Analysis.Model) ||
+                e.PropertyName == nameof(Analysis.ParameterNames) ||
+                e.PropertyName == nameof(Analysis.Results))
             {
                 LoadParameterComboBox();
             }
@@ -173,10 +175,31 @@ namespace RMC_BestFit
         private void LoadParameterComboBox()
         {
             if (Analysis == null || Analysis.ParameterNames == null) return;
-            var parms = Analysis.ParameterNames.ToList();
+            var selectedParameter = ParameterComboBox.SelectedValue as string;
+            var parms = GetSampledParameterNames();
             ParameterComboBox.ItemsSource = null;
             ParameterComboBox.ItemsSource = parms;
-            ParameterComboBox.SelectedIndex = 0;
+            int selectedIndex = selectedParameter == null ? -1 : parms.IndexOf(selectedParameter);
+            ParameterComboBox.SelectedIndex = selectedIndex >= 0
+                ? selectedIndex
+                : parms.Count > 0 ? 0 : -1;
+        }
+
+        /// <summary>
+        /// Gets names aligned with the coordinates stored in the MCMC results.
+        /// </summary>
+        /// <returns>Sampled parameter names; the derived final mixture weight is omitted for new K-1 results.</returns>
+        private List<string> GetSampledParameterNames()
+        {
+            var names = Analysis.ParameterNames!.ToList();
+            if (Analysis.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                Analysis.Results?.ParameterResults?.Length == names.Count - 1)
+            {
+                names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
+            }
+            return names;
         }
 
 
@@ -243,7 +266,7 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Sets the plot title. Suppresses PropertyChanged so the change is not recorded
-        /// as an undoable action — the title tracks combo selection, not user intent.
+        /// as an undoable action â€” the title tracks combo selection, not user intent.
         /// </summary>
         private void SetPlotTitle(string title)
         {
@@ -263,7 +286,7 @@ namespace RMC_BestFit
             if (_plot == null) return;
 
             // Set plot title to reflect the selected parameter. Suppress PropertyChanged so
-            // the PlotUndoManager does not record this as an undoable action — the title
+            // the PlotUndoManager does not record this as an undoable action â€” the title
             // tracks combo selection, not user intent.
             string paramName = ParameterComboBox.SelectedValue as string ?? "";
             SetPlotTitle(string.IsNullOrEmpty(paramName) ? "Autocorrelation" : $"Autocorrelation of {paramName}");
@@ -320,7 +343,16 @@ namespace RMC_BestFit
                 try
                 {
 
-                int index = Math.Max(0, ParameterComboBox.SelectedIndex);
+                int index = ParameterComboBox.SelectedIndex;
+                int retainedDrawCount = Analysis.Results.Output.Count;
+                if (Analysis.Results.ParameterResults == null ||
+                    index < 0 ||
+                    index >= Analysis.Results.ParameterResults.Length ||
+                    retainedDrawCount == 0)
+                {
+                    _plot.InvalidatePlot(true);
+                    return;
+                }
 
                 var acfItems = new List<OxyPlot.Series.HistogramItem>();
                 var acf = Analysis.Results.ParameterResults[index].Autocorrelation;
@@ -333,7 +365,7 @@ namespace RMC_BestFit
                 acfSeries.TrackerFormatString = "{0}" + Environment.NewLine + "{1}: {2:0}" + Environment.NewLine + "{3}: {4:0.000000}";
                 _plot.Series.Add(acfSeries);
 
-                var ci = Autocorrelation.CorrelationConfidenceInterval(Analysis.OutputLength, Analysis.CredibleIntervalWidth);
+                var ci = Autocorrelation.CorrelationConfidenceInterval(retainedDrawCount, Analysis.CredibleIntervalWidth);
                 var alpha = (1 - Analysis.CredibleIntervalWidth) / 2d;
 
                 lowerCI.Text = (alpha * 100).ToString("F1") + "% CI";

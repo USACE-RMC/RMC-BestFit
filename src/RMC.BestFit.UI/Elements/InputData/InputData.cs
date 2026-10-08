@@ -60,7 +60,7 @@ namespace RMC.BestFit.UI
                 _creationDate = DateTime.Now;
                 _lastModified = DateTime.Now;
 
-                // Add messages � RegisterMessage tracks each one in _messages so the Name setter
+                // Add messages — RegisterMessage tracks each one in _messages so the Name setter
                 // can bulk-update SourceName and we don't risk drift between the per-field
                 // declarations and the master list.
                 _messages = new List<BasicMessageItem>();
@@ -73,7 +73,7 @@ namespace RMC.BestFit.UI
                 _timeSeriesInValidMsg = RegisterMessage(MessageType.Error, "The selected time series is invalid.", nameof(TimeSeriesElement), "ID-ERR-014");
                 _startMonthMsg = RegisterMessage(MessageType.Error, "The start month must be between 1 and 12.", nameof(StartMonth), "ID-ERR-015");
                 _endMonthMsg = RegisterMessage(MessageType.Error, "The end month must be between 1 and 12.", nameof(EndMonth), "ID-ERR-016");
-                _periodMsg = RegisterMessage(MessageType.Error, "The smoothing period must be non-negative and not exceed the time series length.", nameof(Period), "ID-ERR-017");
+                _periodMsg = RegisterMessage(MessageType.Error, "The smoothing period must be at least 1 and less than the time series length.", nameof(Period), "ID-ERR-017");
                 _potThresholdMsg = RegisterMessage(MessageType.Error, "The threshold must be less than the max of the time series values.", nameof(Threshold), "ID-ERR-018");
                 _minStepsMsg = RegisterMessage(MessageType.Error, "The minimum steps between peaks must be non-negative and not exceed the time series length.", nameof(MinStepsBetweenPeaks), "ID-ERR-019");
                 _partialBlockSeriesMsg = RegisterMessage(MessageType.Warning, "The selected time series contains missing values, gaps, or incomplete block years. Block-series results may be biased; consider trimming to complete block years or filling missing data before processing.", nameof(TimeSeriesElement), "ID-WNG-020");
@@ -103,7 +103,8 @@ namespace RMC.BestFit.UI
 
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "ID");
                 SetIsValid();
-                SetIsDirty(openedFromV1);
+                // Open establishes whether persisted data needs saving after migration or repair.
+                if (!openFromFile) SetIsDirty(false);
             }
             finally
             {
@@ -311,6 +312,23 @@ namespace RMC.BestFit.UI
         private BasicMessageItem _partialBlockSeriesMsg;
 
         /// <summary>
+        /// Reference to the low-outlier migration warning added to the messenger during
+        /// <see cref="OpenFromVersion1"/> when a version 1.0 project's stored low-outlier threshold
+        /// or Multiple Grubbs-Beck Test result is rejected by the current guards in
+        /// <see cref="DataFrame.SetLowOutliersFromThreshold"/> / <see cref="DataFrame.SetLowOutliersFromMGBT"/>.
+        /// </summary>
+        /// <remarks>
+        /// Unlike the other messages in <see cref="_messages"/>, its text depends on the caught
+        /// exception and so cannot be pre-registered by <see cref="RegisterMessage"/>; it is
+        /// constructed in <see cref="OpenFromVersion1"/> and added to <see cref="_messages"/> there
+        /// so the <see cref="Name"/> setter still keeps its <c>SourceName</c> in sync. Reset (cleared
+        /// and removed from <see cref="_messages"/>) at the start of every <see cref="Open(SQLiteManager)"/>
+        /// so a later open of a project that does not trigger it shows no warning and repeated opens
+        /// never accumulate messages.
+        /// </remarks>
+        private BasicMessageItem _lowOutlierMigrationMsg = null;
+
+        /// <summary>
         /// Indicates whether the file was opened from version 1.0 format.
         /// </summary>
         private bool openedFromV1 = false;
@@ -346,11 +364,6 @@ namespace RMC.BestFit.UI
         private bool _endMonthValid = true;
 
         /// <summary>
-        /// Indicates whether the period is valid.
-        /// </summary>
-        private bool _periodValid = true;
-
-        /// <summary>
         /// The data frame containing exact, uncertain, interval, and threshold data series.
         /// </summary>
         private DataFrame _dataFrame = new DataFrame();
@@ -359,6 +372,39 @@ namespace RMC.BestFit.UI
         /// The method used for entering exact data (manual, block series, POT, or USGS download).
         /// </summary>
         private ExactDataEntryType _exactDataMethod = ExactDataEntryType.Manual;
+
+        /// <summary>
+        /// The point-process observation-years exposure recorded on <see cref="DataFrame"/> at the
+        /// moment <see cref="ExactDataMethod"/> last left <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>.
+        /// <see cref="double.NaN"/> when nothing is stashed.
+        /// </summary>
+        /// <remarks>
+        /// Stashed by <see cref="StashPointProcessObservationYears"/> and consumed (restored or
+        /// discarded) by <see cref="RestorePointProcessObservationYearsIfUnchanged"/> the next time
+        /// the method returns to POT extraction. See that method's remarks for why the stash exists.
+        /// </remarks>
+        private double _stashedPointProcessObservationYears = double.NaN;
+
+        /// <summary>
+        /// The <see cref="DataFrame"/> instance that owned <see cref="_stashedPointProcessObservationYears"/>
+        /// and <see cref="_stashedExactSeriesSnapshot"/> when they were stashed. <c>null</c> when
+        /// nothing is stashed.
+        /// </summary>
+        /// <remarks>
+        /// Compared by reference against the current <see cref="DataFrame"/> before restoring, so a
+        /// data frame swapped in while away from POT extraction (for example, by reassigning
+        /// <see cref="DataFrame"/> directly) cannot receive an exposure recorded for a different
+        /// instance.
+        /// </remarks>
+        private DataFrame _stashedDataFrame;
+
+        /// <summary>
+        /// A snapshot of <see cref="DataFrame"/>'s exact series — each ordinate's date, index, and
+        /// value, in order — taken when <see cref="ExactDataMethod"/> last left
+        /// <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>. <c>null</c> when nothing is
+        /// stashed.
+        /// </summary>
+        private List<(DateTime DateTime, int Index, double Value)> _stashedExactSeriesSnapshot;
 
         /// <summary>
         /// The factory-default data unit label.
@@ -609,6 +655,20 @@ namespace RMC.BestFit.UI
         /// <summary>
         /// Determines how the exact data is entered.
         /// </summary>
+        /// <remarks>
+        /// Changing away from <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/> clears any
+        /// <see cref="RMC.BestFit.Models.DataFrame.PointProcessObservationYears"/> source exposure
+        /// retained on <see cref="DataFrame"/> from the prior POT extraction: Manual, USGS, and
+        /// Block Series entry do not carry that metadata, so leaving it in place would let a later
+        /// point-process fit silently reuse an exposure recorded for an unrelated period. Editing
+        /// the POT-derived series while this stays <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>
+        /// does not affect it. Returning to <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>
+        /// with the exact series unchanged since it left — whether by re-selecting the method or by
+        /// an Undo/Redo that replays this setter — restores the exposure that was cleared; if the
+        /// series changed (edited in place, or re-derived by another method) while away, the
+        /// exposure stays cleared until the next POT extraction. See
+        /// <see cref="RestorePointProcessObservationYearsIfUnchanged"/> for the exact conditions.
+        /// </remarks>
         [Category("General")]
         [DisplayName("Exact Data Entry Method")]
         [Description("Select whether exact data is manually entered, downloaded from USGS, or derived from a time series.")]
@@ -622,6 +682,27 @@ namespace RMC.BestFit.UI
                 {
                     var old = _exactDataMethod;
                     _exactDataMethod = value;
+
+                    // Leaving POT extraction invalidates any retained source-observation span.
+                    // Manual and USGS entry never populate this metadata, and Block Series clears
+                    // it itself (DataFrame.CreateBlockSeries); reset it here too so every path away
+                    // from POT is covered by a single check on the transition, not on which
+                    // "Create*" method the caller happens to invoke next. Stash what is being
+                    // cleared first so a return to POT with the series unchanged can restore it —
+                    // see RestorePointProcessObservationYearsIfUnchanged.
+                    if (old == ExactDataEntryType.PeaksOverThresholdSeries && DataFrame != null)
+                    {
+                        StashPointProcessObservationYears();
+                        DataFrame.PointProcessObservationYears = double.NaN;
+                    }
+                    else if (value == ExactDataEntryType.PeaksOverThresholdSeries && DataFrame != null)
+                    {
+                        // Deliberately unconditional: this must also run when UndoManager replays
+                        // this setter for Undo/Redo, or the stash/restore pair is not symmetric and
+                        // Undo of a method change would leave a wrong exposure in place.
+                        RestorePointProcessObservationYearsIfUnchanged();
+                    }
+
                     SetIsValid();
                     RecordPropertyChange(nameof(ExactDataMethod), old, value);
                 }
@@ -982,7 +1063,6 @@ namespace RMC.BestFit.UI
                 {
                     var old = _period;
                     _period = value;
-                    _periodValid = _period >= 1;
 
                     if (ExactDataMethod != ExactDataEntryType.Manual && !UndoManager.IsExecutingAction)
                         ClearTimeSeriesResults();
@@ -1228,7 +1308,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -1244,171 +1325,212 @@ namespace RMC.BestFit.UI
             try
             {
             openedFromV1 = false;
+            // Reset the low-outlier migration warning before re-deriving it below, so a later
+            // Open of a project that does not trigger it shows no warning and repeated Opens
+            // never accumulate stale messages (see remarks on the field).
+            if (_lowOutlierMigrationMsg != null)
+            {
+                _messages.Remove(_lowOutlierMigrationMsg);
+                _lowOutlierMigrationMsg = null;
+            }
+            bool repairedPlottingPositions = false;
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
+            try
+            {
+                if (wasOpen == false) sqlite.Open();
 
-            // First check if we need to open from version 1.0.
-            var dtView = sqlite.GetTableManager("Project");
-            string version = "";
-            if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
-            if (version == "1.0")
-            {
-                openedFromV1 = true;
-                OpenFromVersion1(sqlite);
-            }
-            else
-            {
-                dtView = sqlite.GetTableManager(ParentCollection.Name);
-                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                if (rowIndex != -1)
+                // First check if we need to open from version 1.0.
+                var dtView = sqlite.GetTableManager("Project");
+                string version = "";
+                if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
+                if (version == "1.0")
                 {
-                    // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearTimeSeriesResults() calls.
-                    if (dtView.ColumnNames.Contains(nameof(Name)))
+                    openedFromV1 = true;
+                    OpenFromVersion1(sqlite);
+                }
+                else
+                {
+                    dtView = sqlite.GetTableManager(ParentCollection.Name);
+                    int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    if (rowIndex != -1)
                     {
-                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                        foreach (var item in _messages) item.SourceName = _name;
-                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "ID");
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Description)))
-                    {
-                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                        if (string.IsNullOrEmpty(_description))
-                            _messenger.Add(_descriptionMsg);
-                        else
-                            _messenger.Remove(_descriptionMsg);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                    // General
-                    // Use backing fields during deserialization to avoid repeated SetIsValid() calls.
-                    // Each public setter calls SetIsValid() which runs 4 series Validate() methods.
-                    // A single SetIsValid() call at the end of Open() is sufficient.
-                    if (dtView.ColumnNames.Contains(nameof(ExactDataMethod))) Enum.TryParse(dtView.GetCell(nameof(ExactDataMethod), rowIndex).ToString(), out _exactDataMethod);
-                    if (dtView.ColumnNames.Contains(nameof(UnitLabel)))
-                    {
-                        _unitLabel = dtView.GetCell(nameof(UnitLabel), rowIndex).ToString();
-                        _unitLabelValid = !string.IsNullOrEmpty(_unitLabel);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(IndexLabel)))
-                    {
-                        _indexLabel = dtView.GetCell(nameof(IndexLabel), rowIndex).ToString();
-                        _indexLabelValid = !string.IsNullOrEmpty(_indexLabel);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(USGSSiteNumber)))
-                    {
-                        _usgsSiteNumber = dtView.GetCell(nameof(USGSSiteNumber), rowIndex).ToString();
-                        _siteNumberValid = _usgsSiteNumber.Length == 8 ||
-                            (_exactDataMethod != ExactDataEntryType.USGSPeakDischarge && _exactDataMethod != ExactDataEntryType.USGSPeakStage);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(UseMultipleGrubbsBeckTest))) bool.TryParse(dtView.GetCell(nameof(UseMultipleGrubbsBeckTest), rowIndex).ToString(), out _useMultipleGrubbsBeckTest);
-
-                    // Get time series element
-                    if (dtView.ColumnNames.Contains(nameof(TimeSeriesElement)))
-                    {
-                        var timeSeriesName = dtView.GetCell(nameof(TimeSeriesElement), rowIndex).ToString();
-                        // Unsubscribe from old element before assigning new (prevents handler leak on repeated Open)
-                        if (_timeSeriesElement != null)
+                        // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearTimeSeriesResults() calls.
+                        if (dtView.ColumnNames.Contains(nameof(Name)))
                         {
-                            _timeSeriesElement.PropertyChanged -= TimeSeriesElementChanged;
-                            _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
+                            _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                            foreach (var item in _messages) item.SourceName = _name;
+                            _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "ID");
                         }
-                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        if (dtView.ColumnNames.Contains(nameof(Description)))
                         {
-                            if (collection.GetType() == typeof(TimeSeriesCollection))
+                            _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                            if (string.IsNullOrEmpty(_description))
+                                _messenger.Add(_descriptionMsg);
+                            else
+                                _messenger.Remove(_descriptionMsg);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                        if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                        // General
+                        // Use backing fields during deserialization to avoid repeated SetIsValid() calls.
+                        // Each public setter calls SetIsValid() which runs 4 series Validate() methods.
+                        // A single SetIsValid() call at the end of Open() is sufficient.
+                        if (dtView.ColumnNames.Contains(nameof(ExactDataMethod))) Enum.TryParse(dtView.GetCell(nameof(ExactDataMethod), rowIndex).ToString(), out _exactDataMethod);
+                        if (dtView.ColumnNames.Contains(nameof(UnitLabel)))
+                        {
+                            _unitLabel = dtView.GetCell(nameof(UnitLabel), rowIndex).ToString();
+                            _unitLabelValid = !string.IsNullOrEmpty(_unitLabel);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(IndexLabel)))
+                        {
+                            _indexLabel = dtView.GetCell(nameof(IndexLabel), rowIndex).ToString();
+                            _indexLabelValid = !string.IsNullOrEmpty(_indexLabel);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(USGSSiteNumber)))
+                        {
+                            _usgsSiteNumber = dtView.GetCell(nameof(USGSSiteNumber), rowIndex).ToString();
+                            _siteNumberValid = _usgsSiteNumber.Length == 8 ||
+                                (_exactDataMethod != ExactDataEntryType.USGSPeakDischarge && _exactDataMethod != ExactDataEntryType.USGSPeakStage);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(UseMultipleGrubbsBeckTest))) bool.TryParse(dtView.GetCell(nameof(UseMultipleGrubbsBeckTest), rowIndex).ToString(), out _useMultipleGrubbsBeckTest);
+
+                        // Get time series element
+                        if (dtView.ColumnNames.Contains(nameof(TimeSeriesElement)))
+                        {
+                            var timeSeriesName = dtView.GetCell(nameof(TimeSeriesElement), rowIndex).ToString();
+                            // Unsubscribe from old element before assigning new (prevents handler leak on repeated Open)
+                            if (_timeSeriesElement != null)
                             {
-                                foreach (IElement element in collection)
+                                _timeSeriesElement.PropertyChanged -= TimeSeriesElementChanged;
+                                _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
+                            }
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                            {
+                                if (collection.GetType() == typeof(TimeSeriesCollection))
                                 {
-                                    if (element.Name == timeSeriesName && element.GetType() == typeof(TimeSeriesElement))
+                                    foreach (IElement element in collection)
                                     {
-                                        _timeSeriesElement = (TimeSeriesElement)element;
-                                        _timeSeriesElement.PropertyChanged += TimeSeriesElementChanged;
-                                        _timeSeriesElement.Deleted += OnTimeSeriesElementDeleted;
-                                        break;
+                                        if (element.Name == timeSeriesName && element.GetType() == typeof(TimeSeriesElement))
+                                        {
+                                            _timeSeriesElement = (TimeSeriesElement)element;
+                                            _timeSeriesElement.PropertyChanged += TimeSeriesElementChanged;
+                                            _timeSeriesElement.Deleted += OnTimeSeriesElementDeleted;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    // Time-Series Properties
-                    if (dtView.ColumnNames.Contains(nameof(BlockFunction))) Enum.TryParse(dtView.GetCell(nameof(BlockFunction), rowIndex).ToString(), out _blockFunction);
-                    if (dtView.ColumnNames.Contains(nameof(TimeBlock))) Enum.TryParse(dtView.GetCell(nameof(TimeBlock), rowIndex).ToString(), out _timeBlock);
-                    if (dtView.ColumnNames.Contains(nameof(StartMonth)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(StartMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _startMonth);
-                        _startMonthValid = _startMonth >= 1 && _startMonth <= 12;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(EndMonth)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(EndMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _endMonth);
-                        _endMonthValid = _endMonth >= 1 && _endMonth <= 12;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(SmoothingFunction))) Enum.TryParse(dtView.GetCell(nameof(SmoothingFunction), rowIndex).ToString(), out _smoothingFunction);
-                    if (dtView.ColumnNames.Contains(nameof(Period)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(Period), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _period);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Threshold)))
-                    {
-                        double.TryParse(dtView.GetCell(nameof(Threshold), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _threshold);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(MinStepsBetweenPeaks)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(MinStepsBetweenPeaks), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _minStepsBetweenPeaks);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(IsProcessed))) bool.TryParse(dtView.GetCell(nameof(IsProcessed), rowIndex).ToString(), out _isProcessed);
-                    // Deserialize plot settings into Plot objects, then refresh only axes
-                    // that still carry their factory-default labels.
-                    bool chronologyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "ChronologyPlotSettings", _chronologyPlot);
-                    bool frequencyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "SeasonalityPlotSettings", _seasonalityPlot);
-                    bool densityPlotRestored = DeserializePlotSettings(dtView, rowIndex, "DensityPlotSettings", _densityPlot);
-                    bool histogramPlotRestored = DeserializePlotSettings(dtView, rowIndex, "HistogramPlotSettings", _histogramPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "QQPlotSettings", _qqPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ACFPlotSettings", _acfPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "PACFPlotSettings", _pacfPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "MRLPlotSettings", _mrlPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ModifiedScalePlotSettings", _modifiedScalePlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ShapePlotSettings", _shapePlot);
-                    RefreshPlotAxisTitlesAfterOpen(chronologyPlotRestored, frequencyPlotRestored, densityPlotRestored, histogramPlotRestored);
-                    // Get data frame
-                    if (dtView.ColumnNames.Contains(nameof(DataFrame)))
-                    {
-                        try
+                        // Time-Series Properties
+                        if (dtView.ColumnNames.Contains(nameof(BlockFunction))) Enum.TryParse(dtView.GetCell(nameof(BlockFunction), rowIndex).ToString(), out _blockFunction);
+                        if (dtView.ColumnNames.Contains(nameof(TimeBlock))) Enum.TryParse(dtView.GetCell(nameof(TimeBlock), rowIndex).ToString(), out _timeBlock);
+                        if (dtView.ColumnNames.Contains(nameof(StartMonth)))
                         {
-                            if (_dataFrame != null)
-                                _dataFrame.PropertyChanged -= DataFramePropertyChanged;
-                            _dataFrame = new DataFrame(XElement.Parse(dtView.GetCell(nameof(DataFrame), rowIndex).ToString()));
-                            _dataFrame.ProcessThresholdSeries();
-                            _dataFrame.PropertyChanged += DataFramePropertyChanged;
+                            int.TryParse(dtView.GetCell(nameof(StartMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _startMonth);
+                            _startMonthValid = _startMonth >= 1 && _startMonth <= 12;
                         }
-                        catch (Exception ex)
+                        if (dtView.ColumnNames.Contains(nameof(EndMonth)))
                         {
-                            // Surface the deserialization failure to Debug for diagnosis. A corrupt
-                            // or malformed DataFrame XML payload leaves _dataFrame in its previous
-                            // state; the user sees an InputData with no series and the validation
-                            // adapter surfaces the empty-series message via SetIsValid.
-                            System.Diagnostics.Debug.WriteLine($"InputData.Open: could not deserialize DataFrame for '{Name}': {ex.Message}");
+                            int.TryParse(dtView.GetCell(nameof(EndMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _endMonth);
+                            _endMonthValid = _endMonth >= 1 && _endMonth <= 12;
                         }
+                        if (dtView.ColumnNames.Contains(nameof(SmoothingFunction))) Enum.TryParse(dtView.GetCell(nameof(SmoothingFunction), rowIndex).ToString(), out _smoothingFunction);
+                        if (dtView.ColumnNames.Contains(nameof(Period)))
+                        {
+                            int.TryParse(dtView.GetCell(nameof(Period), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _period);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(Threshold)))
+                        {
+                            double.TryParse(dtView.GetCell(nameof(Threshold), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _threshold);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(MinStepsBetweenPeaks)))
+                        {
+                            int.TryParse(dtView.GetCell(nameof(MinStepsBetweenPeaks), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _minStepsBetweenPeaks);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(IsProcessed))) bool.TryParse(dtView.GetCell(nameof(IsProcessed), rowIndex).ToString(), out _isProcessed);
+                        // Deserialize plot settings into Plot objects, then refresh only axes
+                        // that still carry their factory-default labels.
+                        bool chronologyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "ChronologyPlotSettings", _chronologyPlot);
+                        bool frequencyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "SeasonalityPlotSettings", _seasonalityPlot);
+                        bool densityPlotRestored = DeserializePlotSettings(dtView, rowIndex, "DensityPlotSettings", _densityPlot);
+                        bool histogramPlotRestored = DeserializePlotSettings(dtView, rowIndex, "HistogramPlotSettings", _histogramPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "QQPlotSettings", _qqPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ACFPlotSettings", _acfPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "PACFPlotSettings", _pacfPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "MRLPlotSettings", _mrlPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ModifiedScalePlotSettings", _modifiedScalePlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ShapePlotSettings", _shapePlot);
+                        RefreshPlotAxisTitlesAfterOpen(chronologyPlotRestored, frequencyPlotRestored, densityPlotRestored, histogramPlotRestored);
+                        // Get data frame
+                        if (dtView.ColumnNames.Contains(nameof(DataFrame)))
+                        {
+                            try
+                            {
+                                if (_dataFrame != null)
+                                    _dataFrame.PropertyChanged -= DataFramePropertyChanged;
+                                _dataFrame = new DataFrame(XElement.Parse(dtView.GetCell(nameof(DataFrame), rowIndex).ToString()));
+                                _dataFrame.ProcessThresholdSeries();
+                                repairedPlottingPositions = RepairSavedPlottingPositions(_dataFrame);
+                                _dataFrame.PropertyChanged += DataFramePropertyChanged;
+                            }
+                            catch (Exception ex)
+                            {
+                                // Surface the deserialization failure to Debug for diagnosis. A corrupt
+                                // or malformed DataFrame XML payload leaves _dataFrame in its previous
+                                // state; the user sees an InputData with no series and the validation
+                                // adapter surfaces the empty-series message via SetIsValid.
+                                System.Diagnostics.Debug.WriteLine($"InputData.Open: could not deserialize DataFrame for '{Name}': {ex.Message}");
+                            }
+                        }
+
                     }
+
 
                 }
-
-
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
 
             SetupBridges();
             SetIsValid();
-            SetIsDirty(openedFromV1);
+            SetIsDirty(openedFromV1 || repairedPlottingPositions);
             }
             finally
             {
                 IsUndoEnabled = wasUndoEnabled;
                 if (wasUndoEnabled) ClearUndoHistory();
             }
+        }
+
+        /// <summary>
+        /// Recalculates saved positions affected by explicit observations below perception thresholds.
+        /// </summary>
+        /// <param name="dataFrame">The deserialized frame before normal input-data listeners are attached.</param>
+        /// <returns>Whether at least one saved plotting position changed.</returns>
+        /// <remarks>
+        /// Invalid frames retain their supplied positions for the existing validation path. Direct model
+        /// XML construction continues to preserve positions; this migration belongs to project opening.
+        /// </remarks>
+        private static bool RepairSavedPlottingPositions(DataFrame dataFrame)
+        {
+            if (!dataFrame.Validate().IsValid) return false;
+
+            var observations = dataFrame.ExactSeries
+                .Concat(dataFrame.UncertainSeries).Concat(dataFrame.IntervalSeries).ToArray();
+            bool affected = observations.Any(observation => dataFrame.ThresholdSeries.Cast<ThresholdData>().Any(threshold =>
+                observation.Index >= threshold.StartIndex && observation.Index <= threshold.EndIndex &&
+                observation.Value < threshold.Value));
+            if (!affected) return false;
+
+            var savedPositions = observations.Select(observation => observation.PlottingPosition).ToArray();
+            dataFrame.CalculatePlottingPositions();
+            return observations.Where((observation, index) =>
+                !observation.PlottingPosition.Equals(savedPositions[index])).Any();
         }
 
         /// <summary>
@@ -1490,13 +1612,67 @@ namespace RMC.BestFit.UI
                 double threshold = 0;
                 if (dtView.ColumnNames.Contains("LowOutlierThresholdValue")) double.TryParse(dtView.GetCell("LowOutlierThresholdValue", rowIndex).ToString(), out threshold);
                 DataFrame.LowOutlierThreshold = threshold;
-                // Update low outliers
-                if (UseMultipleGrubbsBeckTest == true)
-                    DataFrame.SetLowOutliersFromMGBT();
-                else
-                    DataFrame.SetLowOutliersFromThreshold();
-                
+                // Update low outliers. The setters validate their preconditions by throwing - a
+                // legacy project can store a threshold the current guards reject (for example one
+                // censoring more than half the record) or fewer than ten exact values - and an
+                // uncaught throw here crashed the application on project open. The outliers are
+                // left cleared instead so the project opens, and the catch below warns the user
+                // instead of clearing them silently.
+                try
+                {
+                    if (UseMultipleGrubbsBeckTest == true)
+                        DataFrame.SetLowOutliersFromMGBT();
+                    else
+                        DataFrame.SetLowOutliersFromThreshold();
+                }
+                catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"InputData.Open: the stored low-outlier settings for '{Name}' could not be applied: {ex.Message}");
+                    DataFrame.ClearLowOutliers();
+
+                    // Surface the cleared settings to the user instead of only logging them, since a
+                    // legacy project silently losing its low-outlier flags is otherwise invisible.
+                    string reason = GetLowOutlierMigrationReason(ex);
+                    _lowOutlierMigrationMsg = new BasicMessageItem(MessageType.Warning,
+                        $"The low-outlier settings saved with this version 1.0 project could not be applied ({reason}), so no observations are flagged as low outliers. Review the low-outlier threshold or the Multiple Grubbs-Beck test setting before running an analysis on this input data.",
+                        this, ParentCollection.Name, Name, nameof(UseMultipleGrubbsBeckTest), "ID-WNG-021");
+                    _messages.Add(_lowOutlierMigrationMsg);
+                    _messenger.Add(_lowOutlierMigrationMsg);
+                }
+
             }
+        }
+
+        /// <summary>
+        /// Gets the reason shown inside the parentheses of the version 1.0 low-outlier migration
+        /// warning for an exception thrown while the stored low-outlier settings were applied.
+        /// </summary>
+        /// <param name="ex">The exception thrown by the data frame's low-outlier setter.</param>
+        /// <returns>
+        /// The exception message without the parameter-name suffix that <see cref="ArgumentException"/>
+        /// appends and without a trailing period.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="ex"/> is <see langword="null"/>.</exception>
+        /// <remarks>
+        /// When <see cref="ArgumentException.ParamName"/> is set, <see cref="ArgumentException.Message"/>
+        /// ends with <c> (Parameter 'name')</c>, so trimming the trailing period alone would leave that
+        /// suffix, and its closing parenthesis, inside the warning's parentheses. The suffix is removed
+        /// only when the message ends with it; any other message is kept whole apart from its trailing
+        /// period.
+        /// </remarks>
+        private static string GetLowOutlierMigrationReason(Exception ex)
+        {
+            ArgumentNullException.ThrowIfNull(ex);
+
+            string message = ex.Message;
+            if (ex is ArgumentException argumentException && !string.IsNullOrEmpty(argumentException.ParamName))
+            {
+                string parameterSuffix = $" (Parameter '{argumentException.ParamName}')";
+                if (message.EndsWith(parameterSuffix, StringComparison.Ordinal))
+                    message = message.Substring(0, message.Length - parameterSuffix.Length);
+            }
+
+            return message.TrimEnd('.');
         }
 
         /// <summary>
@@ -1516,7 +1692,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1661,7 +1837,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new InputData(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1674,12 +1850,12 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // TimeSeriesElement setter � that would re-trigger validation messages and
+            // TimeSeriesElement setter — that would re-trigger validation messages and
             // re-flip IsDirty=true).
             if (_timeSeriesElement != null) _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
             DisposeBridges();
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {
@@ -1716,7 +1892,7 @@ namespace RMC.BestFit.UI
                 ExactDataMethod == ExactDataEntryType.USGSPeakStage) && _siteNumberValid == false)
                 valid = false;
 
-            // Check Data Frame � minimum count is UI-only, series validation delegated to model via adapter.
+            // Check Data Frame — minimum count is UI-only, series validation delegated to model via adapter.
             // The DataFrame setter accepts null (during deserialization mid-flight); treat that as
             // invalid rather than throwing NRE from every property edit that calls SetIsValid.
             _messenger.Remove(_dataFrameMsg);
@@ -1788,9 +1964,8 @@ namespace RMC.BestFit.UI
                 }
             }
 
-            if (_periodValid == false) valid = false;
             _messenger.Remove(_periodMsg);
-            if (_period < 1 || (TimeSeriesElement?.TimeSeries != null && _period > TimeSeriesElement.TimeSeries.Count))
+            if (!IsSmoothingPeriodValid())
             {
                 valid = false;
                 _messenger.Add(_periodMsg);
@@ -1821,6 +1996,38 @@ namespace RMC.BestFit.UI
             }
 
             return valid;
+        }
+
+        /// <summary>
+        /// Determines whether <see cref="Period"/> is a safe smoothing period for
+        /// <see cref="SmoothingFunction"/> against the linked <see cref="TimeSeriesElement"/>'s series.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> when <see cref="SmoothingFunction"/> is <see cref="SmoothingFunctionType.None"/>
+        /// (the period is not applied), when no time series is linked yet (the upper bound cannot be
+        /// evaluated), or when <c>1 &lt;= Period &lt; TimeSeriesElement.TimeSeries.Count</c>; otherwise,
+        /// <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Numerics' <c>TimeSeries.MovingAverage</c> and <c>TimeSeries.MovingSum</c> — two of the three
+        /// functions behind <c>TimeSeries.SmoothedSeries</c> — throw when the period is not strictly less
+        /// than the series length, and also throw for a period below 1 (via their internal
+        /// <c>minValidCount</c> guard). <c>TimeSeries.Difference</c> shares the same upper-bound guard (it
+        /// throws when the series length does not exceed the period used as its lag) but, unlike the
+        /// moving-window pair, does not itself throw for a period of 0 — it silently returns an
+        /// all-zero series instead. This predicate applies the single <c>1 &lt;= period &lt; series length</c>
+        /// rule to all three non-<see cref="SmoothingFunctionType.None"/> functions so the validation
+        /// message is consistent regardless of which one is selected. Used by
+        /// <see cref="IsTimeSeriesInputValid"/> and by the App's POT diagnostics plots to reject an
+        /// out-of-range period before it reaches <c>TimeSeries.SmoothedSeries</c>, instead of crashing on
+        /// an unhandled exception.
+        /// </remarks>
+        public bool IsSmoothingPeriodValid()
+        {
+            if (SmoothingFunction == SmoothingFunctionType.None) return true;
+            int? seriesLength = TimeSeriesElement?.TimeSeries?.Count;
+            if (seriesLength == null) return Period >= 1;
+            return Period >= 1 && Period < seriesLength.Value;
         }
 
         /// <summary>
@@ -2094,21 +2301,35 @@ namespace RMC.BestFit.UI
         /// </summary>
         /// <param name="sender">The event source.</param>
         /// <param name="e">The property changed event arguments.</param>
+        /// <remarks>
+        /// Source ordinate and collection edits invalidate derived observations just like a series replacement.
+        /// Only block and peaks-over-threshold extraction derive observations from the series; manual and USGS
+        /// entry keep theirs, because a switched input keeps the reference to the series it once extracted from.
+        /// Automatic invalidation does not enter this dependent element's undo history; the source owns the edit.
+        /// </remarks>
         private void TimeSeriesElementChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Defensive null guards. TimeSeriesElement.TimeSeries is initialized non-null in the
-            // ctor but a future refactor or partial init could expose null transiently; mirrors
-            // the guard used in TimeSeriesAnalysis.TimeSeriesData_PropertyChanged at line 670.
-            if (TimeSeriesElement?.TimeSeries == null) return;
-            if (TimeSeriesElement.TimeSeries.SuppressCollectionChanged == false)
-            {
-                if (e.PropertyName == nameof(TimeSeriesElement.TimeSeries))
-                    if (ExactDataMethod != ExactDataEntryType.Manual)
-                        ClearTimeSeriesResults();
+            if (TimeSeriesElement == null || !ReferenceEquals(sender, TimeSeriesElement)) return;
+            if (TimeSeriesElement.TimeSeries?.SuppressCollectionChanged == true) return;
 
-                SetIsValid();
-                RaisePropertyChange(e.PropertyName);
+            bool sourceDataChanged = e.PropertyName == nameof(TimeSeriesElement.TimeSeries)
+                || e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value)
+                || e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index)
+                || e.PropertyName == "TimeSeriesCollection";
+            bool derivesFromSource = ExactDataMethod == ExactDataEntryType.BlockSeries
+                || ExactDataMethod == ExactDataEntryType.PeaksOverThresholdSeries;
+            if (sourceDataChanged && derivesFromSource)
+            {
+                bool wasUndoEnabled = IsUndoEnabled;
+                IsUndoEnabled = false;
+                try { ClearTimeSeriesResults(); }
+                finally { IsUndoEnabled = wasUndoEnabled; }
             }
+
+            SetIsValid();
+            RaisePropertyChange(e.PropertyName);
+            if (sourceDataChanged && e.PropertyName != nameof(TimeSeriesElement.TimeSeries))
+                RaisePropertyChange(nameof(TimeSeriesElement.TimeSeries));
         }
 
         /// <summary>
@@ -2145,6 +2366,129 @@ namespace RMC.BestFit.UI
                 }
             }
             IsProcessed = false;
+        }
+
+        /// <summary>
+        /// Records the current point-process observation-years exposure, the owning data frame, and
+        /// a snapshot of the exact series, for a possible restore by
+        /// <see cref="RestorePointProcessObservationYearsIfUnchanged"/> if <see cref="ExactDataMethod"/>
+        /// later returns to peaks-over-threshold extraction.
+        /// </summary>
+        /// <remarks>
+        /// Called only from the <see cref="ExactDataMethod"/> setter's leave-POT branch, so
+        /// <see cref="DataFrame"/> is known non-null at the call site. Stashing unconditionally
+        /// (even when the current exposure is already <see cref="double.NaN"/>) is intentional and
+        /// harmless: <see cref="RestorePointProcessObservationYearsIfUnchanged"/> only acts on a
+        /// finite stashed value, so a stash of NaN is simply never restored.
+        /// </remarks>
+        private void StashPointProcessObservationYears()
+        {
+            _stashedPointProcessObservationYears = DataFrame.PointProcessObservationYears;
+            _stashedDataFrame = DataFrame;
+            _stashedExactSeriesSnapshot = SnapshotExactSeries(DataFrame.ExactSeries);
+        }
+
+        /// <summary>
+        /// Restores a point-process observation-years exposure stashed by
+        /// <see cref="StashPointProcessObservationYears"/> when <see cref="ExactDataMethod"/> returns
+        /// to peaks-over-threshold extraction with the exact series unchanged, then clears the
+        /// stash unconditionally.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Switching <see cref="ExactDataMethod"/> away from and back to
+        /// <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/> — by plain re-selection, or by
+        /// an Undo/Redo that replays the setter — does not itself re-run
+        /// <see cref="CreatePeaksOverThresholdSeries()"/>. Without this check, restoring the stashed
+        /// exposure unconditionally on return would apply an old span to a series that may have
+        /// since been edited in place, re-derived by <see cref="CreateBlockSeries()"/> or
+        /// <see cref="CreateFromUSGS"/>, or replaced outright — silently reintroducing the
+        /// stale-exposure defect this stash/restore pair exists to prevent.
+        /// </para>
+        /// <para>
+        /// Restoring requires ALL of: a finite stashed exposure; the current <see cref="DataFrame"/>
+        /// is reference-equal to the one the stash was taken from (a data frame swapped in while
+        /// away from POT must not receive an exposure recorded for a different instance); the
+        /// current exact series matches the stashed snapshot exactly, item for item (catches an
+        /// in-place value or date edit that leaves the count unchanged, as well as a re-derived
+        /// series with a different count); and the current exposure is still <see cref="double.NaN"/>
+        /// (defensive — something else may already have recorded a fresh exposure). The stash is
+        /// dropped after this check regardless of outcome, so a later, unrelated return to POT
+        /// cannot reuse a stale snapshot from an earlier transition.
+        /// </para>
+        /// <para>
+        /// This method must run unconditionally, including while <c>UndoManager</c> is replaying an
+        /// Undo or Redo of the <see cref="ExactDataMethod"/> setter: the stash written on the
+        /// forward leave-POT transition and the restore attempted on the reverse return-to-POT
+        /// transition are what make Undo (which replays the setter with the old method value) and
+        /// Redo (which replays it with the new value) symmetric. Gating this on
+        /// <c>!UndoManager.IsExecutingAction</c>, as some other property setters in this class do
+        /// for <see cref="ClearTimeSeriesResults"/>, would break that symmetry here.
+        /// </para>
+        /// </remarks>
+        private void RestorePointProcessObservationYearsIfUnchanged()
+        {
+            if (double.IsFinite(_stashedPointProcessObservationYears) &&
+                ReferenceEquals(_stashedDataFrame, DataFrame) &&
+                _stashedExactSeriesSnapshot != null &&
+                double.IsNaN(DataFrame.PointProcessObservationYears) &&
+                ExactSeriesMatchesSnapshot(DataFrame.ExactSeries, _stashedExactSeriesSnapshot))
+            {
+                DataFrame.PointProcessObservationYears = _stashedPointProcessObservationYears;
+            }
+
+            _stashedPointProcessObservationYears = double.NaN;
+            _stashedDataFrame = null;
+            _stashedExactSeriesSnapshot = null;
+        }
+
+        /// <summary>
+        /// Captures the date, index, and value of every ordinate in an exact series, in order, for
+        /// later exact comparison against the same series' state at another point in time.
+        /// </summary>
+        /// <param name="series">The exact series to snapshot.</param>
+        /// <returns>A list with one entry per ordinate, in series order.</returns>
+        private static List<(DateTime DateTime, int Index, double Value)> SnapshotExactSeries(ExactSeries series)
+        {
+            var snapshot = new List<(DateTime, int, double)>(series.Count);
+            for (int i = 0; i < series.Count; i++)
+            {
+                var item = (ExactData)series[i];
+                snapshot.Add((item.DateTime, item.Index, item.Value));
+            }
+            return snapshot;
+        }
+
+        /// <summary>
+        /// Determines whether an exact series' current ordinates match a snapshot taken earlier by
+        /// <see cref="SnapshotExactSeries"/>, comparing count and every ordinate's date, index, and
+        /// value exactly.
+        /// </summary>
+        /// <param name="series">The current exact series.</param>
+        /// <param name="snapshot">The snapshot to compare against.</param>
+        /// <returns>
+        /// <c>true</c> when <paramref name="series"/> has the same count as <paramref name="snapshot"/>
+        /// and every ordinate's date, index, and value exactly match the snapshot at the same
+        /// position; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Value comparison uses <see cref="double.Equals(double)"/> rather than <c>==</c> so two
+        /// stashed <see cref="double.NaN"/> values compare equal, matching the intuitive meaning of
+        /// "nothing changed" rather than IEEE 754 equality.
+        /// </remarks>
+        private static bool ExactSeriesMatchesSnapshot(ExactSeries series, List<(DateTime DateTime, int Index, double Value)> snapshot)
+        {
+            if (series.Count != snapshot.Count)
+                return false;
+
+            for (int i = 0; i < series.Count; i++)
+            {
+                var item = (ExactData)series[i];
+                var expected = snapshot[i];
+                if (item.DateTime != expected.DateTime || item.Index != expected.Index || !item.Value.Equals(expected.Value))
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -2793,13 +3137,13 @@ namespace RMC.BestFit.UI
         /// <para>
         /// Cell-level edits are handled by the A2 clone-and-replace pattern: RowItem setters
         /// clone the Data object, modify the clone, and replace it in the series via the indexer.
-        /// This fires CollectionChanged(Replace) which the bridge records � no per-item
+        /// This fires CollectionChanged(Replace) which the bridge records — no per-item
         /// UndoableStateBridge is needed.
         /// </para>
         /// <para>
         /// Each collection bridge has a BulkRestoreWrapper that suppresses intermediate
         /// CollectionChanged events during undo/redo replay of Reset actions. This prevents
-        /// O(n�) CalculatePlottingPositions calls when the bridge's Clear+AddAll loop replays.
+        /// O(n²) CalculatePlottingPositions calls when the bridge's Clear+AddAll loop replays.
         /// </para>
         /// </remarks>
         private void SetupBridges()
@@ -2853,7 +3197,7 @@ namespace RMC.BestFit.UI
             );
             _thresholdSeriesBridge.BulkRestoreWrapper = CreateBulkRestoreWrapper(_dataFrame.ThresholdSeries);
 
-            // Create plot undo managers � each monitors its plot's axes, series, and annotations
+            // Create plot undo managers — each monitors its plot's axes, series, and annotations
             // for collection changes and auto-rebuilds bridges as needed.
             Func<IUndoManager> getUndo = () => IsUndoEnabled ? UndoManager : null;
             Action onRecorded = () => SetIsDirty(true);

@@ -15,6 +15,17 @@ namespace RMC.BestFit.Api.Services
         /// <param name="request">The manual creation request.</param>
         /// <returns>The created resource.</returns>
         /// <exception cref="Exceptions.RequestValidationException">Thrown when the data frame fails model-layer validation.</exception>
+        /// <exception cref="ArgumentException">
+        /// Thrown when no exact observations are supplied; when <c>useMultipleGrubbsBeckTest</c> is
+        /// combined with <c>lowOutlierThreshold</c> or a preflagged exact observation; when an
+        /// exact observation is preflagged <c>isLowOutlier=true</c> and <c>lowOutlierThreshold</c>
+        /// is not supplied (a preflag needs the threshold to define its censoring boundary; use
+        /// <c>useMultipleGrubbsBeckTest</c> to derive the flags instead); when a preflagged exact
+        /// observation has a value at or above <c>lowOutlierThreshold</c> (the threshold would
+        /// unflag it); or when <c>lowOutlierThreshold</c> is supplied but the data frame cannot
+        /// apply it (fewer than ten exact observations, or a threshold that would censor more than
+        /// half the record).
+        /// </exception>
         InputDataResource CreateManual(CreateManualInputDataRequest request);
 
         /// <summary>

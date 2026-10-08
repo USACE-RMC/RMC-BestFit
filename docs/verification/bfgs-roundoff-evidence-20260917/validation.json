@@ -1,0 +1,136 @@
+{
+  "date": "2026-09-17",
+  "numericsBaseline": "189a5973559cade7725f33cef4ded8fce4e16ccc",
+  "bestfitBaseline": "cc5931cb9f069a0a879def64a4d248f742d1f3fb",
+  "numericsBuild": {
+    "command": "dotnet build -c Release",
+    "warnings": 0,
+    "errors": 0,
+    "log": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\numerics-build-final.txt"
+  },
+  "numericsFullTests": {
+    "command": "dotnet test -c Release --no-build --logger trx --results-directory <numerics-final-results>",
+    "frameworks": {
+      "net8.0": {
+        "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\numerics-final-results\\haden_HADEN_2026-09-17_13_59_47_net8.0.trx",
+        "total": 2895,
+        "passed": 2895,
+        "failed": 0
+      },
+      "net10.0": {
+        "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\numerics-final-results\\haden_HADEN_2026-09-17_13_59_48_net10.0.trx",
+        "total": 2895,
+        "passed": 2895,
+        "failed": 0
+      },
+      "net9.0": {
+        "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\numerics-final-results\\haden_HADEN_2026-09-17_13_59_48_net9.0.trx",
+        "total": 2895,
+        "passed": 2895,
+        "failed": 0
+      },
+      "net481": {
+        "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\numerics-final-results\\haden_HADEN_2026-09-17_13_59_50_net481.trx",
+        "total": 2880,
+        "passed": 2879,
+        "failed": 1
+      }
+    },
+    "totalCases": 11565,
+    "initialRunPassed": 11565,
+    "initialRunNote": "Before the negative-objective fixture was strengthened; production source was identical.",
+    "finalRunNote": "One net481 live USGS request returned HTTP 503; all other cases passed. The exact failing method passed on retry.",
+    "unresolvedFailures": 0
+  },
+  "networkRetry": {
+    "command": "dotnet test Test_Numerics/Test_Numerics.csproj -c Release -f net481 --no-build --no-restore --filter FullyQualifiedName=Data.TimeSeriesAnalysis.Test_TimeSeriesDownload.USGS_InstantaneousDischarge_Works --logger trx",
+    "result": {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\usgs-retry\\haden_HADEN_2026-09-17_14_06_16_net481.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "bestfitBuild": {
+    "command": "dotnet build RMC.BestFit.sln -c Debug --artifacts-path <validation-roundoff>",
+    "warnings": 0,
+    "errors": 0,
+    "log": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\bfgs-roundoff-review\\bestfit-build.txt"
+  },
+  "fastSuites": {
+    "RMC.BestFit.Tests": {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation-roundoff\\bin\\RMC.BestFit.Tests\\debug_net10.0\\TestResults\\haden_HADEN_2026-09-17_19_57_55.843.trx",
+      "total": 3434,
+      "passed": 3434,
+      "failed": 0
+    },
+    "RMC.BestFit.UI.Tests": {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation-roundoff\\bin\\RMC.BestFit.UI.Tests\\debug\\TestResults\\haden_HADEN_2026-09-17_19_58_30.111.trx",
+      "total": 645,
+      "passed": 645,
+      "failed": 0
+    },
+    "RMC.BestFit.App.Tests": {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation-roundoff\\bin\\RMC.BestFit.App.Tests\\debug\\TestResults\\haden_HADEN_2026-09-17_19_57_50.527.trx",
+      "total": 444,
+      "passed": 444,
+      "failed": 0
+    },
+    "RMC.BestFit.Api.Tests": {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation-roundoff\\bin\\RMC.BestFit.Api.Tests\\debug_net10.0\\TestResults\\haden_HADEN_2026-09-17_19_57_44.849.trx",
+      "total": 498,
+      "passed": 498,
+      "failed": 0
+    }
+  },
+  "scopedB17C": [
+    {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation-roundoff\\bin\\RMC.BestFit.Verification\\debug_net10.0\\TestResults\\haden_HADEN_2026-09-17_20_00_36.339.trx",
+      "total": 13,
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "path": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation-roundoff\\bin\\RMC.BestFit.Verification\\debug_net10.0\\TestResults\\haden_HADEN_2026-09-17_20_00_47.858.trx",
+      "total": 7,
+      "passed": 7,
+      "failed": 0
+    }
+  ],
+  "exactExample1": {
+    "command": "./scripts/run-verification-test.ps1 -Test RMC.BestFit.Verification.Univariate.Bulletin17CTests.B17CExampleTests.Test_Example1",
+    "result": {
+      "path": "C:\\GIT\\RMC-BestFit\\TestResults\\VerificationFocused\\20260917-140050-RMC_BestFit_Verification_Univariate_Bulletin17CTests_B17CExampleTests_Test_Example1\\haden_HADEN_2026-09-17_20_01_11.129.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0
+    }
+  },
+  "independentGradientCheck": {
+    "command": "python analyze.py --check",
+    "outcome": "Passed; all 707 recovered trials satisfy the existing 1e-8 tolerance independently"
+  },
+  "benchmarks": {
+    "release": {
+      "coldMilliseconds": 2033.0674,
+      "warmMedianMilliseconds": 481.8185,
+      "warmMilliseconds": [
+        720.9426,
+        469.5835,
+        481.8185
+      ]
+    },
+    "debug": {
+      "coldMilliseconds": 1561.7752,
+      "warmMedianMilliseconds": 1192.5201,
+      "warmMilliseconds": [
+        1192.5201,
+        1185.1037,
+        1215.3868
+      ]
+    }
+  },
+  "sourceReview": "No blocking correctness findings; negative-objective regression fixture strengthened following review.",
+  "scope": "No BestFit production code modified; Numerics BFGS and its regression tests only. No full Verification or excluded coverage runs.",
+  "numericsCommit": "c949397023556f8f70582128deb9b7596bb15532"
+}

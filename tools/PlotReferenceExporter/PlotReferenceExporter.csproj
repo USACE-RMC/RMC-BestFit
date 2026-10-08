@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseLocalRmcNumerics>false</UseLocalRmcNumerics>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/RMC.BestFit.App/RMC.BestFit.App.csproj" />
+    <ProjectReference Include="../../src/RMC.BestFit.UI/RMC.BestFit.UI.csproj" />
+  </ItemGroup>
+</Project>

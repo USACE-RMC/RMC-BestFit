@@ -438,7 +438,7 @@ namespace RMC.BestFit.Api.Mcp
             [Description("True to include an ARIMAX Fourier seasonal component. Rejected otherwise.")] bool? includeSeasonality = null,
             [Description("ARIMAX covariate time-series resource ids, in order (each cloned). Rejected otherwise.")] Guid[]? covariateTimeSeriesIds = null,
             [Description("ARIMAX covariate extension: none, blockBootstrap (default), or knn. Rejected otherwise.")] string? covariateExtension = null,
-            [Description("Optional training window in time steps (default 80% of the series).")] int? trainingTimeSteps = null,
+            [Description("Optional training window in time steps (default: 80% of the series, but at least d + K + k + 10 steps: differencing order, conditioning order, and ten more fitted steps than the k parameters).")] int? trainingTimeSteps = null,
             [Description("Optional forecast horizon past the series end (0-100).")] int? forecastingTimeSteps = null,
             [Description("Optional total MCMC iterations per chain (server-capped).")] int? iterations = null,
             [Description("Optional warm-up iterations (must be below iterations).")] int? warmupIterations = null,

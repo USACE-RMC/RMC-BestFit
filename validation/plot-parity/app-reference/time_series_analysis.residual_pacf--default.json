@@ -1,0 +1,246 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "9eca00ee4cf0f1b06b79c0dd1257ceac9f444192b9ce50a3272ecf6d9852cfeb",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+  "element": "Airline Passengers - TSA",
+  "plotId": "time_series_analysis.residual_pacf",
+  "variant": "default",
+  "variantSelection": "app control defaults and saved element data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/TimeSeriesAnalysis/TimeSeriesAnalysis.cs::CreateDefaultResidualPACFPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/TimeSeriesAnalysis/TimeSeriesAnalysisControl.xaml.cs::UpdatePACFPlot",
+  "title": "Residual Partial Autocorrelation Function",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "PACF",
+      "position": "Left",
+      "Minimum": -0.55,
+      "Maximum": 0.55,
+      "ActualMinimum": -0.55,
+      "ActualMaximum": 0.55,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": "Xaxis",
+      "Title": "Lag",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -0.2,
+      "ActualMaximum": 20.2,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "PartialAutocorrelation",
+      "type": "HistogramSeries",
+      "Title": "Partial Autocorrelation",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [
+        {
+          "Value": 0.0186350283326532,
+          "RangeStart": 0,
+          "RangeEnd": 1,
+          "Area": 0.0186350283326532,
+          "Count": 0
+        },
+        {
+          "Value": -0.01712361158975961,
+          "RangeStart": 1,
+          "RangeEnd": 2,
+          "Area": -0.01712361158975961,
+          "Count": 0
+        },
+        {
+          "Value": -0.18975372587993877,
+          "RangeStart": 2,
+          "RangeEnd": 3,
+          "Area": -0.18975372587993877,
+          "Count": 0
+        },
+        {
+          "Value": -0.2801763071408618,
+          "RangeStart": 3,
+          "RangeEnd": 4,
+          "Area": -0.2801763071408618,
+          "Count": 0
+        },
+        {
+          "Value": -0.01531366738261132,
+          "RangeStart": 4,
+          "RangeEnd": 5,
+          "Area": -0.01531366738261132,
+          "Count": 0
+        },
+        {
+          "Value": -0.1030501007904832,
+          "RangeStart": 5,
+          "RangeEnd": 6,
+          "Area": -0.1030501007904832,
+          "Count": 0
+        },
+        {
+          "Value": -0.11819536558097063,
+          "RangeStart": 6,
+          "RangeEnd": 7,
+          "Area": -0.11819536558097063,
+          "Count": 0
+        },
+        {
+          "Value": -0.4351842891561522,
+          "RangeStart": 7,
+          "RangeEnd": 8,
+          "Area": -0.4351842891561522,
+          "Count": 0
+        },
+        {
+          "Value": -0.27650771656339546,
+          "RangeStart": 8,
+          "RangeEnd": 9,
+          "Area": -0.27650771656339546,
+          "Count": 0
+        },
+        {
+          "Value": -0.37099936251399795,
+          "RangeStart": 9,
+          "RangeEnd": 10,
+          "Area": -0.37099936251399795,
+          "Count": 0
+        },
+        {
+          "Value": -0.45254680579940587,
+          "RangeStart": 10,
+          "RangeEnd": 11,
+          "Area": -0.45254680579940587,
+          "Count": 0
+        },
+        {
+          "Value": 0.42536223681076396,
+          "RangeStart": 11,
+          "RangeEnd": 12,
+          "Area": 0.42536223681076396,
+          "Count": 0
+        },
+        {
+          "Value": 0.12251763265286593,
+          "RangeStart": 12,
+          "RangeEnd": 13,
+          "Area": 0.12251763265286593,
+          "Count": 0
+        },
+        {
+          "Value": -0.3234278125631785,
+          "RangeStart": 13,
+          "RangeEnd": 14,
+          "Area": -0.3234278125631785,
+          "Count": 0
+        },
+        {
+          "Value": 0.17163530933456309,
+          "RangeStart": 14,
+          "RangeEnd": 15,
+          "Area": 0.17163530933456309,
+          "Count": 0
+        },
+        {
+          "Value": 0.07731145729767537,
+          "RangeStart": 15,
+          "RangeEnd": 16,
+          "Area": 0.07731145729767537,
+          "Count": 0
+        },
+        {
+          "Value": 0.02008940504514705,
+          "RangeStart": 16,
+          "RangeEnd": 17,
+          "Area": 0.02008940504514705,
+          "Count": 0
+        },
+        {
+          "Value": -0.028418648910369725,
+          "RangeStart": 17,
+          "RangeEnd": 18,
+          "Area": -0.028418648910369725,
+          "Count": 0
+        },
+        {
+          "Value": 0.08167454457340999,
+          "RangeStart": 18,
+          "RangeEnd": 19,
+          "Area": 0.08167454457340999,
+          "Count": 0
+        },
+        {
+          "Value": 0.04667796286762515,
+          "RangeStart": 19,
+          "RangeEnd": 20,
+          "Area": 0.04667796286762515,
+          "Count": 0
+        }
+      ],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "FillColor": "#7d688caf",
+        "StrokeThickness": 1,
+        "StrokeColor": "#ff353b7a"
+      }
+    }
+  ],
+  "annotations": [
+    {
+      "type": "LineAnnotation",
+      "text": "2.5% CI",
+      "geometry": {
+        "Type": "Horizontal",
+        "X": 0,
+        "Y": -0.17966960388572917,
+        "MinimumX": -1.7976931348623157E+308,
+        "MaximumX": 1.7976931348623157E+308,
+        "MinimumY": -1.7976931348623157E+308,
+        "MaximumY": 1.7976931348623157E+308,
+        "Slope": 0,
+        "Intercept": 0
+      },
+      "style": {
+        "Color": "#ff000000",
+        "LineStyle": "Dash",
+        "StrokeThickness": 2
+      }
+    },
+    {
+      "type": "LineAnnotation",
+      "text": "97.5% CI",
+      "geometry": {
+        "Type": "Horizontal",
+        "X": 0,
+        "Y": 0.17966960388572917,
+        "MinimumX": -1.7976931348623157E+308,
+        "MaximumX": 1.7976931348623157E+308,
+        "MinimumY": -1.7976931348623157E+308,
+        "MaximumY": 1.7976931348623157E+308,
+        "Slope": 0,
+        "Intercept": 0
+      },
+      "style": {
+        "Color": "#ff000000",
+        "LineStyle": "Dash",
+        "StrokeThickness": 2
+      }
+    }
+  ]
+}

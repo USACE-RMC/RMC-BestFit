@@ -52,6 +52,10 @@ namespace RMC.BestFit.UI
             get { return _timeSeriesElement; }
             set
             {
+                // A data-binding write-back of the unchanged selection is not a covariate change;
+                // raising it would make the owning analysis rebuild its model parameters.
+                if (ReferenceEquals(_timeSeriesElement, value)) return;
+
                 if (_timeSeriesElement != null)
                 {
                     _timeSeriesElement.PropertyChanged -= TimeSeriesElement_PropertyChanged;
@@ -115,7 +119,7 @@ namespace RMC.BestFit.UI
         /// <remarks>
         /// Without this, the underlying time series element's <c>PropertyChanged</c> +
         /// <c>Deleted</c> delegate lists keep the wrapper alive even after it has been removed
-        /// from its owning collection — a long-session memory leak for users who add and
+        /// from its owning collection â€” a long-session memory leak for users who add and
         /// remove covariates repeatedly. Setting <see cref="TimeSeriesElement"/> to null
         /// triggers the setter's unsubscribe path.
         /// </remarks>

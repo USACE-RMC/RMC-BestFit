@@ -1,0 +1,801 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "9eca00ee4cf0f1b06b79c0dd1257ceac9f444192b9ce50a3272ecf6d9852cfeb",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\7-time-series-analysis\\2-classic-time-series-examples\\classic-time-series-examples.bestfit",
+  "element": "Airline Passengers - TSA",
+  "plotId": "time_series_analysis.residuals",
+  "variant": "default",
+  "variantSelection": "app control defaults and saved element data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/TimeSeriesAnalysis/TimeSeriesAnalysis.cs::CreateDefaultResidualPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/TimeSeriesAnalysis/TimeSeriesAnalysisControl.xaml.cs::UpdateResidualsPlot",
+  "title": "Residuals",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "Residual",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -102.71777852367768,
+      "ActualMaximum": 53.822186345792204,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": "Xaxis",
+      "Title": "Passengers (thousands)",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 17894.1,
+      "ActualMaximum": 21555.9,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "Residuals",
+      "type": "ScatterSeries",
+      "Title": "Residuals",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 17930,
+          "Y": 0,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 17958,
+          "Y": 11.606436820004143,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 17989,
+          "Y": -10.906025908361688,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18019,
+          "Y": -5.759905205115669,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18050,
+          "Y": 10.647832266724276,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18080,
+          "Y": 5.79263036859145,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18111,
+          "Y": -4.037097266920654,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18142,
+          "Y": -13.661181100040979,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18172,
+          "Y": -16.066816748040708,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18203,
+          "Y": -14.15516010664702,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18233,
+          "Y": 14.188227744792307,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18264,
+          "Y": -12.787703216499068,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18295,
+          "Y": 14.611510837122395,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18323,
+          "Y": 3.79881647031225,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18354,
+          "Y": -7.847299498417847,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18384,
+          "Y": -11.094166105153374,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18415,
+          "Y": 23.798928653489956,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18445,
+          "Y": 7.891032637415927,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18476,
+          "Y": -2.6198536863184487,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18507,
+          "Y": -14.694105594475536,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18537,
+          "Y": -23.313994138147827,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18568,
+          "Y": -15.81984060501019,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18598,
+          "Y": 25.92818354520697,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18629,
+          "Y": -8.924170854073648,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18660,
+          "Y": 8.742281058805412,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18688,
+          "Y": 18.866505038137788,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18719,
+          "Y": -23.04077971845686,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18749,
+          "Y": 15.664301632787291,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18780,
+          "Y": -6.705138846107548,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18810,
+          "Y": 23.493318826402955,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18841,
+          "Y": -13.99121129510352,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18872,
+          "Y": -9.406360305061039,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18902,
+          "Y": -25.272822777052255,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18933,
+          "Y": -10.287214204948723,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18963,
+          "Y": 17.000839962257448,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 18994,
+          "Y": -4.627648302585833,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19025,
+          "Y": 9.610862123440425,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19054,
+          "Y": 4.706767498266512,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19085,
+          "Y": -15.245691772687223,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19115,
+          "Y": 4.088016413929825,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19146,
+          "Y": 28.153675411397757,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19176,
+          "Y": -0.2312267122440037,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19207,
+          "Y": 11.984921812305235,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19238,
+          "Y": -41.918529373761004,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19268,
+          "Y": -4.206979210612129,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19299,
+          "Y": -27.16724926049082,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19329,
+          "Y": 30.198474205916277,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19360,
+          "Y": -16.50977854032776,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19391,
+          "Y": 8.165891540507143,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19419,
+          "Y": 29.444958862754284,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19450,
+          "Y": -12.330714087116387,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19480,
+          "Y": -1.9849012689192023,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19511,
+          "Y": 8.633163473008555,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19541,
+          "Y": 15.260974112521229,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19572,
+          "Y": 0.008738620340141168,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19603,
+          "Y": -36.66327849462489,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19633,
+          "Y": -16.773798255267295,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19664,
+          "Y": -32.95483464139914,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19694,
+          "Y": 28.996697316997192,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19725,
+          "Y": -15.002218663832338,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19756,
+          "Y": -8.564531040869792,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19784,
+          "Y": 42.74530304490478,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19815,
+          "Y": -26.446067980721594,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19845,
+          "Y": 18.72445319430291,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19876,
+          "Y": 14.327888376964498,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19906,
+          "Y": 34.00373741041244,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19937,
+          "Y": -24.389925730527345,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19968,
+          "Y": -24.14244430952538,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 19998,
+          "Y": -29.530985574185113,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20029,
+          "Y": -20.130367359362708,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20059,
+          "Y": 26.49152143481551,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20090,
+          "Y": -1.3347463633114316,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20121,
+          "Y": -7.842477154887988,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20149,
+          "Y": 31.79733881024619,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20180,
+          "Y": -13.255151492344043,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20210,
+          "Y": 6.79383352301156,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20241,
+          "Y": 35.81327773840444,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20271,
+          "Y": 34.86952123872263,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20302,
+          "Y": -28.969336892704774,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20333,
+          "Y": -24.751463184135048,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20363,
+          "Y": -37.455443369621875,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20394,
+          "Y": -28.301428038352068,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20424,
+          "Y": 43.395211006838295,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20455,
+          "Y": -15.12969890847367,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20486,
+          "Y": 1.633360356564987,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20515,
+          "Y": 31.62775217518434,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20546,
+          "Y": -16.9215914137499,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20576,
+          "Y": 11.256070755274383,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20607,
+          "Y": 45.03438881840039,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20637,
+          "Y": 22.200527244484956,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20668,
+          "Y": -14.419108098304454,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20699,
+          "Y": -47.041112320449145,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20729,
+          "Y": -37.73506146557226,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20760,
+          "Y": -30.149229919182627,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20790,
+          "Y": 39.47859136666925,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20821,
+          "Y": -11.485124099905555,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20852,
+          "Y": -6.917921438345982,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20880,
+          "Y": 50.28186416759626,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20911,
+          "Y": -28.992297977751377,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20941,
+          "Y": 20.580212760543837,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 20972,
+          "Y": 49.97536186847469,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21002,
+          "Y": 26.65101071423294,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21033,
+          "Y": -6.189430566239491,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21064,
+          "Y": -62.35585021188392,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21094,
+          "Y": -39.36152518376505,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21125,
+          "Y": -38.9104347605642,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21155,
+          "Y": 39.28570081104612,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21186,
+          "Y": -17.817847621045942,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21217,
+          "Y": -12.144099597205702,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21245,
+          "Y": 40.144226135495785,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21276,
+          "Y": -31.65531497188878,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21306,
+          "Y": 28.311128903024475,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21337,
+          "Y": 52.28748080785623,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21367,
+          "Y": 39.807511516127576,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21398,
+          "Y": 1.010013255793968,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21429,
+          "Y": -101.1830729857417,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21459,
+          "Y": -13.059640171378383,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21490,
+          "Y": -60.660020407730826,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 21520,
+          "Y": 48.55908469191638,
+          "Value": null,
+          "Size": null
+        }
+      ],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "MarkerFill": "#ff000000",
+        "MarkerStroke": "#ff000000",
+        "MarkerType": "Circle",
+        "MarkerSize": 3
+      }
+    }
+  ],
+  "annotations": [
+    {
+      "type": "LineAnnotation",
+      "text": "",
+      "geometry": {
+        "Type": "LinearEquation",
+        "X": 0,
+        "Y": 0,
+        "MinimumX": -1.7976931348623157E+308,
+        "MaximumX": 1.7976931348623157E+308,
+        "MinimumY": -1.7976931348623157E+308,
+        "MaximumY": 1.7976931348623157E+308,
+        "Slope": 0,
+        "Intercept": 0
+      },
+      "style": {
+        "Color": "#ff000000",
+        "LineStyle": "Dash",
+        "StrokeThickness": 2
+      }
+    }
+  ]
+}

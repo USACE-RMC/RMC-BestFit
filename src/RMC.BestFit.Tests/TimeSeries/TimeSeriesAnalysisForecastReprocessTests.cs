@@ -6,7 +6,7 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Tests.TimeSeries;
 
 /// <summary>
-/// Phase 3b unit tests for the four time-series analyses' <c>ForecastingTimeSteps</c>
+/// Unit tests for the four time-series analyses' <c>ForecastingTimeSteps</c>
 /// setters. Verifies that horizon changes reprocess the predictive output without
 /// wiping the MCMC fit. Programmatic event-wiring tests — no MCMC chain is run.
 /// Chain-running parity tests live in RMC.BestFit.Verification.
@@ -15,8 +15,8 @@ namespace RMC.BestFit.Tests.TimeSeries;
 /// <para>
 /// The contract: changing the forecast horizon on an estimated analysis preserves
 /// <c>BayesianAnalysis.Results</c> (the MCMC chain output) and only reprocesses
-/// <c>AnalysisResults</c>. Before Phase 3b each setter called <c>ClearResults()</c>,
-/// forcing the user to rerun chains just to extend the horizon. After Phase 3b each
+/// <c>AnalysisResults</c>. The setters do not call <c>ClearResults()</c>, which would
+/// force the user to rerun chains just to extend the horizon; instead each
 /// fires-and-forgets <c>CreateUncertaintyAnalysisResultsAsync</c> at the new horizon.
 /// </para>
 /// </remarks>

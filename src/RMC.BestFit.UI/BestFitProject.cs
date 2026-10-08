@@ -260,7 +260,7 @@ namespace RMC.BestFit.UI
         [Browsable(true)]
         public override string SoftwareVersion
         {
-            get { return "2.0.0"; }
+            get { return "2.0.1"; }
         }
 
         private static readonly System.Lazy<System.Windows.Media.ImageSource> s_projectIcon = new(() =>
@@ -660,7 +660,7 @@ namespace RMC.BestFit.UI
                 bool cancel = false;
                 string version = "";
 
-                var sqlite = new SQLiteManager(FullFileName);
+                using var sqlite = new SQLiteManager(FullFileName);
                 sqlite.Open();
 
                 // The user might have renamed the SQLite file from Windows Explorer.
@@ -815,7 +815,7 @@ namespace RMC.BestFit.UI
                 }
             }
 
-            var sqlite = new SQLiteManager(FullFileName);
+            using var sqlite = new SQLiteManager(FullFileName);
             sqlite.Open();
             try
             {
@@ -987,11 +987,10 @@ namespace RMC.BestFit.UI
         public override void Compact()
         {
             // A basic connection is set so I can get the size of the "-journal" temp file.
-            var sqlite = new SQLiteManager(FullFileName);
             SQLiteConnectionStringBuilder connectionBuilder = new SQLiteConnectionStringBuilder();
             connectionBuilder.Version = 3;
             connectionBuilder.DataSource = FullFileName;
-            sqlite.SetDatabaseConnection(connectionBuilder);
+            using var sqlite = new SQLiteManager(FullFileName, connectionBuilder);
             sqlite.Vacuum();
         }
 
@@ -1000,7 +999,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Optimize()
         {
-            var sqlite = new SQLiteManager(FullFileName);
+            using var sqlite = new SQLiteManager(FullFileName);
             sqlite.Optimize();
         }
 

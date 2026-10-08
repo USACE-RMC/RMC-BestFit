@@ -22,8 +22,8 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The ARIMA(p,q) model combines autoregressive and moving average components:
-    /// Y(t) = µ + f1*(Y(t-1) - µ) + ... + fp*(Y(t-p) - µ) + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
-    /// where e(t) ~ N(0, s²).
+    /// Y(t) = Î¼ + Ï†1*(Y(t-1) - Î¼) + ... + Ï†p*(Y(t-p) - Î¼) + Îµ(t) + Î¸1*Îµ(t-1) + ... + Î¸q*Îµ(t-q)
+    /// where Îµ(t) ~ N(0, ÏƒÂ²).
     /// </para>
     /// <para>
     /// This analysis uses Bayesian Markov Chain Monte Carlo (MCMC) methods to estimate the model parameters
@@ -295,13 +295,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the uncertainty/forecast output
+        /// Clears <see cref="AnalysisResults"/> only â€” the uncertainty/forecast output
         /// whose horizon is <see cref="ForecastingTimeSteps"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results) and
         /// <c>IsEstimated</c> intact. Called when the horizon is set to a value
-        /// that would produce no derived output (e.g., a defensive fallback) — the fit
+        /// that would produce no derived output (e.g., a defensive fallback) â€” the fit
         /// survives and reprocesses on the next valid horizon change.
         /// </remarks>
         public void ClearUncertaintyAnalysisResults()
@@ -318,7 +318,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// Validity matches the setter clamp (0 = horizon = 100). Reprocess is
-        /// fire-and-forget on the default task scheduler — exceptions are logged
+        /// fire-and-forget on the default task scheduler â€” exceptions are logged
         /// via <see cref="Debug"/> and do not propagate to the setter.
         /// </remarks>
         private void ReprocessOrClearForecast()
@@ -357,7 +357,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change) can be inside its parallel loop
-            // when ClearResults() nulls AnalysisResults — producing an NRE on the next
+            // when ClearResults() nulls AnalysisResults â€” producing an NRE on the next
             // AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -375,7 +375,7 @@ namespace RMC.BestFit.Analyses
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process. The base-class gate is held throughout RunAsync, so
-                    // CreateUncertaintyAnalysisResultsAsync runs without contention here —
+                    // CreateUncertaintyAnalysisResultsAsync runs without contention here â€”
                     // its body (and the UpdatePointEstimateResultsAsync it chains to) does
                     // not itself acquire the gate, so there is no re-entrant deadlock.
                     if (BayesianAnalysis.IsEstimated == true)
@@ -462,8 +462,16 @@ namespace RMC.BestFit.Analyses
                 // matches the full observed range plus the future forecast horizon.
                 int dataLength = ARIMA.TimeSeries.Count;
                 int forecastStepsForPredict = (dataLength - ARIMA.TrainingTimeSteps) + ForecastingTimeSteps;
+                int n = dataLength + ForecastingTimeSteps;
 
-                AnalysisResults.ModeCurve = localModel.Predict(forecastStepsForPredict);
+                // forecastStepsForPredict is negative whenever TrainingTimeSteps exceeds n.
+                // Reachable only when the model fails validation (TrainingTimeSteps >
+                // TimeSeries.Count), e.g. injected state; RunAsync refuses such configurations.
+                // Predict now rejects a negative forecastSteps, so predict at least the training
+                // window (clamped to zero) and keep only the leading n values -- identical to the
+                // unclamped values for every t < n because the recursion is forward-only and does
+                // not depend on the loop's upper bound.
+                AnalysisResults.ModeCurve = localModel.Predict(Math.Max(0, forecastStepsForPredict)).Subset(0, n - 1);
 
                 // Get goodness of fit measures
                 // RMSE (comparing predicted vs observed for in-sample period only)
@@ -471,8 +479,9 @@ namespace RMC.BestFit.Analyses
                 var modelValues = AnalysisResults.ModeCurve.Subset(0, dataLength - 1);
                 var rmse = GoodnessOfFit.RMSE(trueValues, modelValues);
 
-                // AIC/BIC at MAP using full LogLikelihood (data + prior).
-                double mapLogLH = ARIMA.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                double mapLogLH = ARIMA.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 AnalysisResults.AIC = GoodnessOfFit.AIC(ARIMA.NumberOfParameters, mapLogLH);
                 AnalysisResults.BIC = GoodnessOfFit.BIC(dataLength, ARIMA.NumberOfParameters, mapLogLH);
                 AnalysisResults.DIC = BayesianAnalysis.DIC;
@@ -527,14 +536,18 @@ namespace RMC.BestFit.Analyses
                 int forecastStepsForPredict = (dataLength - ARIMA.TrainingTimeSteps) + ForecastingTimeSteps;
                 int n = dataLength + ForecastingTimeSteps;
 
+                // See the clamping note in UpdatePointEstimateResultsAsync: forecastStepsForPredict
+                // can be negative, and Predict now rejects a negative forecastSteps.
+                int clampedForecastSteps = Math.Max(0, forecastStepsForPredict);
+
                 AnalysisResults = new UncertaintyAnalysisResults();
-                AnalysisResults.ModeCurve = ARIMA.Predict(forecastStepsForPredict);
+                AnalysisResults.ModeCurve = ARIMA.Predict(clampedForecastSteps).Subset(0, n - 1);
                 AnalysisResults.MeanCurve = new double[n];
                 AnalysisResults.ConfidenceIntervals = new double[n, 3];
 
                 var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
                 // Bind realz to the actual posterior length, not the configured
-                // OutputLength — guards against a partial run / restore where
+                // OutputLength â€” guards against a partial run / restore where
                 // OutputLength > Output.Count.
                 var realz = Math.Min(BayesianAnalysis.OutputLength, posterior.Count);
                 double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
@@ -547,7 +560,7 @@ namespace RMC.BestFit.Analyses
                     // Temporarily set parameters for prediction
                     var tempARIMA = (ARIMA)ARIMA.Clone();
                     tempARIMA.SetParameterValues(posterior[idx].Values);
-                    var prediction = tempARIMA.Predict(forecastStepsForPredict, seeds[idx]);
+                    var prediction = tempARIMA.Predict(clampedForecastSteps, seeds[idx]).Subset(0, n - 1);
                     series.SetColumn(idx, prediction);
                 });
 

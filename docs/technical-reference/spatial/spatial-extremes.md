@@ -1,971 +1,526 @@
-# Spatial Extremes Analysis
+<!-- technical-reference-status: complete -->
 
-[<- Previous: Time Series](../analysis/time-series.md) | [Back to Index](../../index.md) | [Next: Trend and Link Functions ->](../support/trend-and-link-functions.md)
+# Spatial GEV and Regional Extreme-Value Analysis
 
-Spatial extremes analysis extends classical univariate extreme value theory to multiple locations, enabling regional flood frequency analysis with rigorous uncertainty quantification. This chapter provides a comprehensive introduction to spatial GEV modeling using Bayesian Hierarchical Models (BHM), suitable for readers with foundational knowledge of probability and statistics but limited exposure to spatial statistics or extreme value theory.
+[<- Previous: Time Series](../analysis/time-series.md) | [Back to Index](../index.md) | [Next: Trend and Link Functions ->](../support/trend-and-link-functions.md)
 
----
+`SpatialGEV` is a hierarchical block-maxima model for annual or otherwise aligned maxima observed at multiple sites. Site-specific Generalized Extreme Value (GEV) parameters are regression functions of site covariates, optionally augmented by spatial Gaussian-process errors. A Gaussian copula can represent dependence among sites within the same observation row. `SpatialGEVAnalysis` estimates the joint parameter vector with Bayesian MCMC and constructs site-level frequency curves.
 
-## Table of Contents
+This is not an index-flood estimator and it does not automatically define a homogeneous region. The analyst supplies the network, alignment, coordinates, covariates, regression structure, correlation family, and probability ordinates. Those choices are part of the scientific model.
 
-1. [Introduction and Motivation](#1-introduction-and-motivation)
-2. [Foundations: Extreme Value Theory](#2-foundations-extreme-value-theory)
-3. [Regional Frequency Analysis](#3-regional-frequency-analysis)
-4. [The Bayesian Hierarchical Model Framework](#4-the-bayesian-hierarchical-model-framework)
-5. [Spatial Correlation Structures](#5-spatial-correlation-structures)
-6. [Gaussian Copula for Inter-Site Dependence](#6-gaussian-copula-for-inter-site-dependence)
-7. [Spatial Regression on GEV Parameters](#7-spatial-regression-on-gev-parameters)
-8. [Spatially Correlated Regression Errors](#8-spatially-correlated-regression-errors)
-9. [Likelihood Formulation](#9-likelihood-formulation)
-10. [Bayesian Inference](#10-bayesian-inference)
-11. [Model Selection and Validation](#11-model-selection-and-validation)
-12. [Implementation in RMC-BestFit](#12-implementation-in-rmc-bestfit)
-13. [Assumptions and Limitations](#13-assumptions-and-limitations)
-14. [References](#14-references)
+## Applicability and Current Availability
 
----
+Use the model when:
 
-## 1. Introduction and Motivation
+- each row represents the same block or event period at every included site;
+- site maxima are adequately described by GEV marginals;
+- spatial variation can be represented by the supplied covariates and residual correlation;
+- coordinates share a projected linear unit (Cartesian metric) or are latitude/longitude pairs in decimal degrees (geodesic metric); and
+- the network is small enough for repeated dense covariance factorizations.
 
-### The Challenge of Rare Events
+The Bayesian model supports complete or partially observed rows, site-specific posterior parameter summaries, site-specific posterior quantiles, row/year information criteria, observed-subset copula marginalization, explicit data/prior decomposition, Godambe estimating equations, and leave-one-site-out cross-validation. The coordinate metric and the interpretation of optional site weights must be selected explicitly for the application, as described below. Ungauged-site prediction, regional credible bounds, dependent simulation, spatial bootstrap uncertainty, and uncertainty-method dispatch are implemented and covered by focused oracle or recovery tests.
 
-Hydrologic design—whether for dams, levees, bridges, or stormwater systems—requires estimating the magnitude of floods that occur rarely: the 100-year flood, the 500-year flood, or even rarer events. These rare quantiles lie far beyond the range of observed data at most gauging stations. A typical station with 50 years of record provides only modest information about events with return periods exceeding the record length.
+Composite pairwise likelihood is a future enhancement. The current code always uses either independent marginal contributions or one Gaussian-copula contribution per observation row over the sites observed in that row.
 
-### The Power of Regional Information
+## Notation and Units
 
-The fundamental insight of regional frequency analysis is that nearby locations experience similar flood-generating mechanisms. A station with 30 years of record gains inferential power by "borrowing strength" from neighboring stations. If 10 stations each have 30 years of data, the region collectively contains 300 station-years of information—far more than any single station possesses.
+| Symbol | Meaning |
+|---|---|
+| $Y_{ij}$ | maximum in row $i=1,\ldots,n$ at site $j=1,\ldots,S$, in the response unit |
+| $\mathbf s_j=(s_{j1},s_{j2})$ | site coordinates: projected (X, Y) in a common linear unit (Cartesian metric) or (latitude, longitude) in decimal degrees (geodesic metric) |
+| $\mathbf x_j$ | row of standardized or otherwise scaled site covariates |
+| $\xi_j,\alpha_j,\kappa_j$ | Numerics GEV location, scale, and shape at site $j$ |
+| $\boldsymbol\beta_a$ | regression coefficients for GEV parameter $a$ |
+| $\boldsymbol\epsilon_a$ | optional spatial-error vector for parameter $a$ |
+| $\sigma_a,r_a,p_a$ | spatial-error standard deviation, range, and optional powered-exponential exponent |
+| $R(h)$ | spatial correlation at separation $h$ (planar Euclidean or great-circle kilometres by metric) |
+| $\mathbf R_C$ | Gaussian-copula correlation matrix |
+| $w_j$ | site weight multiplying the marginal log density |
+| $p_E$ | exceedance probability; the nonexceedance probability is $q=1-p_E$ |
 
-### Why Spatial Models?
+Location, scale, quantiles, and location/scale spatial errors have response units unless a log link is used. Regression-coefficient units depend on the link and covariate scaling. Shape, copula probabilities, correlations, and powered-exponential exponents are dimensionless. Range parameters use the projected coordinate unit for Cartesian distance and kilometres for geodesic distance.
 
-Classical regional frequency analysis methods, such as the index flood method [[1]](#1), assume that:
-1. All sites share the same standardized distribution (the "growth curve")
-2. Sites differ only in a scaling factor (the index flood)
-3. Observations at different sites are independent
+## Site-Level GEV Model
 
-These assumptions are often violated in practice:
-- Distribution parameters vary smoothly across space
-- Nearby sites experience correlated flood events
-- Environmental covariates (elevation, drainage area, precipitation) influence flood characteristics
+RMC.Numerics 2.2.0 uses the shape sign convention documented in the [GEV chapter](../distributions/generalized-extreme-value.md). For
 
-Spatial GEV models address these limitations by explicitly modeling:
-- **Spatial variation** in distribution parameters through regression
-- **Spatial dependence** in observations through copulas
-- **Residual spatial correlation** through Gaussian processes
+$$
+z_{ij}=\frac{y_{ij}-\xi_j}{\alpha_j},
+\qquad t_{ij}=1-\kappa_j z_{ij}>0, \tag{1}
+$$
 
----
+the CDF and density for $\kappa_j\ne0$ are
 
-## 2. Foundations: Extreme Value Theory
+$$
+F_j(y_{ij})=\exp\!\left[-t_{ij}^{1/\kappa_j}\right], \tag{2}
+$$
 
-### Block Maxima and the GEV Distribution
+$$
+f_j(y_{ij})=
+\frac{1}{\alpha_j}
+t_{ij}^{1/\kappa_j-1}
+\exp\!\left[-t_{ij}^{1/\kappa_j}\right]. \tag{3}
+$$
 
-The Generalized Extreme Value (GEV) distribution arises naturally as the limiting distribution of properly rescaled block maxima. If $X_1, X_2, \ldots, X_n$ are independent observations from some parent distribution, and $M_n = \max(X_1, \ldots, X_n)$, then under mild regularity conditions [[2]](#2):
+The $\kappa_j\to0$ limit is Gumbel:
 
-```math
-\frac{M_n - b_n}{a_n} \xrightarrow{d} G
-```
+$$
+F_j(y)=\exp\{-\exp[-(y-\xi_j)/\alpha_j]\}, \tag{4}
+$$
 
-where $G$ is the GEV distribution with CDF:
+$$
+f_j(y)=\alpha_j^{-1}
+\exp\!\left[-\frac{y-\xi_j}{\alpha_j}
+-\exp\!\left(-\frac{y-\xi_j}{\alpha_j}\right)\right]. \tag{5}
+$$
 
-```math
-G(x; \xi, \alpha, \kappa) = \exp\left\{-\left[1 + \kappa\left(\frac{x - \xi}{\alpha}\right)\right]^{-1/\kappa}\right\}
-```
+Thus $\kappa_j<0$ gives an unbounded heavy upper tail, $\kappa_j=0$ an exponential-type upper tail, and $\kappa_j>0$ an upper endpoint $\xi_j+\alpha_j/\kappa_j$. The nonexceedance quantile is
 
-for $1 + \kappa(x - \xi)/\alpha > 0$, where:
-- $\xi \in \mathbb{R}$ is the **location** parameter (central tendency)
-- $\alpha > 0$ is the **scale** parameter (spread)
-- $\kappa \in \mathbb{R}$ is the **shape** parameter (tail behavior)
+$$
+Q_j(q)=
+\begin{cases}
+\xi_j+\dfrac{\alpha_j}{\kappa_j}
+\left[1-\{-\log(q)\}^{\kappa_j}\right], & \kappa_j\ne0,\\[6pt]
+\xi_j-\alpha_j\log[-\log(q)], & \kappa_j=0.
+\end{cases} \tag{6}
+$$
 
-### Interpretation of Parameters
+`SpatialGEVAnalysis` evaluates (6) at $q=1-p_E$. A return period $T=1/p_E$ is meaningful only when rows are comparable independent annual trials after accounting for the modeled within-row spatial dependence.
 
-**Location ($\xi$)**: The mode of the distribution occurs near $\xi$. For annual maximum floods, $\xi$ represents a "typical" annual maximum.
+## Covariate Regression and Links
 
-**Scale ($\alpha$)**: Controls the spread of the distribution. Larger $\alpha$ means greater variability in annual maxima.
+Each GEV parameter has a `GeneralLinearFunction`:
 
-**Shape ($\kappa$)**: Determines tail behavior:
-- $\kappa < 0$ (Fréchet type): Heavy upper tail, no upper bound. Common for river floods.
-- $\kappa = 0$ (Gumbel type): Exponential tail decay. Limit as $\kappa \to 0$.
-- $\kappa > 0$ (Weibull type): Bounded upper tail at $\xi - \alpha/\kappa$.
+$$
+\eta_{a,j}=\beta_{a,0}+\mathbf x_j^\mathsf T\boldsymbol\beta_a,
+\qquad a\in\{\xi,\alpha,\kappa\}. \tag{7}
+$$
 
-### Quantile Function
+The constructor creates one intercept followed by one coefficient per covariate column. Site $j$ selects row $j$ of that function's stored covariate matrix. All matrices used for a given parameter must therefore contain $S$ rows in the same site order as the data and coordinates.
 
-The $p$-quantile (value exceeded with probability $1-p$) is:
+With optional error terms, the implemented parameter maps are
+
+$$
+\xi_j=
+\begin{cases}
+\exp(\eta_{\xi,j}+\epsilon_{\xi,j}), & \text{log link},\\
+\eta_{\xi,j}+\epsilon_{\xi,j}, & \text{identity link},
+\end{cases} \tag{8}
+$$
 
-```math
-x_p = \xi + \frac{\alpha}{\kappa}\left[(-\log p)^{-\kappa} - 1\right]
-```
+$$
+\alpha_j=
+\begin{cases}
+\exp(\eta_{\alpha,j}+\epsilon_{\alpha,j}), & \text{log link},\\
+\max(\eta_{\alpha,j}+\epsilon_{\alpha,j},\epsilon_{\rm mach}), & \text{identity link},
+\end{cases} \tag{9}
+$$
 
-For the Gumbel case ($\kappa = 0$):
+$$
+\kappa_j=\eta_{\kappa,j}+\epsilon_{\kappa,j}. \tag{10}
+$$
 
-```math
-x_p = \xi - \alpha \log(-\log p)
-```
+Log links for location and scale are enabled by default. A log location link is appropriate only for a strictly positive response on the modeled scale. The identity-scale path clamps nonpositive predictions rather than rejecting them; the log scale is preferable for smooth inference.
 
-**Example**: The 100-year flood corresponds to $p = 0.99$ (or equivalently, 1% annual exceedance probability).
+Covariates should be centered and scaled before model construction. This makes the intercept interpretable at a typical site and makes the default slope bounds $[-1,1]$ meaningful. Do not combine raw drainage area in square kilometres, elevation in metres, and precipitation in millimetres under the same default coefficient bounds without intentional rescaling and prior review.
 
----
+## Spatial Regression Errors
 
-## 3. Regional Frequency Analysis
+For each enabled parameter field,
 
-### The Index Flood Method
+$$
+\boldsymbol\epsilon_a\mid\sigma_a,\boldsymbol\phi_a
+\sim \mathcal N_S\!\left(
+\mathbf0,\,
+\sigma_a^2\mathbf R_a(\boldsymbol\phi_a)
+\right). \tag{11}
+$$
 
-The classical index flood method [[1]](#1) assumes that at each site $j$, the annual maximum $Y_j$ follows:
+The implementation has no nugget term. At separation
 
-```math
-Y_j = \mu_j \cdot Z
-```
+$$
+h_{jk}=\begin{cases}
+\sqrt{(s_{j1}-s_{k1})^2+(s_{j2}-s_{k2})^2}, & \text{Cartesian metric (projected units)},\\[4pt]
+2R_\oplus\arcsin\sqrt{\sin^2\tfrac{\Delta\varphi}{2}+\cos\varphi_j\cos\varphi_k\sin^2\tfrac{\Delta\lambda}{2}}, & \text{geodesic metric (km, } R_\oplus=6371.0088\text{ km)},
+\end{cases} \tag{12}
+$$
 
-where $\mu_j$ is a site-specific index flood (typically the mean or median) and $Z$ is a dimensionless "growth curve" common to all sites in the region. This implies all sites share identical shape and dimensionless scale, differing only by a multiplicative factor.
+the available correlations are
 
-### Limitations of Classical RFA
+$$
+\rho_{\rm exp}(h;r)=\exp(-h/r), \qquad r>0, \tag{13}
+$$
 
-1. **Homogeneity assumption**: Requires defining "homogeneous regions" where growth curves are identical—a subjective and often unrealistic requirement.
+$$
+\rho_{\rm pexp}(h;r,p)=
+\exp[-(h/r)^p], \qquad r>0,\quad 0.1\le p\le2, \tag{14}
+$$
 
-2. **Independence assumption**: Ignores that nearby sites experience floods simultaneously (e.g., basin-wide storm events).
+and
 
-3. **No covariate information**: Cannot incorporate physical explanatory variables.
+$$
+\rho_{\rm sph}(h;r)=
+\begin{cases}
+1-\dfrac{3}{2}\dfrac{h}{r}
++\dfrac{1}{2}\left(\dfrac{h}{r}\right)^3, & 0\le h<r,\\
+0, & h\ge r.
+\end{cases} \tag{15}
+$$
 
-4. **Two-stage estimation**: First estimates growth curve, then index floods, without proper uncertainty propagation.
+`CorrelationFunctionType` names these `Exponential`, `PoweredExponential`, and `Spherical`. Every enabled component has its own correlation parameters: the observation copula, location errors, scale errors, and shape errors do not share a range automatically.
 
-### The Hierarchical Alternative
+Both Gaussian-process and copula covariance evaluators use `CachedMultivariateNormal`. Setting a covariance matrix invalidates its Cholesky/log-determinant cache; repeated density calls at unchanged parameters reuse that factorization. Updating a range or exponent requires a new dense $S\times S$ factorization, with $O(S^3)$ time and $O(S^2)$ storage. Highly colocated sites and very long fitted ranges can make the matrix nearly singular because no nugget is estimated.
 
-Bayesian Hierarchical Models (BHM) address these limitations by:
-- Allowing parameters to vary spatially through regression
-- Modeling inter-site dependence explicitly
-- Estimating all parameters simultaneously with full uncertainty propagation
-- Eliminating the need for discrete homogeneous regions
+`SpatialDistanceMetric` selects the separation in (12) for the copula, the latent-error covariances, kriging, and the inverse-distance fallback. `Cartesian` (default) is the pinned Numerics `Tools.Distance` planar calculation: use a defensible projected coordinate reference system, pass both columns in the same linear unit, and interpret the range values in that unit. `Geodesic` interprets each row as (latitude, longitude) in decimal degrees (validated to |lat| ≤ 90, |lon| ≤ 180) and returns great-circle kilometres, so the range values are kilometres. The default range prior Uniform($\epsilon_{\rm mach}$, 500) is the same number in both metrics and should be reviewed for the network at hand. Components created by `ConfigureForProperCoverage` adopt the model's metric; components assigned directly must be built with the same metric, which `Validate` checks.
 
----
+## Gaussian-Copula Observation Dependence
 
-## 4. The Bayesian Hierarchical Model Framework
+For a complete row, define
 
-The spatial GEV model follows the hierarchical framework developed by Renard et al. [[3]](#3), [[4]](#4), consisting of three levels:
+$$
+u_{ij}=F_j(y_{ij}),\qquad
+z_{ij}=\Phi^{-1}(u_{ij}),\qquad
+\mathbf z_i=(z_{i1},\ldots,z_{iS})^\mathsf T. \tag{16}
+$$
 
-### Level 1: Data Model
+The copula matrix has entries
 
-At each site $j \in \{1, \ldots, S\}$ with $n_j$ observations:
+$$
+(\mathbf R_C)_{jk}=
+\begin{cases}
+1, & j=k,\\
+\rho_C(h_{jk};\boldsymbol\phi_C), & j\ne k.
+\end{cases} \tag{17}
+$$
 
-```math
-Y_{ij} \mid \theta_j \sim \text{GEV}(\xi_j, \alpha_j, \kappa_j), \quad i = 1, \ldots, n_j
-```
+and density
 
-where $\theta_j = (\xi_j, \alpha_j, \kappa_j)$ are the site-specific GEV parameters.
+$$
+c_{\mathbf R_C}(\mathbf u_i)
+=\frac{\phi_S(\mathbf z_i;\mathbf0,\mathbf R_C)}
+{\prod_{j=1}^{S}\phi(z_{ij})}. \tag{18}
+$$
 
-**Spatial Dependence**: Within a given year, observations across sites may be correlated (e.g., a regional storm produces high flows at multiple stations simultaneously). This dependence is captured through a Gaussian copula (see [Section 6](#6-gaussian-copula-for-inter-site-dependence)).
+The Gaussian copula captures within-row association while retaining the GEV marginal tails. It is asymptotically tail independent unless correlations approach one; a high fitted correlation does not by itself establish joint upper-tail dependence.
 
-### Level 2: Process Model
+The copula requires meaningful row alignment. If site records refer to different water years, event definitions, or aggregation windows, the fitted dependence is not interpretable. Serial dependence between rows is also outside this model.
 
-GEV parameters at each site are functions of:
-1. **Spatial regression**: Linear functions of covariates (location, elevation, drainage area, etc.)
-2. **Spatially correlated errors**: Gaussian process deviations from the regression surface
+### Missing observations
 
-For the location parameter with log-link:
+Without copula dependence, `double.NaN` values are skipped and the available marginal contributions remain. With copula dependence, a row whose observed-site set is $O_i$ contributes the Gaussian-copula density of the observed coordinates with the correlation submatrix $\mathbf R_{C,O_i}$, that is, (18) restricted to $O_i$; the unobserved coordinates are integrated out exactly because the Gaussian copula family is closed under marginalization (the copula interprets a missing site as missing at random given the observed sites). A row with a single observed site has no dependence term and a fully missing row contributes nothing. The implementation is `GaussianCopula.LogPDF(z, observedSites)`, which caches the Cholesky factorization of each missingness pattern until the correlation parameters change.
 
-```math
-\log(\xi_j) = \beta_0^\xi + \beta_1^\xi X_{1j} + \beta_2^\xi X_{2j} + \varepsilon_j^\xi
-```
+## Full Implemented Kernel
 
-where:
-- $\beta_0^\xi$ is the intercept
-- $\beta_k^\xi$ are regression coefficients
-- $X_{kj}$ are covariate values at site $j$ (e.g., latitude, longitude, elevation)
-- $\varepsilon_j^\xi$ is a spatially correlated error term
+With enabled copula dependence, the contribution of row $i$ with observed-site set $O_i$ is
 
-The vector of errors $\boldsymbol{\varepsilon}^\xi = (\varepsilon_1^\xi, \ldots, \varepsilon_S^\xi)$ follows:
+$$
+L_i(\Theta)=
+c_{\mathbf R_{C,O_i}}(\mathbf u_{i,O_i})
+\prod_{j\in O_i} f_j(y_{ij})^{w_j}, \tag{19}
+$$
 
-```math
-\boldsymbol{\varepsilon}^\xi \sim \mathcal{N}(\mathbf{0}, \sigma_\xi^2 \mathbf{R}_\xi)
-```
+with $c_{\mathbf R_{C,O_i}}\equiv 1$ when $|O_i|<2$. Without the copula, remove $c$. With equal weights, $w_j=1$. The scalar `DataLogLikelihood` is the observation log likelihood
 
-where $\mathbf{R}_\xi$ is a correlation matrix determined by a spatial correlation function.
+$$
+\ell_D(\Theta)=
+\sum_{i=1}^{n}\left[
+\log c_{\mathbf R_{C,O_i}}(\mathbf u_{i,O_i})
++\sum_{j\in O_i}w_j\log f_j(y_{ij})
+\right], \tag{20}
+$$
 
-### Level 3: Prior Model
+and the prior log density evaluated by `PriorLogLikelihood` is
 
-Hyperparameters (regression coefficients, error variance, correlation parameters) receive prior distributions:
+$$
+\ell_P(\Theta)=
+\sum_{r=1}^{d_\Theta}\log p_r(\Theta_r)
++\sum_{a\in\mathcal E}
+\log\phi_S(\boldsymbol\epsilon_a;\mathbf0,\sigma_a^2\mathbf R_a), \tag{20a}
+$$
 
-```math
-\begin{aligned}
-\beta_k^\xi &\sim \text{Uniform}(L_\beta, U_\beta) \\
-\sigma_\xi &\sim \text{Uniform}(0, U_\sigma) \text{ or Jeffreys prior} \\
-\text{range} &\sim \text{Uniform}(0, U_r)
-\end{aligned}
-```
+where $\mathcal E$ is the set of enabled spatial-error fields. The Gaussian-process terms are prior structure on the latent errors (Level 2 of the hierarchy), so they live in `PriorLogLikelihood` and not in `DataLogLikelihood`; the posterior kernel `LogLikelihood` is $\ell_D+\ell_P$.
 
-### Model Schematic
+The flat parameter order is:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    LEVEL 3: PRIORS                              │
-│   β (regression coefficients)  σ (error std dev)  r (range)    │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                 LEVEL 2: PROCESS MODEL                          │
-│                                                                 │
-│   log(ξⱼ) = β₀ + β₁X₁ⱼ + β₂X₂ⱼ + εⱼ    where ε ~ MVN(0, σ²R)   │
-│   log(αⱼ) = ...                                                 │
-│        κⱼ = ...                                                 │
-│                                                                 │
-│   Site-specific GEV parameters: θⱼ = (ξⱼ, αⱼ, κⱼ)               │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                   LEVEL 1: DATA MODEL                           │
-│                                                                 │
-│   Yᵢⱼ | θⱼ ~ GEV(ξⱼ, αⱼ, κⱼ)  with Gaussian copula dependence  │
-│                                                                 │
-│   Site 1: Y₁₁, Y₁₂, ..., Y₁ₙ₁                                   │
-│   Site 2: Y₂₁, Y₂₂, ..., Y₂ₙ₂                                   │
-│   ...                                                           │
-│   Site S: Yₛ₁, Yₛ₂, ..., Yₛₙₛ                                   │
-└─────────────────────────────────────────────────────────────────┘
-```
+1. copula correlation parameters, when enabled;
+2. location regression coefficients, intercept first;
+3. scale regression coefficients;
+4. shape regression coefficients;
+5. location-error block, when enabled;
+6. scale-error block, when enabled; and
+7. shape-error block, when enabled.
 
----
+Each error block is ordered
 
-## 5. Spatial Correlation Structures
+$$
+(\sigma_a,\ \boldsymbol\phi_a,\ \epsilon_{a,1},\ldots,\epsilon_{a,S}). \tag{21}
+$$
 
-Spatial correlation functions describe how similarity between locations decreases with distance. Let $h = \|\mathbf{s}_i - \mathbf{s}_j\|$ denote the Euclidean distance between sites $i$ and $j$. The correlation function $\rho(h)$ must satisfy:
-- $\rho(0) = 1$ (perfect correlation at zero distance)
-- $0 \leq \rho(h) \leq 1$ for all $h \geq 0$
-- $\rho(h) \to 0$ as $h \to \infty$ (decay to independence)
-- Positive definiteness (required for valid covariance matrices)
+### Priors and bounds
 
-### Basic Exponential
+`SetDefaultParameters` derives intercept starting values and bounds from sitewise sample means and standard deviations, and sizes the latent-error bounds from three times the spread of those site statistics in the space in which the error acts (log space under a log link, raw units under an identity link; ceiling, floor 1.0). A proposal whose site location, scale, or shape is not finite has negative-infinite likelihood. Shape intercept is initialized at zero with Uniform$(-0.5,0.5)$. `GeneralLinearFunction` assigns each covariate coefficient Uniform$(-1,1)$. Correlation ranges have Uniform$(\epsilon_{\rm mach},500)$ priors, and the powered-exponential exponent has Uniform$(0.1,2)$.
 
-```math
-\rho(h) = \exp\left(-\frac{h}{r}\right)
-```
+For an error field with data-derived bound $M_a$, the implementation assigns
 
-where $r > 0$ is the **range** (or **scale**) parameter.
+$$
+\sigma_a\sim{\rm Uniform}(\epsilon_{\rm mach},M_a),\qquad
+\epsilon_{a,j}\sim{\rm Uniform}(-M_a,M_a), \tag{22}
+$$
 
-**Properties**:
-- Exponential decay with distance
-- Practical range (correlation drops to 0.05): approximately $3r$
-- Infinitely divisible (valid for any positive definite operation)
-- Non-differentiable at the origin (rough process realizations)
+and also multiplies by the joint Gaussian density in (11), which enters $\ell_P$ in (20a). The Uniform latent-error priors therefore act as truncation constraints in addition to the Gaussian process. The posterior kernel is
 
-**When to use**: Default choice; robust and widely applicable.
+$$
+\pi(\Theta\mid\mathbf Y)\propto
+\exp[\ell_D(\Theta)+\ell_P(\Theta)]. \tag{23}
+$$
 
-### Powered Exponential
+Because the range bound 500 is fixed rather than derived from the network, coordinate units and extent can place substantial prior mass in an irrelevant region or exclude plausible ranges. Review and, where supported by the API, revise every bound before MCMC.
 
-```math
-\rho(h) = \exp\left(-\left(\frac{h}{r}\right)^p\right)
-```
+### Pointwise likelihood
 
-where $r > 0$ is the range and $0 < p \leq 2$ is the **power** parameter.
+`PointwiseDataLogLikelihood` returns one value per row/year: the row's weighted observed-site marginals plus its observed-subset copula term, so the values sum to `DataLogLikelihood` in (20). `PointwisePriorLogLikelihood` reports each parameter prior and each enabled error process as components that sum to `PriorLogLikelihood` in (20a). WAIC and PSIS-LOO therefore score the row/year predictive unit of the fitted kernel, and the identities `LogLikelihood == DataLogLikelihood + PriorLogLikelihood`, `DataLogLikelihood == sum of pointwise rows`, and `PriorLogLikelihood == sum of pointwise prior components` hold in fast contracts and the `mvtnorm` oracle cells.
 
-**Special cases**:
-- $p = 1$: Basic exponential
-- $p = 2$: Gaussian (squared exponential)
+## Estimation and Output Construction
 
-**Properties**:
-- Higher $p$ gives smoother correlation decay
-- Gaussian ($p = 2$) produces infinitely differentiable (smooth) process realizations
-- Practical range varies with $p$
+`SpatialGEVAnalysis.RunAsync` validates the model, raises a cancellable start event, clears stale results, runs `BayesianAnalysis`, and post-processes only when MCMC reports an estimated result. Cancellation is forwarded to the sampler. The analysis constructs:
 
-**When to use**: When process smoothness is important; $p \approx 1.5$ often works well.
+- `SpatialGEVSiteResults` for each site, containing posterior means and equal-tailed credible limits for $\xi_j,\alpha_j,\kappa_j$ and $Q_j(1-p_E)$;
+- a point curve from the selected posterior mean or MAP parameter vector; and
+- an aggregate `AnalysisResults` curve based on arithmetic averages across sites.
 
-### Spherical
+Changing probability ordinates or credible-interval width reprocesses saved posterior draws; it does not rerun MCMC. Changing model structure or parameters clears the fit.
 
-```math
-\rho(h) = \begin{cases}
-1 - \frac{3h}{2r} + \frac{h^3}{2r^3} & \text{if } h < r \\
-0 & \text{if } h \geq r
-\end{cases}
-```
+### Leave-one-site-out cross-validation
 
-**Properties**:
-- **Compact support**: Exactly zero correlation beyond range $r$
-- Computational advantage for large networks (sparse correlation matrices)
-- Transition from correlation to independence at distance $r$
+`RunCrossValidationAsync` builds, for every site $j$, the training network without that site (`SpatialGEV.CreateReducedModel`: the data column, coordinate row, covariate rows of every trend, copula coordinate, and latent error of site $j$ are removed; flags, links, the remaining site weights, and every remaining parameter's value, bounds, and prior are copied), validates it, fits it with a fold `BayesianAnalysis` that carries the main analysis's sampler type, defaults policy (resolved against the fold's own parameter count), seed, interval width, output length, and point estimator (and its explicit iteration, chain, thinning, and tuning settings when the defaults are off), and predicts site $j$ from the fold posterior at its coordinates with its own covariate rows. The T = 100 posterior-mean quantile minus the site's at-site maximum-likelihood GEV quantile is the site prediction error; the RMSE spans T = 2, 5, 10, 25, 50, and 100. The analysis model and posterior are never modified, so `CrossValidationResults` survives the run. `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, and `TotalFolds` record folds without observations, with invalid or unfittable reduced models, or with non-finite predictions; such folds hold NaN metrics and are excluded from the aggregates, and a run with no successful fold throws. CRPS is not computed (zero-filled, documented). The per-fold latent-error interpolation uses inverse-distance weighting.
 
-**When to use**: When distant sites are believed truly independent; reduces computational burden.
+The regional curve reports, for every probability, the posterior summaries of the regional mean quantile computed within each retained draw: the mean curve is its posterior mean (equal to the regional mean of the site posterior means) and the bounds are its equal-tailed posterior quantiles, so cross-site posterior dependence is retained; the mode curve is the regional mean of the point-estimate site curves. The regional growth curve keeps its descriptive site-average definition. Spatial AIC/BIC use the observation log likelihood `SpatialGEV.DataLogLikelihood` in (20) at the stored MAP (parameter priors and latent-error process densities excluded, missing sites marginalized), and BIC treats each nonempty row/year as one multivariate observation block rather than counting site cells (`SpatialGEVAnalysis.ComputeInformationCriteria`), so fully missing rows are excluded and contemporaneously dependent sites are not counted as independent replicates. They remain qualified diagnostics: the MAP is not an MLE when priors are nonconstant, and weighted or dependent spatial likelihoods do not automatically satisfy ordinary AIC/BIC regularity assumptions. WAIC and PSIS-LOO at the row/year unit are the preferred comparison tools.
 
-### Comparison
+`SpatialGEVUncertaintyMethod` selects how `RunAsync` builds the interval bounds after the MCMC fit: `BayesianPosterior` keeps the posterior intervals; `BayesianInflated` widens the site and regional intervals by the square root of the variance inflation factor from the empirical intersite correlation (`InflatePosteriorCovariance`); `GodambeSandwich` computes the Godambe covariance at the MAP (`ComputeGodambeCovariance`, both sandwich factors from the row/year estimating equations, explicit failure through `GodambeCovarianceStatus`), draws `OutputLength` seeded Gaussian parameter vectors N(MAP, Σ) truncated to the parameter bounds, and propagates them through the site-result machinery; `SpatialBootstrap` runs the temporal block bootstrap (`RunSpatialBootstrapAsync` with `BootstrapReplicates` and `BootstrapBlockSize`): rows are resampled with replacement in contiguous blocks keeping every site, each replicate (`SpatialGEV.CreateResampledModel`) is refitted by maximum a posteriori estimation warm-started at the full-model MAP, failed replicates are excluded with at least half required, and percentile intervals replace the site and regional bounds while `BootstrapResults` records the accounting. A method that cannot be applied (unavailable covariance, too few replicates) fails the run explicitly; `AppliedUncertaintyMethod` and `SpatialGEVSiteResults.UncertaintyMethod` record the method actually applied. The Godambe and bootstrap paths are frequentist diagnostics of the Bayesian fit.
 
-| Property | Basic Exponential | Powered Exponential | Spherical |
-|----------|-------------------|---------------------|-----------|
-| Parameters | 1 (range) | 2 (range, power) | 1 (range) |
-| Smoothness | Rough | Adjustable | Moderate |
-| Compact support | No | No | Yes |
-| Computation | O(S²) | O(S²) | O(S² sparse) |
+## Ungauged Prediction
 
-### Implementation in RMC-BestFit
+At a new location in the selected coordinate metric $\mathbf s_*$ with matching covariates, the model-level `PredictAtUngauged` computes the regression trend and, for each enabled error field, simple-Gaussian-process conditioning:
 
-```cs
-// Basic exponential correlation
-var basicExp = new BasicExponential(range: 30.0);
+$$
+E(\epsilon_{a,*}\mid\boldsymbol\epsilon_a)
+=\mathbf k_*^\mathsf T\mathbf K_a^{-1}\boldsymbol\epsilon_a, \tag{24}
+$$
 
-// Powered exponential (p = 1.5)
-var poweredExp = new PoweredExponential(range: 30.0, power: 1.5);
+$$
+{\rm Var}(\epsilon_{a,*}\mid\boldsymbol\epsilon_a)
+=\sigma_a^2-\mathbf k_*^\mathsf T\mathbf K_a^{-1}\mathbf k_*. \tag{25}
+$$
 
-// Spherical correlation
-var spherical = new Spherical(range: 50.0);
-```
+It returns conditional means in the GEV parameter vector and the three conditional error variances. If Cholesky factorization fails after diagonal-jitter attempts, `SpatialRegressionErrors` falls back to inverse-distance weighting.
 
----
+The analysis-level `PredictAtUngaugedLocation` applies (24)–(25) to every retained posterior draw with that draw's error model and, by default (`SampleConditionalResidual = true`), adds a conditional residual drawn from N(0, (25)) with standard-normal scores generated from the analysis seed before the parallel loop, so the predictive interval carries both parameter uncertainty and the spatial-interpolation uncertainty of the latent errors; with `SampleConditionalResidual = false` it uses the conditional mean only. The model-level predictor is verified against the R conditional-GP oracle. Its single covariate vector applies to every covariate trend (the trends must share the covariate definition) and is required whenever a trend has covariates: `GeneralLinearFunction.PredictWithCovariates` throws for a covariate trend evaluated without covariates. Extrapolation outside the covariate and spatial convex hull should be treated as a scenario, not validated regionalization.
 
-## 6. Gaussian Copula for Inter-Site Dependence
+## Site Weights and Pairwise Likelihood
 
-### The Copula Concept
+`ComputeCorrelationHeuristicSiteWeights` (formerly `ComputeEffectiveSampleSizeWeights`, kept as an obsolete forwarding alias) calculates preliminary weights
 
-When analyzing regional extremes, observations at different sites in the same year are typically not independent—a major storm produces large floods at multiple nearby stations. A **copula** models this dependence structure separately from the marginal distributions [[5]](#5).
+$$
+w_j^\star=\frac{1}{1+(S-1)\bar\rho_j},
+\qquad
+\bar\rho_j=\frac{1}{S-1}\sum_{k\ne j}|\hat\rho_{jk}|, \tag{26}
+$$
 
-**Sklar's Theorem**: Any multivariate distribution can be decomposed as:
+then rescales them so $\sum_jw_j=S$. They modify only the marginal part of (20); the copula contribution of each row remains unweighted. This is a relative correlation-based down-weighting heuristic, not an effective-sample-size reduction or a pairwise composite likelihood, and no composite-likelihood (Godambe) uncertainty adjustment follows from it; `ConfigureForProperCoverage(useWeightedLikelihood: true)` applies it and its remarks say so.
 
-```math
-F(y_1, \ldots, y_S) = C(F_1(y_1), \ldots, F_S(y_S))
-```
+No method evaluates
 
-where $F_j$ are the marginal CDFs and $C: [0,1]^S \to [0,1]$ is the copula function capturing dependence.
+$$
+\ell_{\rm pair}(\Theta)=
+\sum_{i=1}^{n}\sum_{j<k}
+\log f_{jk}(y_{ij},y_{ik};\Theta). \tag{27}
+$$
 
-### The Gaussian Copula
+Godambe adjustment for (27), Bayesian composite-likelihood calibration, and pair selection are future design work [5]–[7]. Documentation and engineering reports must not imply that these methods are already implemented.
 
-The Gaussian copula is defined through the multivariate normal distribution:
+## Compile-Checked Configuration
 
-```math
-C(u_1, \ldots, u_S) = \Phi_{\mathbf{R}}(\Phi^{-1}(u_1), \ldots, \Phi^{-1}(u_S))
-```
+The example uses ten complete annual-maxima rows at six sites. Flow is in cubic feet per second, coordinates are projected kilometres, and the two illustrative covariates are standardized log drainage area and standardized mean annual precipitation. The location and scale regressions use both covariates; shape is intercept-only to reduce weakly identified tail regression. The snippet configures but does not run MCMC.
 
-where:
-- $\Phi$ is the standard normal CDF
-- $\Phi^{-1}$ is the standard normal quantile function
-- $\Phi_{\mathbf{R}}$ is the CDF of the multivariate normal with correlation matrix $\mathbf{R}$
-
-### Copula Density
-
-The copula density is:
-
-```math
-c(u_1, \ldots, u_S) = \frac{\phi_{\mathbf{R}}(z_1, \ldots, z_S)}{\prod_{j=1}^S \phi(z_j)}
-```
-
-where $z_j = \Phi^{-1}(u_j)$ and $\phi_{\mathbf{R}}$ is the multivariate normal PDF.
-
-The log-copula density is:
-
-```math
-\log c(\mathbf{u}) = -\frac{1}{2}\log|\mathbf{R}| - \frac{1}{2}\mathbf{z}^\top(\mathbf{R}^{-1} - \mathbf{I})\mathbf{z}
-```
-
-### Constructing the Correlation Matrix
-
-The correlation matrix $\mathbf{R}$ for the Gaussian copula uses the same spatial correlation functions from [Section 5](#5-spatial-correlation-structures):
-
-```math
-R_{ij} = \rho(h_{ij})
-```
-
-where $h_{ij}$ is the distance between sites $i$ and $j$.
-
-### Joint Likelihood with Copula
-
-The joint density of observations in year $i$ is:
-
-```math
-f(y_{i1}, \ldots, y_{iS}) = c(F_1(y_{i1}), \ldots, F_S(y_{iS})) \cdot \prod_{j=1}^S f_j(y_{ij})
-```
-
-where $f_j$ and $F_j$ are the site-specific GEV density and CDF.
-
-**Log-likelihood contribution from observation $i$**:
-
-```math
-\ell_i = \log c\left(F_1(y_{i1}), \ldots, F_S(y_{iS})\right) + \sum_{j=1}^S \log f_j(y_{ij})
-```
-
-### Why Gaussian Copula?
-
-**Advantages**:
-1. Mathematically tractable (closed-form density)
-2. Flexible range of dependence (correlation matrix)
-3. Natural spatial interpretation (correlation decays with distance)
-4. Efficient computation via Cholesky decomposition
-
-**Limitations**:
-1. Symmetric dependence (cannot model asymmetric tail dependence)
-2. Tail independence (joint extremes less likely than heavy-tailed copulas)
-3. May underestimate joint flood risk at very high return periods
-
-For flood frequency analysis, the Gaussian copula is typically adequate because:
-- Annual maxima from different sites have moderate dependence
-- Primary interest is in marginal quantiles, not joint exceedance probabilities
-- More complex copulas (e.g., extreme-value copulas) add parameters without clear practical benefit
-
----
-
-## 7. Spatial Regression on GEV Parameters
-
-### Link Functions
-
-GEV parameters have natural constraints that require appropriate link functions:
-- **Location ($\xi$)**: Often positive for flood data, so log-link ensures positivity
-- **Scale ($\alpha$)**: Must be positive, so log-link is essential
-- **Shape ($\kappa$)**: Typically small ($|\kappa| < 0.5$), so identity link with bounded priors
-
-### Location Parameter
-
-With log-link:
-
-```math
-\log(\xi_j) = \beta_0^\xi + \beta_1^\xi X_{1j} + \beta_2^\xi X_{2j} + \cdots + \beta_K^\xi X_{Kj}
-```
-
-Equivalently:
-
-```math
-\xi_j = \exp\left(\beta_0^\xi + \sum_{k=1}^K \beta_k^\xi X_{kj}\right)
-```
-
-**Interpretation**: Regression coefficients represent multiplicative effects. A unit increase in covariate $X_k$ multiplies location by $\exp(\beta_k^\xi)$.
-
-### Scale Parameter
-
-With log-link:
-
-```math
-\log(\alpha_j) = \beta_0^\alpha + \sum_{k=1}^K \beta_k^\alpha X_{kj}
-```
-
-This ensures $\alpha_j > 0$ for all covariate values.
-
-### Shape Parameter
-
-With identity link:
-
-```math
-\kappa_j = \beta_0^\kappa + \sum_{k=1}^K \beta_k^\kappa X_{kj}
-```
-
-Shape is kept near zero through bounded priors, typically $|\kappa_j| < 0.5$.
-
-### Common Covariates
-
-For spatial flood frequency analysis, useful covariates include:
-
-| Covariate | Symbol | Effect on Floods |
-|-----------|--------|------------------|
-| Longitude | $X$ | East-west climate gradients |
-| Latitude | $Y$ | North-south climate gradients |
-| Elevation | $Z$ | Orographic precipitation effects |
-| Drainage area | $A$ | Larger basins → larger floods |
-| Mean precipitation | $P$ | Wetter regions → larger floods |
-| Basin slope | $S$ | Steeper basins → faster concentration |
-
-### Example: Location Regression
-
-Consider a simple model with X and Y coordinates as covariates:
-
-```math
-\log(\xi_j) = \beta_0 + \beta_X \cdot X_j + \beta_Y \cdot Y_j
-```
-
-For a 100×100 km region with:
-- $\beta_0 = 8.987$ (intercept, log-scale)
-- $\beta_X = 0.005$ (X coefficient)
-- $\beta_Y = 0.008$ (Y coefficient)
-
-**At corner (0, 0)**:
-```math
-\xi = \exp(8.987) \approx 8000
-```
-
-**At corner (100, 100)**:
-```math
-\xi = \exp(8.987 + 0.5 + 0.8) = \exp(10.287) \approx 29,500
-```
-
-The location parameter increases by a factor of 3.7 across the region due to spatial trends.
-
----
-
-## 8. Spatially Correlated Regression Errors
-
-### Motivation
-
-Even with spatial regression, residual variation remains that is:
-1. **Spatially structured**: Nearby sites have similar residuals
-2. **Not captured by covariates**: Due to unmeasured local effects
-
-This variation is modeled as a Gaussian process on the regression residuals.
-
-### Mathematical Formulation
-
-For the location parameter:
-
-```math
-\log(\xi_j) = \underbrace{\beta_0^\xi + \sum_{k=1}^K \beta_k^\xi X_{kj}}_{\text{spatial trend}} + \underbrace{\varepsilon_j^\xi}_{\text{spatial error}}
-```
-
-where the error vector follows:
-
-```math
-\boldsymbol{\varepsilon}^\xi = (\varepsilon_1^\xi, \ldots, \varepsilon_S^\xi)^\top \sim \mathcal{N}(\mathbf{0}, \sigma_\xi^2 \mathbf{R})
-```
-
-The covariance matrix is:
-
-```math
-\text{Cov}(\varepsilon_i^\xi, \varepsilon_j^\xi) = \sigma_\xi^2 \rho(h_{ij})
-```
-
-### Gaussian Process Prior
-
-The spatial errors define a **Gaussian process** prior on deviations from the regression surface. This is equivalent to kriging in geostatistics, providing:
-- Smooth interpolation between observed sites
-- Proper uncertainty quantification
-- Shrinkage toward the regression surface where data is sparse
-
-### Error Parameters
-
-Each parameter with spatial errors has two hyperparameters:
-
-| Hyperparameter | Symbol | Interpretation |
-|----------------|--------|----------------|
-| Error standard deviation | $\sigma$ | Magnitude of spatial deviations |
-| Correlation range | $r$ | Distance over which errors remain correlated |
-
-### The Full Model
-
-With spatial errors on all parameters:
-
-```math
-\begin{aligned}
-\log(\xi_j) &= \beta_0^\xi + \sum_k \beta_k^\xi X_{kj} + \varepsilon_j^\xi, \quad \boldsymbol{\varepsilon}^\xi \sim \mathcal{N}(\mathbf{0}, \sigma_\xi^2 \mathbf{R}_\xi) \\
-\log(\alpha_j) &= \beta_0^\alpha + \sum_k \beta_k^\alpha X_{kj} + \varepsilon_j^\alpha, \quad \boldsymbol{\varepsilon}^\alpha \sim \mathcal{N}(\mathbf{0}, \sigma_\alpha^2 \mathbf{R}_\alpha) \\
-\kappa_j &= \beta_0^\kappa + \sum_k \beta_k^\kappa X_{kj} + \varepsilon_j^\kappa, \quad \boldsymbol{\varepsilon}^\kappa \sim \mathcal{N}(\mathbf{0}, \sigma_\kappa^2 \mathbf{R}_\kappa)
-\end{aligned}
-```
-
-The three error processes $\boldsymbol{\varepsilon}^\xi$, $\boldsymbol{\varepsilon}^\alpha$, $\boldsymbol{\varepsilon}^\kappa$ are assumed independent, though they may share the same correlation function.
-
----
-
-## 9. Likelihood Formulation
-
-### Full Log-Likelihood
-
-The full log-likelihood combines contributions from:
-1. **Marginal GEV likelihoods** at each site
-2. **Copula likelihood** for inter-site dependence
-3. **Gaussian process priors** on spatial errors
-
-```math
-\ell(\theta) = \ell_{\text{data}}(\theta) + \ell_{\text{errors}}(\theta)
-```
-
-### Data Likelihood
-
-**Without copula** (conditional independence given parameters):
-
-```math
-\ell_{\text{data}} = \sum_{i=1}^{n} \sum_{j=1}^{S} w_j \cdot \log f_{\text{GEV}}(y_{ij}; \xi_j, \alpha_j, \kappa_j)
-```
-
-where $w_j$ are optional site weights.
-
-The GEV log-density is:
-
-```math
-\log f_{\text{GEV}}(y; \xi, \alpha, \kappa) = -\log\alpha - \left(1 + \frac{1}{\kappa}\right)\log\left(1 + \kappa\frac{y-\xi}{\alpha}\right) - \left(1 + \kappa\frac{y-\xi}{\alpha}\right)^{-1/\kappa}
-```
-
-For $\kappa = 0$ (Gumbel case):
-
-```math
-\log f_{\text{Gumbel}}(y; \xi, \alpha) = -\log\alpha - \frac{y-\xi}{\alpha} - \exp\left(-\frac{y-\xi}{\alpha}\right)
-```
-
-**With copula**:
-
-```math
-\ell_{\text{data}} = \sum_{i=1}^{n} \left[\log c_{\mathbf{R}}(u_{i1}, \ldots, u_{iS}) + \sum_{j=1}^{S} w_j \cdot \log f_j(y_{ij})\right]
-```
-
-where $u_{ij} = F_j(y_{ij})$ is the probability integral transform.
-
-### Spatial Error Prior Likelihood
-
-The Gaussian process prior on errors contributes:
-
-```math
-\ell_{\text{errors}} = \sum_{\theta \in \{\xi, \alpha, \kappa\}} \mathbb{1}_{\text{errors on } \theta} \cdot \log \phi_S(\boldsymbol{\varepsilon}^\theta; \mathbf{0}, \sigma_\theta^2 \mathbf{R}_\theta)
-```
-
-where $\phi_S$ is the $S$-dimensional multivariate normal density:
-
-```math
-\log \phi_S(\boldsymbol{\varepsilon}; \mathbf{0}, \boldsymbol{\Sigma}) = -\frac{S}{2}\log(2\pi) - \frac{1}{2}\log|\boldsymbol{\Sigma}| - \frac{1}{2}\boldsymbol{\varepsilon}^\top \boldsymbol{\Sigma}^{-1} \boldsymbol{\varepsilon}
-```
-
-### Handling Missing Data
-
-Annual maximum series often have gaps. Missing values are handled naturally:
-- Omit missing observations from marginal likelihood
-- Use only available observations for copula contributions
-- No interpolation or imputation required
-
-### Numerical Considerations
-
-1. **Support constraints**: Return $-\infty$ if $1 + \kappa(y-\xi)/\alpha \leq 0$
-2. **Scale positivity**: Return $-\infty$ if $\alpha \leq 0$
-3. **Cholesky stability**: Add small ridge ($10^{-8}$) to correlation matrix diagonal
-4. **Overflow protection**: Use log-scale computations throughout
-
----
-
-## 10. Bayesian Inference
-
-### Posterior Distribution
-
-The posterior distribution of all parameters is:
-
-```math
-\pi(\theta \mid \mathbf{Y}) \propto \mathcal{L}(\mathbf{Y} \mid \theta) \cdot \pi(\theta)
-```
-
-where $\theta$ includes:
-- Regression coefficients $\beta$
-- Error hyperparameters $(\sigma, r)$ for each parameter
-- Copula correlation parameters
-- Site-specific spatial errors $\varepsilon_j$
-
-### MCMC Sampling
-
-RMC-BestFit uses the **DEMCzs** sampler (Differential Evolution Markov Chain with snooker update) [[6]](#6), which offers:
-- Self-tuning proposal distributions
-- Robust multimodal exploration
-- Parallel chain execution
-- No manual tuning required
-
-### Prior Distributions
-
-**Regression coefficients**:
-```math
-\beta_k \sim \text{Uniform}(L_\beta, U_\beta)
-```
-
-Bounds are set wide enough to be non-informative but finite for numerical stability.
-
-**Error standard deviations**:
-```math
-\sigma \sim \text{Uniform}(\epsilon, U_\sigma) \quad \text{or} \quad \sigma \sim \text{Jeffreys}(\propto 1/\sigma)
-```
-
-**Correlation range**:
-```math
-r \sim \text{Uniform}(\epsilon, U_r)
-```
-
-where $U_r$ is typically 2-3 times the maximum inter-site distance.
-
-**Spatial errors**:
-
-The site-specific errors $\varepsilon_j$ are sampled jointly or as part of Gibbs updates, with the Gaussian process prior providing regularization.
-
-### Convergence Diagnostics
-
-| Diagnostic | Target Value | Interpretation |
-|------------|--------------|----------------|
-| $\hat{R}$ (Gelman-Rubin) | $< 1.1$ | Chains have converged to same distribution |
-| ESS (Effective Sample Size) | $> 400$ | Sufficient independent samples |
-| Trace plots | No trends, good mixing | Visual confirmation of stationarity |
-
-### Point Estimates
-
-Two point estimators are available:
-
-1. **Posterior Mean**: $\hat{\theta} = E[\theta \mid \mathbf{Y}]$
-   - Minimizes squared error loss
-   - Affected by posterior skewness
-
-2. **Posterior Mode (MAP)**: $\hat{\theta} = \arg\max_\theta \pi(\theta \mid \mathbf{Y})$
-   - Maximum a posteriori estimate
-   - Coincides with MLE when priors are flat
-
----
-
-## 11. Model Selection and Validation
-
-### Information Criteria
-
-**Deviance Information Criterion (DIC)** [[7]](#7):
-
-```math
-\text{DIC} = \bar{D} + p_D
-```
-
-where $\bar{D}$ is the posterior mean deviance and $p_D$ is the effective number of parameters.
-
-**Watanabe-Akaike Information Criterion (WAIC)** [[8]](#8):
-
-```math
-\text{WAIC} = -2 \cdot \text{lppd} + 2 \cdot p_{\text{WAIC}}
-```
-
-where lppd is the log pointwise predictive density.
-
-**Lower values indicate better models** (balancing fit and complexity).
-
-### Leave-One-Out Cross-Validation
-
-LOO-CV with Pareto-Smoothed Importance Sampling (PSIS-LOO) [[9]](#9) provides:
-- Estimate of out-of-sample predictive accuracy
-- Diagnostic for influential observations
-- No refitting required
-
-### Posterior Predictive Checks
-
-1. **Quantile comparison**: Compare observed vs. predicted quantiles at each site
-2. **Return level plots**: Visual comparison of fitted curves to data
-3. **Residual analysis**: Check for spatial patterns in residuals
-
-### Model Hierarchy Testing
-
-Build models of increasing complexity:
-
-| Model | Copula | Regression | Spatial Errors |
-|-------|--------|------------|----------------|
-| Baseline | No | None | None |
-| + Copula | Yes | None | None |
-| + Location regression | Yes | Location | None |
-| + Scale regression | Yes | Loc + Scale | None |
-| + Location errors | Yes | Loc + Scale | Location |
-| Full BHM | Yes | All | All |
-
-Compare each step using DIC/WAIC to justify added complexity.
-
----
-
-## 12. Implementation in RMC-BestFit
-
-### Model Classes
-
-| Class | Description |
-|-------|-------------|
-| `SpatialGEV` | Main spatial GEV model implementing the full BHM |
-| `GeneralLinearFunction` | Spatial regression for GEV parameters |
-| `SpatialRegressionErrors` | Gaussian process for spatially correlated errors |
-| `GaussianCopula` | Inter-site dependence modeling |
-| `BasicExponential` | Exponential correlation function |
-| `PoweredExponential` | Powered exponential correlation function |
-| `Spherical` | Spherical correlation function |
-
-### Basic Usage
-
-```cs
-using RMC.BestFit.Models;
-using RMC.BestFit.Models.SpatialExtremes;
-
-// Prepare data: nObs × nSites matrix
-double[,] atSiteData = LoadAtSiteData();     // Annual maxima
-double[,] coordinates = LoadCoordinates();   // Site coordinates [S × 2]
-
-// Create covariate matrix (X and Y coordinates)
-int nSites = coordinates.GetLength(0);
-var covariates = new double[nSites, 2];
-for (int j = 0; j < nSites; j++)
+<!-- snippet: spatial-gev-workflow -->
+```csharp
+private static SpatialGEVAnalysis ConfigureSpatialGevAnalysis()
 {
-    covariates[j, 0] = coordinates[j, 0]; // X
-    covariates[j, 1] = coordinates[j, 1]; // Y
-}
+    double[,] annualMaximumFlow =
+    {
+        { 1_240, 1_820, 2_810, 3_640, 4_930, 6_110 },
+        { 1_510, 2_090, 3_260, 4_020, 5_410, 6_750 },
+        { 1_370, 1_960, 3_040, 3_810, 5_120, 6_430 },
+        { 1_860, 2_480, 3_790, 4_690, 6_080, 7_520 },
+        { 2_110, 2_730, 4_120, 5_060, 6_540, 8_010 },
+        { 1_740, 2_310, 3_510, 4_390, 5_770, 7_160 },
+        { 2_430, 3_090, 4_480, 5_510, 7_030, 8_640 },
+        { 2_080, 2_690, 4_060, 4_970, 6_420, 7_910 },
+        { 2_760, 3_410, 4_910, 6_020, 7_590, 9_180 },
+        { 2_350, 2_980, 4_370, 5_360, 6_880, 8_430 }
+    };
+    double[,] projectedCoordinatesKm =
+    {
+        { 12.0, 18.0 },
+        { 29.0, 24.0 },
+        { 46.0, 31.0 },
+        { 61.0, 43.0 },
+        { 79.0, 57.0 },
+        { 96.0, 66.0 }
+    };
+    double[,] standardizedSiteCovariates =
+    {
+        { -1.31, -1.18 },
+        { -0.78, -0.61 },
+        { -0.24, -0.16 },
+        {  0.29,  0.22 },
+        {  0.82,  0.71 },
+        {  1.22,  1.02 }
+    };
 
-// Create GeneralLinearFunction for each parameter
-var location = new GeneralLinearFunction("Location", covariates);
-var scale = new GeneralLinearFunction("Scale", covariates);
-var shape = new GeneralLinearFunction("Shape"); // Intercept only
+    var location = new GeneralLinearFunction(
+        "GEV location",
+        standardizedSiteCovariates);
+    var scale = new GeneralLinearFunction(
+        "GEV scale",
+        standardizedSiteCovariates);
+    var shape = new GeneralLinearFunction("GEV shape");
 
-// Create spatial GEV model
-var model = new SpatialGEV(atSiteData, coordinates, location, scale, shape)
-{
-    UseLogLinkForLocation = true,
-    UseLogLinkForScale = true
-};
-```
+    var model = new SpatialGEV(
+        annualMaximumFlow,
+        projectedCoordinatesKm,
+        location,
+        scale,
+        shape);
+    model.ConfigureForProperCoverage(
+        CorrelationFunctionType.PoweredExponential,
+        includeScaleErrors: false,
+        includeShapeErrors: false,
+        useWeightedLikelihood: false);
 
-### Adding Spatial Errors
-
-```cs
-// Create spatial error models
-var locErrors = new SpatialRegressionErrors(coordinates, new BasicExponential(range: 30.0));
-var sclErrors = new SpatialRegressionErrors(coordinates, new BasicExponential(range: 40.0));
-
-// Enable spatial errors
-model.UseLocationErrors = true;
-model.LocationErrors = locErrors;
-
-model.UseScaleErrors = true;
-model.ScaleErrors = sclErrors;
-
-model.SetDefaultParameters();
-```
-
-### Adding Copula Dependence
-
-```cs
-// Create Gaussian copula with exponential correlation
-var copula = new GaussianCopula(coordinates, new BasicExponential(range: 30.0));
-
-model.UseCopulaDependence = true;
-model.SpatialDependence = copula;
-
-model.SetDefaultParameters();
-```
-
-### Running Bayesian Analysis
-
-```cs
-using RMC.BestFit.Analyses;
-
-var analysis = new SpatialGEVAnalysis(model);
-
-// Configure MCMC
-analysis.BayesianAnalysis.Iterations = 20000;
-analysis.BayesianAnalysis.WarmupIterations = 10000;
-analysis.BayesianAnalysis.ThinningInterval = 10;
-analysis.BayesianAnalysis.NumberOfChains = 4;
-
-// Run analysis
-await analysis.RunAsync();
-
-// Access results
-var map = analysis.BayesianAnalysis.Results.MAP.Values;
-var posteriorMean = analysis.BayesianAnalysis.Results.ParameterResults
-    .Select(p => p.SummaryStatistics.Mean)
-    .ToArray();
-
-// Get site-specific quantiles
-foreach (var siteResult in analysis.SiteResults)
-{
-    Console.WriteLine($"Site: {siteResult.SiteName}");
-    Console.WriteLine($"  100-year flood: {siteResult.Q100:F0}");
-    Console.WriteLine($"  500-year flood: {siteResult.Q500:F0}");
+    return new SpatialGEVAnalysis(model);
 }
 ```
 
----
+Before estimation, inspect every `model.Parameters` entry, set scientifically justified bounds/priors, configure the MCMC seed and chain length through `BayesianAnalysis`, and retain convergence evidence. `ConfigureForProperCoverage` enables the full Gaussian copula and location spatial errors; the method name is not a coverage guarantee. For a new study, begin with simpler nested structures and add dependence components only when the network and record support them.
 
-## 13. Assumptions and Limitations
+## Assumptions, Identifiability, and Failure Modes
 
-### Model Assumptions
+- **Block definition.** Rows are comparable maxima from aligned blocks; asynchronous event pairing is not repaired by the model.
+- **Marginal adequacy.** Every site follows the Numerics-sign GEV with parameter surfaces in (8)–(10). Physical upper bounds implied by $\kappa>0$ must be checked.
+- **Conditional structure.** The copula describes within-row dependence; Gaussian-process errors describe persistent spatial deviations of parameter surfaces. With few sites, the two layers and their ranges can be weakly separated.
+- **No nugget.** Colocated or near-colocated sites and long ranges can produce ill-conditioned covariance matrices.
+- **Covariate design.** Collinearity, incompatible scaling, or more regression terms than the network can support produces weak identification and prior sensitivity.
+- **Shape complexity.** Site-specific shape errors add $S$ latent tail parameters plus covariance hyperparameters. Rare-quantile inference can become prior-dominated.
+- **Stationarity.** There is no time trend in the spatial model. Changes in climate, regulation, land use, or measurement practice violate a stationary block-maxima interpretation unless encoded outside this class.
+- **Missingness.** Rows with missing sites are marginalized exactly under the Gaussian copula, which treats a missing site as missing at random given the observed sites; informative missingness is outside the model.
+- **Extrapolation.** Predictions outside observed coordinate or covariate support are not validated by an in-sample fit.
+- **Simulation.** With copula dependence enabled, `GenerateRandomValues` simulates rows through the Cholesky factor of the fitted correlation matrix (sample $i$ of every site is one event; values grouped by site); without it the sites are independent.
+- **Computational scaling.** Full covariance factorization is cubic in site count for each changed spatial-parameter vector, plus one factorization per distinct missingness pattern.
 
-1. **GEV marginals**: Annual maxima follow GEV distributions at each site
-2. **Stationarity**: Distribution parameters constant over time (no trends)
-3. **Gaussian copula**: Inter-site dependence adequately captured by Gaussian copula
-4. **Gaussian process**: Spatial errors follow multivariate normal distribution
-5. **Isotropic correlation**: Correlation depends only on distance, not direction
-6. **Euclidean distance**: Distance measured as straight-line (may be inappropriate for river networks)
+For life-safety applications, report posterior sensitivity to correlation family, covariate set, shape structure, priors, influential years, network definition, and coordinate system. Do not publish a regional return level without stating whether it is a site value, arithmetic site average, normalized growth factor, simultaneous-event quantity, or an areal aggregate.
 
-### Limitations
+## Validation and Traceability
 
-1. **Computational complexity**: Full model scales as $O(S^3)$ due to matrix operations
-2. **No non-stationarity**: Time trends not currently supported (see univariate models)
-3. **Limited copula choice**: Only Gaussian copula; no extreme-value copulas
-4. **Isotropy**: Cannot model anisotropic correlation (directional dependence)
-5. **Fixed correlation functions**: Cannot estimate correlation function parameters jointly
-6. **No prediction at ungauged sites**: Currently supports only gauged site estimation
+Implementation symbols:
 
-### Data Requirements
+- `Models/SpatialExtremes/SpatialGEV.cs`;
+- `Models/SpatialExtremes/CopulaModels/GaussianCopula.cs`;
+- `Models/SpatialExtremes/CopulaModels/SpatialRegressionErrors.cs`;
+- `Models/SpatialExtremes/CopulaModels/CachedMultivariateNormal.cs`;
+- `Models/SpatialExtremes/SpatialCorrelation/*.cs`;
+- `Models/TrendFunctions/GeneralLinearFunction.cs`; and
+- `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs` plus its result DTOs.
 
-| Requirement | Minimum | Recommended |
-|-------------|---------|-------------|
-| Number of sites | 3 | 10+ |
-| Observations per site | 10 | 30+ |
-| Total observations | 100 | 500+ |
-| Parameter identifiability | 500+ total for full BHM |
+The formulas and parameter bounds in this chapter were checked against the current Numerics source checkpoint and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior including the observed-subset evaluation, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components and the data/prior identities, the row/year criteria helper, the Godambe status contract, result DTOs, serialization, and analysis lifecycle. Focused numerical tests verify the likelihood against the R `mvtnorm` observed-subset and location-error oracle (eight exact cells), the criteria against a guarded MCMC run, and the current retained spatial recovery evidence. The current independent completeness matrix pins all three correlation laws, a fitted held-out Gaussian-copula fold, held-out covariate regression, draw-specific conditional-GP prediction, fixed-draw regional aggregation, both Godambe factors and their sandwich covariance, temporal whole-row block resampling, and the analytical VIF transformation. Historical production-versus-production fold, prediction, and uncertainty-dispatch cells are retained only as design history; the corresponding state and dispatch behavior remains fast-test owned. The geodesic metric is checked against an R haversine oracle and the Cartesian default against planar distances. See [Spatial-Extremes Analysis](../../verification/report/spatial-extremes.md#likelihood-oracle).
 
-### When to Use Simpler Models
+### Current independent correlation and fold matrix
 
-| Situation | Recommended Model |
-|-----------|-------------------|
-| Single site | Univariate GEV |
-| Few sites (< 5) | Independent univariate models |
-| No spatial trend | Homogeneous regional model |
-| Short records | Index flood method |
-| Interest in joint exceedance | Consider max-stable processes |
+Independent numerical targets distinguish correlation laws, fitted folds, and held-out prediction. Basic Exponential, Powered Exponential, and Spherical correlation functions are pinned on a common
+distance grid that includes zero, the Spherical range boundary, and a beyond-range point. Powered Exponential
+uses smoothness 1.6 so it is not merely the exponential special case. A fixed Cartesian held-out fold freezes
+the independently fitted SciPy optimum of a three-site marginal-GEV plus Gaussian-copula likelihood, then
+compares production Differential Evolution and the held-out quantiles with unregularized observed-information
+uncertainty. A separate two-covariate fold recomputes OLS coefficients, the held-out log-link mean, its physical location,
+and parameter and observation prediction variances by normal equations. Missing-site scoring and fold accounting remain fast contracts. The historical
+production-versus-production cross-validation cells are no longer current Verification declarations.
 
----
+### Current independent prediction and uncertainty matrix
 
-## 14. References
+The fixed-draw conditional-GP cell uses a geodesic coordinate matrix and independently evaluates
+the conditional mean, conditional variance, and prediction for four parameter/error draws at one ungauged target.
+The regional cell independently transforms nine supplied link-space intercept/slope and log-scale draws, with physical shape, at three
+predeclared ordinates, averages each draw across sites, and only then computes the posterior mean
+and equal-tailed bounds. These cells isolate the prediction and aggregation formulas from MCMC and
+from production result aggregation.
 
-<a id="1">[1]</a> J. R. M. Hosking and J. R. Wallis, *Regional Frequency Analysis: An Approach Based on L-Moments*, Cambridge, UK: Cambridge University Press, 1997.
+The Godambe generator independently differentiates the row/year objective to obtain `H` and row-score `J`;
+the executable test reconstructs the frozen `H^-1 J H^-1` target and compares the production sandwich.
+The bootstrap cell uses MT19937 seed 24681357 to draw five wrapping temporal block replicates from twelve
+complete row/year vectors with block size four; each selected row keeps its entire site vector. Bounded SciPy
+flat-prior MAP fits (optimizer seed 20260837 plus replicate) independently produce the physical-parameter,
+site-quantile, and regional-quantile interval targets checked against the five production default-DE refits.
+The variance-inflation cell applies the exact centre-plus-`sqrt(VIF)` analytical transformation to results
+derived from a fixed 10-by-3 observation matrix rather
+than accepting interval widening alone. Parameter uncertainty, conditional-GP residual uncertainty,
+bootstrap resampling uncertainty, and numerical tolerances are therefore recorded as distinct
+quantities. Generator/runtime versions, seeds, inputs, parameter order, tolerances, and SHA-256 hashes
+are frozen in the verification manifest and the associated independent artifact. The `1e-9` absolute tolerance covers
+cross-runtime arithmetic roundoff, `2e-5` relative covers independent Godambe finite-difference cancellation,
+and the bootstrap's 2% relative/0.02 near-zero tolerance is below every frozen fitted-output interval width.
 
-<a id="2">[2]</a> S. Coles, *An Introduction to Statistical Modeling of Extreme Values*, London, UK: Springer, 2001.
+### Current N=1000 recovery matrix
 
-<a id="3">[3]</a> B. Renard, V. Garreta, and M. Lang, "An application of Bayesian analysis and MCMC methods to the estimation of a regional trend in annual maxima," *Water Resources Research*, vol. 42, W12422, 2006.
+The retained recovery sample size $N$ is the site-by-time cross-product: ten sites with 100 observations each,
+for total scalar N=1,000. Each retained fixture contains 100 complete ten-site row/year vectors, so the
+likelihood contribution count is 100 multivariate rows. Posterior draws, warmup iterations, and numerical
+quadrature points are not counted. All recovery coordinates use the Cartesian distance metric.
+The ten-site independent grid is the partial 25 km grid `(0,0)`, `(25,0)`, `(50,0)`, `(75,0)`,
+`(0,25)`, `(25,25)`, `(50,25)`, `(75,25)`, `(0,50)`, `(25,50)`. Copula and regression fixtures use
+the same ten-site partial-grid pattern at spacing `100/3`.
 
-<a id="4">[4]</a> B. Renard, "A Bayesian hierarchical approach to regional frequency analysis," *Water Resources Research*, vol. 47, W11513, 2011.
+The homogeneous flat order is `[log(location), log(scale), shape]`. Copula models prepend physical range,
+and the location-regression order is `[beta0, betaX, betaY, log(scale), shape]` with X and Y taken from the
+coordinate matrix. An independent row contributes one marginal GEV density per site; a dependent row also
+contributes one full-network Gaussian-copula density. All fitted coordinates in the retained designs are
+monitored as identified scalar parameters. No retained model contains a latent spatial-error field, so no weak
+latent coordinate is substituted by a site-quantile or regional-curve interval and no conditional-GP residual
+uncertainty is mixed with parameter uncertainty.
 
-<a id="5">[5]</a> B. Renard and M. Lang, "Use of a Gaussian copula for multivariate extreme value analysis: Some case studies in hydrology," *Advances in Water Resources*, vol. 30, no. 4, pp. 897-912, 2007.
+The two MLE cells use unchanged default Differential Evolution and require an unregularized
+observed-information covariance. Each parent coordinate must have absolute standardized error no greater than
+1.96; singular or regularized information is explicit failure. The six Bayesian cells retain DEMCzs and seed
+12345. Three-, four-, and five-coordinate models use 6/8/10 chains, thinning 30/40/50, and initial populations
+300/400/500; all use 3,500 iterations, 1,750 warmup iterations, and output length 10,000. The tests assert these
+dimension-dependent settings at the default 90% interval width before changing only the reported interval to
+95%. Every parent must lie in that central 95% interval, every coordinate must have R-hat below 1.10
+and ESS at least 100, and the secondary 5% point rule applies only to an already resolved interval. The
+production range support Uniform `(epsilon, 500)`, shape bounds `[-0.5, 0.5]`, data-derived trend bounds,
+priors, initial values, and sampler defaults are unchanged and contain every generating parent.
 
-<a id="6">[6]</a> C. J. F. ter Braak and J. A. Vrugt, "Differential Evolution Markov Chain with snooker updater and fewer chains," *Statistics and Computing*, vol. 18, no. 4, pp. 435-446, 2008.
+The eight retained distinctions are independent homogeneous MLE and Bayesian baselines, exponential-copula
+MLE and Bayesian fits, one X/Y location-regression Bayesian fit, and positive, zero, and strongly negative
+shape regimes. These comparisons support recovery for the stated ten-site by 100-row design. They do not
+test inverse-sample-size precision scaling merely by comparing interval widths. Recovery is supported only for these network dimensions,
+parents, seeds, supports, and model structures; it does not establish latent-error recovery, large-network
+performance, conditional spatial prediction, or repeated-realization coverage.
 
-<a id="7">[7]</a> D. J. Spiegelhalter, N. G. Best, B. P. Carlin, and A. van der Linde, "Bayesian measures of model complexity and fit," *Journal of the Royal Statistical Society: Series B*, vol. 64, no. 4, pp. 583-639, 2002.
+## References
 
-<a id="8">[8]</a> S. Watanabe, "Asymptotic equivalence of Bayes cross validation and widely applicable information criterion in singular learning theory," *Journal of Machine Learning Research*, vol. 11, pp. 3571-3594, 2010.
+<a id="ref-1"></a>[1] S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. London, U.K.: Springer, 2001.
 
-<a id="9">[9]</a> A. Vehtari, A. Gelman, and J. Gabry, "Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC," *Statistics and Computing*, vol. 27, no. 5, pp. 1413-1432, 2017.
+<a id="ref-2"></a>[2] B. Renard, “A Bayesian hierarchical approach to regional frequency analysis,” *Water Resources Research*, vol. 47, W11513, 2011, doi: 10.1029/2010WR010089.
 
-<a id="10">[10]</a> D. Cooley, D. Nychka, and P. Naveau, "Bayesian spatial modeling of extreme precipitation return levels," *Journal of the American Statistical Association*, vol. 102, no. 479, pp. 824-840, 2007.
+<a id="ref-3"></a>[3] B. Renard and M. Lang, “Use of a Gaussian copula for multivariate extreme value analysis: Some case studies in hydrology,” *Advances in Water Resources*, vol. 30, no. 4, pp. 897–912, 2007, doi: 10.1016/j.advwatres.2006.08.001.
 
-<a id="11">[11]</a> A. C. Davison, S. A. Padoan, and M. Ribatet, "Statistical modeling of spatial extremes," *Statistical Science*, vol. 27, no. 2, pp. 161-186, 2012.
+<a id="ref-4"></a>[4] D. Cooley, D. Nychka, and P. Naveau, “Bayesian spatial modeling of extreme precipitation return levels,” *Journal of the American Statistical Association*, vol. 102, no. 479, pp. 824–840, 2007, doi: 10.1198/016214506000000780.
 
-<a id="12">[12]</a> M. D. Dettinger, D. R. Cayan, H. F. Diaz, and D. M. Meko, "Large-scale atmospheric forcing of recent trends toward early snowmelt runoff in California," *Journal of Climate*, vol. 11, no. 12, pp. 3064-3078, 1998.
+<a id="ref-5"></a>[5] S. A. Padoan, M. Ribatet, and S. A. Sisson, “Likelihood-based inference for max-stable processes,” *Journal of the American Statistical Association*, vol. 105, no. 489, pp. 263–277, 2010, doi: 10.1198/jasa.2009.tm08577.
 
----
+<a id="ref-6"></a>[6] C. Varin, N. Reid, and D. Firth, “An overview of composite likelihood methods,” *Statistica Sinica*, vol. 21, no. 1, pp. 5–42, 2011.
 
-## Appendix A: Notation Summary
-
-| Symbol | Description |
-|--------|-------------|
-| $Y_{ij}$ | Observation $i$ at site $j$ |
-| $S$ | Number of sites |
-| $n_j$ | Number of observations at site $j$ |
-| $\xi_j$, $\alpha_j$, $\kappa_j$ | GEV parameters at site $j$ |
-| $\beta_k$ | Regression coefficient |
-| $X_{kj}$ | Covariate $k$ at site $j$ |
-| $\varepsilon_j$ | Spatial error at site $j$ |
-| $\sigma$ | Spatial error standard deviation |
-| $r$ | Correlation range parameter |
-| $\rho(h)$ | Correlation function |
-| $h_{ij}$ | Distance between sites $i$ and $j$ |
-| $\mathbf{R}$ | Correlation matrix |
-| $C(\cdot)$ | Copula function |
-| $c(\cdot)$ | Copula density |
-
-## Appendix B: Progressive Test Hierarchy
-
-RMC-BestFit includes a comprehensive suite of synthetic data generators for validation, building from simple to complex:
-
-| Level | Test Case | Description |
-|-------|-----------|-------------|
-| 1 | `GetBasicIdentifiableData` | 500 total obs, constant parameters |
-| 2 | `GetHomogeneousGridData` | 100×100 km grid, constant parameters |
-| 3a | `GetCopulaDataBasicExponential` | Add copula with exponential correlation |
-| 3b | `GetCopulaDataPoweredExponential` | Copula with powered exponential |
-| 3c | `GetCopulaDataSpherical` | Copula with spherical correlation |
-| 4a | `GetRegressionLocationOnly` | Location varies with X, Y |
-| 4b | `GetRegressionScaleOnly` | Scale varies with X, Y |
-| 4c | `GetRegressionLocationScale` | Both vary |
-| 4d | `GetRegressionLocationScaleShape` | All parameters vary |
-| 5a | `GetSpatialErrorsLocationOnly` | Add GP errors to location |
-| 5b | `GetSpatialErrorsLocationScale` | GP errors on location + scale |
-| 5c | `GetFullBHMData` | Complete model with all components |
-| 6 | `GetCopulaWithRegressionData` | Copula + regression combined |
-
-This hierarchy validates each component independently before combining them, ensuring correct implementation.
-
----
-
-## Implementation Sources
-
-Primary source paths: `src/RMC.BestFit/Models/SpatialExtremes/SpatialGEV.cs`, `src/RMC.BestFit/Models/SpatialExtremes/CopulaModels`, `src/RMC.BestFit/Models/SpatialExtremes/SpatialCorrelation`, `src/RMC.BestFit/Analyses/SpatialExtremes/SpatialGEVAnalysis.cs`, and `src/RMC.BestFit/Estimation/BayesianAnalysis.cs`.
-
----
-
-[<- Previous: Time Series](../analysis/time-series.md) | [Back to Index](../../index.md) | [Next: Trend and Link Functions ->](../support/trend-and-link-functions.md)
+<a id="ref-7"></a>[7] M. Ribatet, D. Cooley, and A. C. Davison, “Bayesian inference from composite likelihoods, with an application to spatial extremes,” *Statistica Sinica*, vol. 22, no. 2, pp. 813–845, 2012.
 
 ---
 
-*Last updated: 2026-02-01*
-*RMC-BestFit v2.0*
+[<- Previous: Time Series](../analysis/time-series.md) | [Back to Index](../index.md) | [Next: Trend and Link Functions ->](../support/trend-and-link-functions.md)

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Opt-in validation settings. This does not change the project's default runner configuration.
+     One test worker prevents unrelated test cases from contending with stopwatch assertions;
+     concurrency exercised inside an individual test remains unchanged. No tests are filtered. -->
+<RunSettings>
+  <MSTest>
+    <Parallelize>
+      <Workers>1</Workers>
+      <Scope>MethodLevel</Scope>
+    </Parallelize>
+  </MSTest>
+</RunSettings>

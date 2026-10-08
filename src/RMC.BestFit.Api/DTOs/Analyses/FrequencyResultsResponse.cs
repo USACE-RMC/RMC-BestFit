@@ -36,6 +36,13 @@ namespace RMC.BestFit.Api.DTOs
         public FrequencyCurveDto? FrequencyCurve { get; set; }
 
         /// <summary>
+        /// Display coordinates for enabled univariate quantile priors or B17C quantile penalties.
+        /// Empty when none are enabled or the analysis kind does not expose these annotations.
+        /// </summary>
+        [JsonPropertyName("quantileAnnotations")]
+        public List<QuantileAnnotationDto> QuantileAnnotations { get; set; } = new();
+
+        /// <summary>
         /// Posterior (or sampled) summaries per parameter, including convergence diagnostics
         /// for MCMC fits.
         /// </summary>

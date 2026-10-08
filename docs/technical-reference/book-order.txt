@@ -1,0 +1,85 @@
+# Canonical external-review order. Foundations precede the application collection order.
+front-matter.md
+index.md
+documentation-contract.md
+models/overview.md
+models/parameters-and-priors.md
+support/trend-functions.md
+support/link-functions.md
+support/trend-and-link-functions.md
+estimation/index.md
+estimation/maximum-likelihood.md
+estimation/maximum-a-posteriori.md
+estimation/generalized-method-of-moments.md
+estimation/bayesian-mcmc.md
+estimation/model-comparison.md
+estimation/diagnostics.md
+estimation/influence-diagnostics.md
+estimation/predictive-checks.md
+analysis/overview.md
+
+# 1. Time Series Data
+data/time-series-data.md
+
+# 2. Input Data
+data/input-data.md
+data-frame/index.md
+
+# 3. Distribution Fitting
+analysis/distribution-fitting.md
+
+# 4. Univariate Analyses
+distributions/index.md
+distributions/univariate.md
+distributions/exponential.md
+distributions/gamma.md
+distributions/generalized-extreme-value.md
+distributions/generalized-logistic.md
+distributions/generalized-normal.md
+distributions/generalized-pareto.md
+distributions/gumbel.md
+distributions/kappa-four.md
+distributions/ln-normal.md
+distributions/logistic.md
+distributions/log-normal.md
+distributions/log-pearson-type-iii.md
+distributions/normal.md
+distributions/pearson-type-iii.md
+distributions/weibull.md
+analysis/univariate.md
+analysis/bulletin-17c.md
+analysis/bulletin-17c-estimation.md
+analysis/bulletin-17c-uncertainty.md
+distributions/point-process.md
+distributions/competing-risks.md
+distributions/mixture.md
+distributions/composite.md
+analysis/composite.md
+
+# 5. Bivariate Analyses
+analysis/bivariate.md
+analysis/coincident-frequency.md
+
+# 6. Rating-Curve Analysis
+analysis/rating-curve.md
+
+# 7. Time-Series Analyses
+analysis/time-series.md
+analysis/autoregressive.md
+analysis/moving-average.md
+analysis/arima.md
+analysis/arimax.md
+
+# 8. Spatial Extremes
+spatial/spatial-extremes.md
+
+# Traceability and appendices
+api-traceability.md
+appendices/notation.md
+appendices/parameterization-crosswalk.md
+appendices/glossary.md
+appendices/implementation-source-index.md
+distributions/verification-matrix.md
+appendices/verification-evidence.md
+appendices/reviewer-checklist.md
+appendices/bibliography.md

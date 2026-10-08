@@ -121,7 +121,7 @@ namespace RMC_BestFit
         /// evaluations on the univariate Student's t), and ? is only weakly identified at
         /// typical hydrologic sample sizes. The copula itself (<c>CopulaType.StudentT</c>)
         /// remains fully supported in the model library and is exercised by the verification
-        /// suite � it can be re-enabled here once either a better prior is plumbed through
+        /// suite — it can be re-enabled here once either a better prior is plumbed through
         /// or runtime costs are reduced.
         /// </remarks>
         public ObservableCollection<CopulaItem> CopulaList { get; private set; } = new ObservableCollection<CopulaItem>()
@@ -368,12 +368,12 @@ namespace RMC_BestFit
         /// <param name="e">The property changed event arguments.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Model object replaced (e.g., during undo) � push to sub-controls
+            // Model object replaced (e.g., during undo) — push to sub-controls
             if (e.PropertyName == nameof(Element.BivariateDistribution))
             {
                 ParameterPriorsControl.Model = Element.BivariateDistribution;
             }
-            // BayesianAnalysis replaced � push to sub-controls
+            // BayesianAnalysis replaced — push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;
@@ -384,7 +384,7 @@ namespace RMC_BestFit
         /// <summary>
         /// Loads all univariate analyses from the project into the <see cref="UnivariateAnalysisList"/>
         /// collection. Subscribes to element added/removed events via NAMED handlers (not anonymous
-        /// lambdas) so they can be unsubscribed deterministically � see Convention 8 in the project coding standards.
+        /// lambdas) so they can be unsubscribed deterministically — see Convention 8 in the project coding standards.
         /// Calls <see cref="UnsubscribeUnivariateAnalysisCollection"/> first so repeated invocations
         /// (re-loads after Element change, or after a transient Unload/Reload cycle) cannot
         /// double-subscribe.
@@ -415,7 +415,7 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Handles a new IUnivariate being added to the project. Accept any IUnivariate that
-        /// exposes a marginal model � CompositeAnalysis returns null from GetMarginalModel
+        /// exposes a marginal model — CompositeAnalysis returns null from GetMarginalModel
         /// because it does not own paired input data, so it is filtered out.
         /// </summary>
         private void OnUnivariateAnalysisAdded(IElement x)

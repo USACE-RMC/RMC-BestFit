@@ -793,13 +793,18 @@ public class ARIMAXAnalysisTests
     #region Edge Cases
 
     /// <summary>
-    /// Tests that analysis validation fails for a too-short time series.
+    /// Tests that analysis validation fails for a time series too short for the model's default
+    /// training window.
     /// </summary>
+    /// <remarks>
+    /// AR(3) with an intercept needs at least 3 + 5 + 10 = 18 training steps under the default
+    /// window; the fixture has 15.
+    /// </remarks>
     [TestMethod]
     public void Constructor_WithShortTimeSeries_FailsValidation()
     {
         var ts = CreateShortTimeSeries();
-        var armax = new ARIMAX(ts) { AROrderP = 1, MAOrderQ = 0 };
+        var armax = new ARIMAX(ts) { AROrderP = 3, MAOrderQ = 0 };
 
         var analysis = new ARIMAXAnalysis(armax);
         var (isValid, _) = analysis.Validate();

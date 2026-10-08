@@ -14,6 +14,13 @@ namespace RMC.BestFit.Api.DTOs
     public class UsgsBulletin17CWorkflowRequest
     {
         /// <summary>
+        /// Screens downloaded peaks with the model's Multiple Grubbs-Beck Test before the
+        /// analysis clones the input. Defaults to false; requires at least ten observations.
+        /// </summary>
+        [JsonPropertyName("useMultipleGrubbsBeckTest")]
+        public bool UseMultipleGrubbsBeckTest { get; set; }
+
+        /// <summary>
         /// The 8-digit USGS surface-water site number.
         /// </summary>
         [Required]

@@ -119,7 +119,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         /// <remarks>
         /// Without this, the underlying univariate's <c>PropertyChanged</c> delegate list keeps
-        /// the wrapper alive even after it has been removed from its owning collection — a
+        /// the wrapper alive even after it has been removed from its owning collection â€” a
         /// long-session memory leak for users who add and remove composite components repeatedly.
         /// Setting <see cref="UnivariateAnalysis"/> to null triggers the setter's unsubscribe path.
         /// </remarks>

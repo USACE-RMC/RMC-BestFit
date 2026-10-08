@@ -379,7 +379,7 @@ namespace RMC_BestFit
             {
                 UpdateTimeIndexConstraints();
             }
-            // Distribution object replaced (e.g., during undo) — explicitly push the new object
+            // Distribution object replaced (e.g., during undo) â€” explicitly push the new object
             // to sub-controls and combo box. Do NOT rely on WPF multi-level binding path refresh.
             if (e.PropertyName == nameof(Element.UnivariateDistribution))
             {
@@ -391,7 +391,7 @@ namespace RMC_BestFit
                 UpdateTimeIndexConstraints();
             }
             // BayesianAnalysis object replaced (during distribution undo, RestoreDistributionFromSnapshot
-            // creates a new inner analysis) — explicitly push to sub-controls.
+            // creates a new inner analysis) â€” explicitly push to sub-controls.
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;
@@ -714,6 +714,14 @@ namespace RMC_BestFit
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The selection changed event arguments.</param>
+        /// <remarks>
+        /// A failed trend-model default build (for example, too few observations for the parent
+        /// distribution's automatic constraint estimator) throws <see cref="InvalidOperationException"/>
+        /// from <c>UnivariateDistribution.SetTrendModel</c>. That call already restores its own state
+        /// on failure, so this handler only needs to revert the combo box row back to the
+        /// distribution's actual (unchanged) trend model and warn the user, instead of letting the
+        /// exception escape the dispatcher and terminate the App.
+        /// </remarks>
         private void TrendModelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_suppressTrendModelSelection) return;
@@ -722,7 +730,26 @@ namespace RMC_BestFit
             {
                 if (_trendModelRowItems[i].Value != Element.UnivariateDistribution.TrendModels[i].Type)
                 {
-                    Element.UnivariateDistribution.SetTrendModel(i, _trendModelRowItems[i].Value);
+                    try
+                    {
+                        Element.UnivariateDistribution.SetTrendModel(i, _trendModelRowItems[i].Value);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"UnivariateAnalysisPropertiesControl.TrendModelComboBox_SelectionChanged: {ex}");
+
+                        _suppressTrendModelSelection = true;
+                        try
+                        {
+                            _trendModelRowItems[i].Value = Element.UnivariateDistribution.TrendModels[i].Type;
+                        }
+                        finally
+                        {
+                            _suppressTrendModelSelection = false;
+                        }
+
+                        GenericControls.MessageBox.Show(ex.InnerException?.Message ?? ex.Message, "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
                 }
             }
         }

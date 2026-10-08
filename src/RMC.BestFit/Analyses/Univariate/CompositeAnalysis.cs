@@ -4,6 +4,7 @@ using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Utilities;
 using RMC.BestFit.Estimation;
+using CorrelationMatrixUtilities = RMC.BestFit.Models.CorrelationMatrixUtilities;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -167,6 +168,11 @@ namespace RMC.BestFit.Analyses
             if (depAttr != null && Enum.TryParse(depAttr.Value, out Probability.DependencyType dt))
                 _dependency = dt;
 
+            // Correlation matrix
+            var correlationElement = xElement.Element(nameof(CorrelationMatrix));
+            if (correlationElement != null)
+                _correlationMatrix = CorrelationMatrixUtilities.FromXElement(correlationElement);
+
             // Is maximum
             var maxAttr = xElement.Attribute(nameof(IsMaximum));
             if (maxAttr != null && bool.TryParse(maxAttr.Value, out bool isMax))
@@ -229,6 +235,7 @@ namespace RMC.BestFit.Analyses
         private CompositeType _compositeDistributionType = CompositeType.CompetingRisks;
         private AverageMethod _modelAverageMethod = AverageMethod.DIC;
         private Probability.DependencyType _dependency = Probability.DependencyType.Independent;
+        private double[,]? _correlationMatrix;
         private bool _isMaximum = true;
         private ProbabilityOrdinates _probabilityOrdinates = null!;
         private BayesianAnalysis _bayesianAnalysis = null!;
@@ -242,7 +249,7 @@ namespace RMC.BestFit.Analyses
         /// child) plus the outer caller's single <see cref="ClearResults"/>. Each
         /// <see cref="ClearResults"/> raises <c>AnalysisResults</c> PropertyChanged,
         /// which the App's <c>UpdateFrequencyPlot</c> handler treats as a full plot
-        /// rebuild � producing visible flicker and a wait-cursor flash for every child.
+        /// rebuild — producing visible flicker and a wait-cursor flash for every child.
         /// This guard collapses the cascade to a single ClearResults at the outer
         /// caller's site.
         /// </summary>
@@ -326,6 +333,35 @@ namespace RMC.BestFit.Analyses
                     ClearResults();
                     RaisePropertyChange(nameof(Dependency));
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the correlation matrix used when <see cref="Dependency"/> is
+        /// <see cref="Probability.DependencyType.CorrelationMatrix"/>.
+        /// </summary>
+        /// <value>An owned copy of the configured correlation matrix, or <see langword="null"/>.</value>
+        /// <exception cref="ArgumentException">
+        /// Thrown when a non-null matrix is not square, finite, symmetric with unit diagonal,
+        /// bounded to valid correlations, and strictly positive definite.
+        /// </exception>
+        /// <remarks>
+        /// The matrix dimension is checked against <see cref="Analyses"/> by <see cref="Validate"/>.
+        /// Both assignment and retrieval use defensive copies so callers cannot mutate the
+        /// analysis configuration without clearing results.
+        /// </remarks>
+        public double[,]? CorrelationMatrix
+        {
+            get { return CorrelationMatrixUtilities.Clone(_correlationMatrix); }
+            set
+            {
+                if (value != null && !CorrelationMatrixUtilities.TryValidate(value, null, true, out string? error))
+                    throw new ArgumentException(error, nameof(value));
+                if (CorrelationMatrixUtilities.AreEqual(_correlationMatrix, value)) return;
+
+                _correlationMatrix = CorrelationMatrixUtilities.Clone(value);
+                ClearResults();
+                RaisePropertyChange(nameof(CorrelationMatrix));
             }
         }
 
@@ -436,9 +472,9 @@ namespace RMC.BestFit.Analyses
             // AnalysisResults = null with IsEstimated still true), then MCMC, then assigns
             // a fresh AnalysisResults, then finally flips IsEstimated to true (see
             // UnivariateAnalysis.RunAsync line 510). The "AnalysisResults"-only branch fires
-            // EstimateModelWeights at every step of that sequence � but at the moment a new
+            // EstimateModelWeights at every step of that sequence — but at the moment a new
             // AnalysisResults is set, IsEstimated is still false, so the child is filtered out
-            // by EstimateModelWeights' "valid sub-analyses" check (CompositeAnalysis.cs:561)
+            // by EstimateModelWeights' valid-sub-analyses check
             // and ends up with weight=0. The IsEstimated handler below catches the final
             // transition so the weights resync to the now-fully-fit child without the user
             // having to toggle ModelAverageMethod manually.
@@ -451,7 +487,7 @@ namespace RMC.BestFit.Analyses
             }
             else if (e.PropertyName == nameof(WeightedUnivariateAnalysis.Weight))
             {
-                // Skip the per-Weight ClearResults when EstimateModelWeights is the writer �
+                // Skip the per-Weight ClearResults when EstimateModelWeights is the writer —
                 // the cascading rebuild fires N AnalysisResults PropertyChanged events in
                 // the App, producing flicker and a wait-cursor flash per child. The caller
                 // (e.g. ModelAverageMethod setter) invokes ClearResults once at the end.
@@ -487,6 +523,8 @@ namespace RMC.BestFit.Analyses
         /// point-estimate output without rebuilding posterior bands; CredibleIntervalWidth
         /// changes clear derived composite results because the per-realisation matrix of
         /// composite distributions is not cached and the user must rerun explicitly.
+        /// PRNGSeed changes also clear derived results because the seed defines the
+        /// independently randomized cross-child posterior pairing.
         /// All other notifications propagate for UI binding.
         /// </summary>
         private void BayesianAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -503,6 +541,11 @@ namespace RMC.BestFit.Analyses
                 RaisePropertyChange(e.PropertyName);
             }
             else if (e.PropertyName == nameof(BayesianAnalysis.CredibleIntervalWidth))
+            {
+                ClearResults();
+                RaisePropertyChange(e.PropertyName);
+            }
+            else if (e.PropertyName == nameof(BayesianAnalysis.PRNGSeed))
             {
                 ClearResults();
                 RaisePropertyChange(e.PropertyName);
@@ -577,6 +620,78 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Gets the selected comparison criterion for a child analysis.
+        /// </summary>
+        /// <param name="index">The child-analysis index.</param>
+        /// <returns>The selected criterion, or <see cref="double.NaN"/> when unavailable.</returns>
+        private double GetCriterionValue(int index)
+        {
+            IUnivariateAnalysis? analysis = Analyses[index].UnivariateAnalysis;
+
+            // Bulletin 17C uses BayesianAnalysis only as a compatibility container for
+            // its GMM sampling distribution. Its DIC/WAIC/LOOIC members therefore do
+            // not represent posterior information criteria and are unavailable for
+            // model weighting. The child remains eligible for every criterion it does
+            // calculate (AIC, BIC, and RMSE) and for equal weighting.
+            if (analysis is Bulletin17CAnalysis &&
+                ModelAverageMethod is AverageMethod.DIC or AverageMethod.WAIC or AverageMethod.LOOIC)
+            {
+                return double.NaN;
+            }
+
+            return ModelAverageMethod switch
+            {
+                AverageMethod.AIC => analysis?.AnalysisResults?.AIC ?? double.NaN,
+                AverageMethod.BIC => analysis?.AnalysisResults?.BIC ?? double.NaN,
+                AverageMethod.DIC => analysis?.BayesianAnalysis?.DIC ?? double.NaN,
+                AverageMethod.WAIC => analysis?.BayesianAnalysis?.WAIC ?? double.NaN,
+                AverageMethod.LOOIC => analysis?.BayesianAnalysis?.LOOIC ?? double.NaN,
+                AverageMethod.RMSE => analysis?.AnalysisResults?.RMSE ?? double.NaN,
+                _ => double.NaN
+            };
+        }
+
+        /// <summary>
+        /// Determines whether a selected model-comparison criterion is usable for weighting.
+        /// </summary>
+        /// <param name="value">The criterion value.</param>
+        /// <returns><see langword="true"/> when the value is finite and valid for the selected method.</returns>
+        private bool IsCriterionValid(double value)
+        {
+            return Tools.IsFinite(value) && (ModelAverageMethod != AverageMethod.RMSE || value >= 0d);
+        }
+
+        /// <summary>
+        /// Classifies fitted children by whether their selected comparison criterion is valid.
+        /// </summary>
+        /// <param name="validIndices">Receives fitted children with valid criteria.</param>
+        /// <param name="invalidIndices">Receives fitted children with invalid criteria.</param>
+        private void ClassifyCriterionIndices(List<int> validIndices, List<int> invalidIndices)
+        {
+            for (int index = 0; index < Analyses.Count; index++)
+            {
+                IUnivariateAnalysis? analysis = Analyses[index].UnivariateAnalysis;
+                if (analysis == null || !analysis.IsEstimated) continue;
+
+                if (IsCriterionValid(GetCriterionValue(index)))
+                    validIndices.Add(index);
+                else
+                    invalidIndices.Add(index);
+            }
+        }
+
+        /// <summary>
+        /// Creates a stable diagnostic label for a child analysis.
+        /// </summary>
+        /// <param name="index">The zero-based child index.</param>
+        /// <returns>A one-based index and runtime analysis type.</returns>
+        private string GetChildDiagnosticLabel(int index)
+        {
+            string typeName = Analyses[index].UnivariateAnalysis?.GetType().Name ?? "unresolved analysis";
+            return $"Sub-analysis {index + 1} ({typeName})";
+        }
+
+        /// <summary>
         /// Estimates model weights based on the selected averaging method.
         /// </summary>
         public void EstimateModelWeights()
@@ -592,75 +707,61 @@ namespace RMC.BestFit.Analyses
             try
             {
 
-            double sum = 0;
-            if (ModelAverageMethod == AverageMethod.Equal)
-            {
-                double w = 1d / Analyses.Count;
-                for (int i = 0; i < Analyses.Count; i++)
+                double sum = 0;
+                if (ModelAverageMethod == AverageMethod.Equal)
                 {
-                    Analyses[i].Weight = w;
-                    sum += w;
-                }
-            }
-            else
-            {
-                // Build the goodness-of-fit array over only the successfully-fit
-                // sub-analyses. Passing default-zero entries for unfit analyses to
-                // AICWeights would assign them the BEST weight (since 0 is the
-                // minimum AIC across the array), contaminating the composite with
-                // phantom contributions.
-                var validIndices = new List<int>();
-                for (int i = 0; i < Analyses.Count; i++)
-                {
-                    var ua = Analyses[i].UnivariateAnalysis;
-                    if (ua?.AnalysisResults != null && ua.IsEstimated)
-                        validIndices.Add(i);
-                }
-
-                // Default every weight to 0; only valid sub-analyses contribute.
-                for (int i = 0; i < Analyses.Count; i++)
-                    Analyses[i].Weight = 0.0;
-
-                if (validIndices.Count == 0)
-                    return; // sum stays 0; caller's normalization branch is a no-op
-
-                var gofValid = new double[validIndices.Count];
-                for (int j = 0; j < validIndices.Count; j++)
-                {
-                    int i = validIndices[j];
-                    gofValid[j] = ModelAverageMethod switch
+                    double w = 1d / Analyses.Count;
+                    for (int i = 0; i < Analyses.Count; i++)
                     {
-                        AverageMethod.AIC => Analyses[i].UnivariateAnalysis!.AnalysisResults!.AIC,
-                        AverageMethod.BIC => Analyses[i].UnivariateAnalysis!.AnalysisResults!.BIC,
-                        AverageMethod.DIC => Analyses[i].UnivariateAnalysis!.BayesianAnalysis?.DIC ?? double.NaN,
-                        AverageMethod.WAIC => Analyses[i].UnivariateAnalysis!.BayesianAnalysis?.WAIC ?? double.NaN,
-                        AverageMethod.LOOIC => Analyses[i].UnivariateAnalysis!.BayesianAnalysis?.LOOIC ?? double.NaN,
-                        AverageMethod.RMSE => Analyses[i].UnivariateAnalysis!.AnalysisResults!.RMSE,
-                        _ => 0
-                    };
+                        Analyses[i].Weight = w;
+                        sum += w;
+                    }
                 }
-
-                var validWeights = ModelAverageMethod == AverageMethod.RMSE
-                    ? GoodnessOfFit.RMSEWeights(gofValid)
-                    : GoodnessOfFit.AICWeights(gofValid);
-
-                for (int j = 0; j < validIndices.Count; j++)
+                else
                 {
-                    Analyses[validIndices[j]].Weight = validWeights[j];
-                    sum += validWeights[j];
-                }
-            }
+                    var validIndices = new List<int>();
+                    var invalidIndices = new List<int>();
+                    ClassifyCriterionIndices(validIndices, invalidIndices);
 
-            // Ensure weights sum to 1 by normalizing proportionally
-            // This avoids pushing any single weight negative or above 1
-            if (Analyses.Count > 0 && Math.Abs(sum - 1.0) > 1e-10 && sum > 0)
-            {
-                for (int i = 0; i < Analyses.Count; i++)
+                    // Invalid and unavailable child criteria never contribute.
+                    for (int i = 0; i < Analyses.Count; i++)
+                        Analyses[i].Weight = 0d;
+
+                    if (validIndices.Count == 0)
+                        return;
+
+                    var validCriteria = new double[validIndices.Count];
+                    for (int j = 0; j < validIndices.Count; j++)
+                        validCriteria[j] = GetCriterionValue(validIndices[j]);
+
+                    double[] validWeights;
+                    if (ModelAverageMethod == AverageMethod.RMSE && validCriteria.Any(value => value == 0d))
+                    {
+                        int zeroCount = validCriteria.Count(value => value == 0d);
+                        validWeights = validCriteria
+                            .Select(value => value == 0d ? 1d / zeroCount : 0d)
+                            .ToArray();
+                    }
+                    else
+                    {
+                        validWeights = ModelAverageMethod == AverageMethod.RMSE
+                            ? GoodnessOfFit.RMSEWeights(validCriteria)
+                            : GoodnessOfFit.AICWeights(validCriteria);
+                    }
+
+                    for (int j = 0; j < validIndices.Count; j++)
+                    {
+                        Analyses[validIndices[j]].Weight = validWeights[j];
+                        sum += validWeights[j];
+                    }
+                }
+
+                // Ensure weights sum to 1 by normalizing proportionally.
+                if (Math.Abs(sum - 1d) > 1e-10 && sum > 0d)
                 {
-                    Analyses[i].Weight /= sum;
+                    for (int i = 0; i < Analyses.Count; i++)
+                        Analyses[i].Weight /= sum;
                 }
-            }
-
             }
             finally { _isEstimatingWeights = false; }
         }
@@ -702,7 +803,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -721,9 +822,9 @@ namespace RMC.BestFit.Analyses
                     // PropertyChanged fires inside CreateFrequencyAnalysisResultsAsync, the
                     // App control's gates (Element.IsEstimated == true && AnalysisResults != null)
                     // see the analysis as estimated and draw the curves. Without this, the batch
-                    // path � which calls inner.RunAsync directly without the UI wrapper's
-                    // post-await RaisePropertyChange � leaves the plot/grids empty. Mirrors the
-                    // B17C pattern (Bulletin17CAnalysis.cs:558).
+                    // path — which calls inner.RunAsync directly without the UI wrapper's
+                    // post-await RaisePropertyChange — leaves the plot/grids empty. Mirrors the
+                    // B17C pattern in Bulletin17CAnalysis.
                     _isEstimated = true;
                     await CreateFrequencyAnalysisResultsAsync(progressReporter);
                     RaisePropertyChange(nameof(IsEstimated));
@@ -766,9 +867,22 @@ namespace RMC.BestFit.Analyses
 
             await Task.Run(() =>
             {
-                // Get minimum number of realizations across all analyses
-                int realz = Analyses.Min(x => x.UnivariateAnalysis?.BayesianAnalysis?.OutputLength ?? 0);
-                if (realz == 0) return;
+                // Independently randomize the retained posterior index selected from each
+                // separately fitted child. The shared output length is the shortest ACTUAL
+                // retained chain; longer chains contribute a without-replacement subset from
+                // their complete retained range rather than being truncated to a common prefix.
+                var sourceOutputCounts = new int[Analyses.Count];
+                for (int analysisIndex = 0; analysisIndex < Analyses.Count; analysisIndex++)
+                {
+                    sourceOutputCounts[analysisIndex] =
+                        Analyses[analysisIndex].UnivariateAnalysis?.BayesianAnalysis?.Results?.Output?.Count ?? 0;
+                    if (sourceOutputCounts[analysisIndex] <= 0) return;
+                }
+
+                int[][] randomIndexes = PosteriorIndexResampler.CreateRandomIndexes(
+                    sourceOutputCounts,
+                    BayesianAnalysis.PRNGSeed);
+                int realz = randomIndexes[0].Length;
 
                 // Cancellation wiring (mirrors Bulletin17CAnalysis.cs:789-850 pattern):
                 // pass the run's cancellation token via ParallelOptions so the runtime
@@ -795,7 +909,8 @@ namespace RMC.BestFit.Analyses
                     {
                         MinimumOfRandomVariables = !IsMaximum,
                         Dependency = Dependency,
-                        XTransform = Transform.Logarithmic,
+                        CorrelationMatrix = CorrelationMatrix!,
+                        XTransform = Transform.None,
                         ProbabilityTransform = Transform.NormalZ
                     };
                     ((CompetingRisks)mode).CreateEmpiricalCDF();
@@ -809,9 +924,9 @@ namespace RMC.BestFit.Analyses
                         // regardless of how fast individual iterations are. The
                         // OperationCanceledException it raises pops as a "first-chance
                         // exception" in the Visual Studio debugger when CLR exceptions
-                        // are enabled in Debug ? Windows ? Exception Settings, but the
-                        // outer catch in RunAsync (CompositeAnalysis.cs:714) handles it
-                        // correctly � the user sees a clean cancel in Release mode and
+                        // are enabled in the debugger's exception settings, but the
+                        // outer catch in RunAsync handles it
+                        // correctly — the user sees a clean cancel in Release mode and
                         // when running outside the debugger. (Silent-return + phase-
                         // boundary check is theoretically equivalent but only catches
                         // the cancel between Parallel.For dispatches, which can be
@@ -821,13 +936,15 @@ namespace RMC.BestFit.Analyses
                         var uDists = new UnivariateDistributionBase[Analyses.Count];
                         for (int i = 0; i < Analyses.Count; i++)
                         {
-                            uDists[i] = Analyses[i].UnivariateAnalysis!.GetDistribution(idx)!;
+                            uDists[i] = Analyses[i].UnivariateAnalysis!
+                                .GetDistribution(randomIndexes[i][idx])!;
                         }
                         results[idx] = new CompetingRisks(uDists)
                         {
                             MinimumOfRandomVariables = !IsMaximum,
                             Dependency = Dependency,
-                            XTransform = Transform.Logarithmic,
+                            CorrelationMatrix = CorrelationMatrix!,
+                            XTransform = Transform.None,
                             ProbabilityTransform = Transform.NormalZ
                         };
                         ((CompetingRisks)results[idx]).CreateEmpiricalCDF();
@@ -852,10 +969,10 @@ namespace RMC.BestFit.Analyses
                     }
                     mode = new Mixture(weights.ToArray(), modeDists.ToArray())
                     {
-                        XTransform = Transform.Logarithmic,
+                        XTransform = Transform.None,
                         ProbabilityTransform = Transform.NormalZ
                     };
-                    if (sum < 1)
+                    if (1.0 - sum > 1e-10)
                     {
                         ((Mixture)mode).IsZeroInflated = true;
                         ((Mixture)mode).ZeroWeight = 1 - sum;
@@ -872,14 +989,15 @@ namespace RMC.BestFit.Analyses
                         var uDists = new List<UnivariateDistributionBase>();
                         for (int i = 0; i < Analyses.Count; i++)
                         {
-                            uDists.Add(Analyses[i].UnivariateAnalysis!.GetDistribution(idx)!);
+                            uDists.Add(Analyses[i].UnivariateAnalysis!
+                                .GetDistribution(randomIndexes[i][idx])!);
                         }
                         results[idx] = new Mixture(weights.ToArray(), uDists.ToArray())
                         {
-                            XTransform = Transform.Logarithmic,
+                            XTransform = Transform.None,
                             ProbabilityTransform = Transform.NormalZ
                         };
-                        if (sum < 1)
+                        if (1.0 - sum > 1e-10)
                         {
                             ((Mixture)results[idx]).IsZeroInflated = true;
                             ((Mixture)results[idx]).ZeroWeight = 1 - sum;
@@ -943,7 +1061,8 @@ namespace RMC.BestFit.Analyses
                 {
                     MinimumOfRandomVariables = !IsMaximum,
                     Dependency = Dependency,
-                    XTransform = Transform.Logarithmic,
+                    CorrelationMatrix = CorrelationMatrix!,
+                    XTransform = Transform.None,
                     ProbabilityTransform = Transform.NormalZ
                 };
                 cr.CreateEmpiricalCDF();
@@ -964,10 +1083,10 @@ namespace RMC.BestFit.Analyses
                 }
                 var mix = new Mixture(weights.ToArray(), modeDists.ToArray())
                 {
-                    XTransform = Transform.Logarithmic,
+                    XTransform = Transform.None,
                     ProbabilityTransform = Transform.NormalZ
                 };
-                if (sum < 1)
+                if (1.0 - sum > 1e-10)
                 {
                     mix.IsZeroInflated = true;
                     mix.ZeroWeight = 1 - sum;
@@ -1053,24 +1172,52 @@ namespace RMC.BestFit.Analyses
                     messages.Add("Error: The sum of the weights is greater than 1.");
                 }
 
-                // Bulletin17CAnalysis is fit by GMM, not by an MCMC chain, so it does not
-                // produce posterior-likelihood-based information criteria (DIC, WAIC, LOO-CV).
-                // Reject Model Averaging weighted by any of those criteria when at least one
-                // child is a Bulletin17CAnalysis � silently averaging with NaN / 0 weights
-                // would produce a meaningless composite curve.
+                // Invalid criteria are excluded with a named warning when at least one
+                // usable child remains. If every fitted child criterion is invalid, the
+                // composite cannot define an average and validation fails.
                 if (CompositeDistributionType == CompositeType.ModelAverage &&
-                    (ModelAverageMethod == AverageMethod.DIC ||
-                     ModelAverageMethod == AverageMethod.WAIC ||
-                     ModelAverageMethod == AverageMethod.LOOIC) &&
-                    Analyses.Any(wua => wua.UnivariateAnalysis is Bulletin17CAnalysis))
+                    ModelAverageMethod != AverageMethod.Equal)
                 {
-                    isValid = false;
-                    messages.Add(
-                        $"Error: Model Averaging with {ModelAverageMethod} is not supported when any child " +
-                        "is a Bulletin17CAnalysis. B17C uses Generalized Method of Moments rather than an " +
-                        "MCMC chain, so DIC, WAIC, and LOO-CV are not defined for it. Choose AIC, BIC, " +
-                        "RMSE, or Equal weighting instead.");
+                    var validIndices = new List<int>();
+                    var invalidIndices = new List<int>();
+                    ClassifyCriterionIndices(validIndices, invalidIndices);
+                    bool noValidCriterion = invalidIndices.Count > 0 && validIndices.Count == 0;
+
+                    foreach (int index in invalidIndices)
+                    {
+                        double criterion = GetCriterionValue(index);
+                        string label = GetChildDiagnosticLabel(index);
+                        if (noValidCriterion)
+                        {
+                            isValid = false;
+                            messages.Add(
+                                $"Error: {label} has invalid {ModelAverageMethod} value " +
+                                $"'{criterion.ToString("G17", CultureInfo.InvariantCulture)}' and must be re-estimated or removed.");
+                        }
+                        else
+                        {
+                            messages.Add(
+                                $"Warning: {label} has invalid {ModelAverageMethod} value " +
+                                $"'{criterion.ToString("G17", CultureInfo.InvariantCulture)}', was assigned zero weight, " +
+                                "and must be re-estimated or removed to be included in the average.");
+                        }
+                    }
                 }
+            }
+
+            int? expectedMatrixDimension = Analyses != null && Analyses.Count > 0
+                ? Analyses.Count
+                : null;
+            bool matrixRequired = CompositeDistributionType == CompositeType.CompetingRisks &&
+                Dependency == Probability.DependencyType.CorrelationMatrix;
+            if (!CorrelationMatrixUtilities.TryValidate(
+                _correlationMatrix,
+                expectedMatrixDimension,
+                matrixRequired,
+                out string? matrixError))
+            {
+                isValid = false;
+                messages.Add($"Error: {matrixError}");
             }
 
             if (ProbabilityOrdinates == null || ProbabilityOrdinates.Count == 0)
@@ -1097,6 +1244,12 @@ namespace RMC.BestFit.Analyses
                 }
             }
 
+            if (BayesianAnalysis.PRNGSeed < 0)
+            {
+                isValid = false;
+                messages.Add("Error: The posterior-resampling PRNG seed must be nonnegative.");
+            }
+
             return (isValid, messages);
         }
 
@@ -1112,6 +1265,9 @@ namespace RMC.BestFit.Analyses
                 new XAttribute(nameof(ModelAverageMethod), ModelAverageMethod),
                 new XAttribute(nameof(Dependency), Dependency),
                 new XAttribute(nameof(IsMaximum), IsMaximum));
+
+            if (_correlationMatrix != null)
+                root.Add(CorrelationMatrixUtilities.ToXElement(_correlationMatrix));
 
             // Probability ordinates
             if (ProbabilityOrdinates != null && ProbabilityOrdinates.Count > 0)

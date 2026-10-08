@@ -48,6 +48,7 @@ namespace RMC.BestFit.Api.Mcp
         /// <param name="parameterPriors">Optional informative parameter priors.</param>
         /// <param name="quantilePriors">Optional quantile priors.</param>
         /// <param name="useSingleQuantile">Optional single-quantile-prior formulation flag.</param>
+        /// <param name="useJeffreysRuleForScale">Optional override of the existing scale rule; omission preserves the model default.</param>
         /// <param name="name">Optional display name.</param>
         /// <returns>JSON with the created analysis summary including its id.</returns>
         [McpServerTool(Name = "create_univariate_analysis")]
@@ -66,7 +67,8 @@ namespace RMC.BestFit.Api.Mcp
             [Description("Optional informative parameter priors: array of { parameterName, distribution: { type, parameters }, isFixed? }. Parameter names per distribution come from get_metadata. Unnamed parameters keep flat priors.")] List<ParameterPriorDto>? parameterPriors = null,
             [Description("Optional quantile priors (engineering judgment about flood magnitudes): array of { alpha (AEP), distribution: { type, parameters } }. Supply one per distribution parameter, or one total with useSingleQuantile=true.")] List<QuantilePriorDto>? quantilePriors = null,
             [Description("True for the single-quantile-prior formulation (Viglione et al. 2013); false/omit for one prior per parameter (Coles and Tawn 1996).")] bool? useSingleQuantile = null,
-            [Description("Optional display name for the analysis.")] string? name = null)
+            [Description("Optional display name for the analysis.")] string? name = null,
+            [Description("Optional Jeffreys scale-rule override. Omit to preserve the model default.")] bool? useJeffreysRuleForScale = null)
         {
             var resource = _service.CreateUnivariate(new CreateUnivariateAnalysisRequest
             {
@@ -77,6 +79,7 @@ namespace RMC.BestFit.Api.Mcp
                 ParameterPriors = parameterPriors,
                 QuantilePriors = quantilePriors,
                 UseSingleQuantile = useSingleQuantile,
+                UseJeffreysRuleForScale = useJeffreysRuleForScale,
                 Name = name
             });
             return McpJson.Serialize(AnalysisMapper.ToResourceResponse(resource));
@@ -226,6 +229,19 @@ namespace RMC.BestFit.Api.Mcp
                 return McpJson.Serialize(_service.GetTimeSeriesResults(analysisId));
             }
             return McpJson.Serialize(_service.GetFrequencyResults(analysisId));
+        }
+
+        /// <summary>Exports detached plot source state from one completed run without estimation.</summary>
+        /// <param name="analysisId">The analysis resource id.</param>
+        /// <param name="includeSamples">Include full saved parameter draws and chains.</param>
+        /// <returns>Versioned JSON plot source snapshot.</returns>
+        [McpServerTool(Name = "get_analysis_plot_source")]
+        [Description("Get a read-only plot source snapshot for a completed analysis. Includes model and data configuration, current results, and precomputed diagnostics. Set includeSamples=true to include full saved draws and chains.")]
+        public string GetAnalysisPlotSource(
+            [Description("The analysis id.")] Guid analysisId,
+            [Description("Include full saved draws and chains (default false).")] bool includeSamples = false)
+        {
+            return McpJson.Serialize(PlotSourceExporter.Export(_service.Get(analysisId), includeSamples));
         }
 
         /// <summary>

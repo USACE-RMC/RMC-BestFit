@@ -206,9 +206,10 @@ namespace RMC.BestFit.Diagnostics
             for (int s = 0; s < S; s += step)
             {
                 var parameters = samples[s];
+                double[] modelParameters = GetModelParameterValues(model, parameters.Values);
 
                 // Get pointwise prior log-likelihood
-                var priorComponents = model.PointwisePriorLogLikelihood(parameters.Values);
+                var priorComponents = model.PointwisePriorLogLikelihood(modelParameters);
                 foreach (var comp in priorComponents)
                 {
                     if (!componentDict.ContainsKey(comp.Name))
@@ -220,7 +221,7 @@ namespace RMC.BestFit.Diagnostics
                 }
 
                 // Get data log-likelihood
-                dataLogLikelihoods.Add(model.DataLogLikelihood(parameters.Values));
+                dataLogLikelihoods.Add(model.DataLogLikelihood(modelParameters));
             }
 
             // Create component summaries
@@ -257,13 +258,13 @@ namespace RMC.BestFit.Diagnostics
         /// <param name="step">Thinning step for the posterior samples.</param>
         private void ComputePriorPrecisionShare(IModel model, MCMCResults results, int step)
         {
-            int p = model.Parameters.Count;
-            if (p == 0 || results.Output == null || results.Output.Count == 0)
+            if (results.Output == null || results.Output.Count == 0)
             {
                 PriorPrecisionShare = Array.Empty<double>();
                 MeanPriorPrecisionShare = 0.0;
                 return;
             }
+            int p = results.Output[0].Values.Length;
 
             var samples = results.Output;
             int S = samples.Count;
@@ -296,14 +297,15 @@ namespace RMC.BestFit.Diagnostics
             var priorVar = new double[p];
             for (int i = 0; i < p; i++)
             {
-                var prior = model.Parameters[i].PriorDistribution;
+                int modelParameterIndex = GetModelParameterIndex(model, p, i);
+                var prior = model.Parameters[modelParameterIndex].PriorDistribution;
                 double v = double.PositiveInfinity;
                 try { v = prior.Variance; }
                 catch (Exception ex)
                 {
                     // Improper prior — Variance is undefined (e.g., flat / Jeffreys-1/σ).
                     // Treated as positive infinity by the fall-through.
-                    Debug.WriteLine($"PriorInfluenceDiagnostics: prior {model.Parameters[i].Name}.Variance unavailable: {ex.Message}");
+                    Debug.WriteLine($"PriorInfluenceDiagnostics: prior {model.Parameters[modelParameterIndex].Name}.Variance unavailable: {ex.Message}");
                 }
                 if (!double.IsFinite(v) || v <= 0) v = double.PositiveInfinity;
                 priorVar[i] = v;
@@ -326,6 +328,48 @@ namespace RMC.BestFit.Diagnostics
                 if (double.IsFinite(share)) { sum += share; finiteCount++; }
             }
             MeanPriorPrecisionShare = finiteCount > 0 ? sum / finiteCount : 0.0;
+        }
+
+        /// <summary>
+        /// Converts stored posterior coordinates to the public model parameter vector.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="storedParameters">The stored posterior coordinates.</param>
+        /// <returns>The public model parameter vector.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when stored mixture coordinates are invalid.</exception>
+        private static double[] GetModelParameterValues(IModel model, double[] storedParameters)
+        {
+            if (model is not MixtureModel mixtureModel)
+                return storedParameters;
+
+            if (!mixtureModel.TryGetPhysicalParameters(storedParameters, out double[] physicalParameters))
+            {
+                throw new InvalidOperationException(
+                    "The stored mixture result does not match the K-1 sampled or full-K public parameterization.");
+            }
+
+            return physicalParameters;
+        }
+
+        /// <summary>
+        /// Maps a sampled result index to the corresponding public model-parameter index.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="storedCount">The stored result dimension.</param>
+        /// <param name="storedIndex">The stored result index.</param>
+        /// <returns>The corresponding public model-parameter index.</returns>
+        private static int GetModelParameterIndex(IModel model, int storedCount, int storedIndex)
+        {
+            if (model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                storedCount == model.Parameters.Count - 1)
+            {
+                int derivedWeightIndex = mixtureModel.Mixture.Distributions.Length - 1;
+                return storedIndex < derivedWeightIndex ? storedIndex : storedIndex + 1;
+            }
+
+            return storedIndex;
         }
 
         /// <summary>

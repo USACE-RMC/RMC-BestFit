@@ -100,7 +100,7 @@ namespace RMC_BestFit
                     thisControl.QQPlotToolbar.Plot = null;
                     thisControl.ACFPlotToolbar.Plot = null;
                     thisControl.PACFPlotToolbar.Plot = null;
-                    // NOTE: PropertiesCalled is wired in XAML for every toolbar — no programmatic -= needed.
+                    // NOTE: PropertiesCalled is wired in XAML for every toolbar â€” no programmatic -= needed.
                 }
             }
 
@@ -117,7 +117,7 @@ namespace RMC_BestFit
 
             // Attach plots, wire toolbars, and wire Bayesian sub-control plots inside a
             // bridge-suspension block. PropertiesCalled / PlotPropertiesCalled are wired
-            // in XAML — no programmatic += needed.
+            // in XAML â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.TimeSeriesPlotHost.Content = newElement.TimeSeriesPlot;
@@ -299,7 +299,7 @@ namespace RMC_BestFit
         {
             // Reset _isLoaded so the next Loaded event re-runs data-refresh steps.
             // Element-scoped lifecycle (PropertyChanged, plot hosts, toolbars) is owned by
-            // ElementCallback and survives unload/reload cycles — no additional teardown needed.
+            // ElementCallback and survives unload/reload cycles â€” no additional teardown needed.
             _isLoaded = false;
         }
 
@@ -338,9 +338,9 @@ namespace RMC_BestFit
                 SetTableColumnHeaders();
             }
             // TrainingTimeSteps / ForecastingTimeSteps changes are owned by the analysis
-            // layer (Phase 6 whitelist + Phase 3b reprocess pattern). The AnalysisResults
+            // layer (reprocess pattern). The AnalysisResults
             // PropertyChanged branch above refreshes plots and tables when the rebuild
-            // completes — no separate App-side trigger needed. Note: TrainingTimeSteps
+            // completes â€” no separate App-side trigger needed. Note: TrainingTimeSteps
             // changes the fit and follows the ClearResults path (no wait cursor); only
             // ForecastSteps reprocesses.
             if ((e.PropertyName == nameof(Element.BayesianAnalysis.PointEstimator)
@@ -366,7 +366,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
@@ -791,11 +791,11 @@ namespace RMC_BestFit
                         trainingCredibleIntervals.DataFieldY = "Y";
                         trainingCredibleIntervals.DataFieldX2 = "X";
                         trainingCredibleIntervals.DataFieldY2 = "Z";
-                        trainingCredibleIntervals.Title = ciPct + "% Credible Intervals — Training";
+                        trainingCredibleIntervals.Title = ciPct + "% Credible Intervals â€” Training";
                         trainingCredibleIntervals.TrackerFormatString = timeSeriesTracker;
                         TimeSeriesPlot.Series.Add(trainingCredibleIntervals);
 
-                        // Prediction Credible Intervals (light red) — only if there's a non-trivial
+                        // Prediction Credible Intervals (light red) â€” only if there's a non-trivial
                         // validation + forecast window beyond the training cutoff.
                         if (predictionCi != null)
                         {
@@ -804,7 +804,7 @@ namespace RMC_BestFit
                             predictionCredibleIntervals.DataFieldY = "Y";
                             predictionCredibleIntervals.DataFieldX2 = "X";
                             predictionCredibleIntervals.DataFieldY2 = "Z";
-                            predictionCredibleIntervals.Title = ciPct + "% Credible Intervals — Prediction";
+                            predictionCredibleIntervals.Title = ciPct + "% Credible Intervals â€” Prediction";
                             predictionCredibleIntervals.TrackerFormatString = timeSeriesTracker;
                             TimeSeriesPlot.Series.Add(predictionCredibleIntervals);
                         }
@@ -1023,7 +1023,8 @@ namespace RMC_BestFit
                 if (Element != null && Element.BayesianAnalysis != null && Element.IsValid == true && Element.BayesianAnalysis.IsEstimated == true)
                 {
                     var points = new List<DataPoint>();
-                    for (int i = 0; i < Element.ARIMAX.TrainingTimeSteps; i++)
+                    int residualCount = Math.Min(_residuals!.Length, Element.ARIMAX.TrainingTimeSeries.Count);
+                    for (int i = 0; i < residualCount; i++)
                     {
                         points.Add(new DataPoint(Element.ARIMAX.TrainingTimeSeries[i].Index.ToOADate(), _residuals[i]));
                     }

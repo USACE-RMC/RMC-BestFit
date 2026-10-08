@@ -1,138 +1,76 @@
-# USGS Peak Discharge Download Example
+# USGS annual peaks: inspect source records and low-outlier flags
 
-## Overview
+This exercise compares two saved annual instantaneous-peak discharge records. The Moose River series has no flagged low outliers; the Orestimba Creek series has 47. Learn to distinguish a retained low observation, its statistical treatment and the physical explanation that still needs independent evidence.
 
-This example demonstrates downloading annual peak instantaneous discharge data directly from the **USGS National Water Information System (NWIS)** peak-flow web service. Unlike the block maximum method, which derives annual peaks from a daily time series, this approach downloads the official USGS annual peak values directly into an Input Data element -- no time series element is needed.
+## Open and inspect the source
 
-The example includes two contrasting stations: a perennial stream with no low outliers, and an ephemeral stream where the **Multiple Grubbs-Beck Test (MGBT)** identifies nearly half the record as anomalously low peaks. This demonstrates how RMC-BestFit handles censored observations in flood frequency analysis.
+Open [usgs-peak-download-example.bestfit](usgs-peak-download-example.bestfit) in BestFit and save a working copy before refreshing or processing data. The figures below use the saved observations and current desktop display routines.
 
-## Data Source
+The saved inputs were downloaded as USGS annual peak discharges. Moose River at Victory, Vermont is site 01134500; Orestimba Creek near Newman, California is site 11274500. The source values are in cfs, although both saved plot axes use the generic label “Value.” Review the original peak-flow qualifiers and station history through the [USGS water-data portal](https://waterdata.usgs.gov/) when preparing a new study.
 
-- **API:** USGS NWIS Peak-Flow Web Service
-- **Website:** https://nwis.waterdata.usgs.gov/nwis/peak
-- **Entry Method in BestFit:** USGS Peak Discharge
-- **Required Parameter:** USGS Site Number (8-15 digits)
+## Find the controls
 
-### Stations in This Example
+Expand **Input Data** in the **Project Explorer** and select **USGS - 01134500 - Peak Discharge**. In **Properties**, read **Data Entry Method = USGS Peak Discharge**, **Site Number = 01134500**, and **Multiple Grubbs-Beck Test**. Open **Data Frame** on the left, then **Exact Data** above the grid. The **Chronology Plot** and **Frequency Plot** selectors below the plot switch between event timing and empirical frequency.
 
-| Station | Name | Location | Record | Character |
-|---------|------|----------|--------|-----------|
-| 01134500 | Moose River at Victory | Vermont | 1947--2025 | Perennial, snowmelt-driven, no low outliers |
-| 11274500 | Orestimba Creek near Newman | California | 1932--2025 | Ephemeral, rainfall-driven, 47 MGBT low outliers |
+For a separate working input, right-click **Input Data**, choose **New Input Data...**, and enter a name. Configure **Data Entry Method** and the source in **Properties**; **Process** extracts a block or POT sample, while **Download** retrieves direct USGS peaks. Follow the saved example by inspection before processing a new input.
 
-## What's Inside
+![Project Explorer for this saved project, with USGS - 01134500 - Peak Discharge selected.](screenshots/peak-download-project-explorer-current.png)
 
-Open `usgs-peak-download-example.bestfit` in RMC-BestFit. The Project Explorer shows two Input Data elements (no Time Series Data elements -- peak data is downloaded directly):
+*Project Explorer for this saved project, with USGS - 01134500 - Peak Discharge selected.* [Capture data](screenshots/peak-download-project-explorer-current.json.gz)
 
-| Element | Station | MGBT Low Outliers | Description |
-|---------|---------|-------------------|-------------|
-| USGS - 01134500 - Peak Discharge | Moose River at Victory, VT | 0 | Perennial stream with reliable annual peaks |
-| USGS - 11274500 - Peak Discharge | Orestimba Creek near Newman, CA | 47 of 94 years | Ephemeral stream with many zero/low-flow years |
+![Properties for USGS - 01134500 - Peak Discharge. Check the source and settings before changing a working copy.](screenshots/peak-download-properties-current.png)
 
-![Project Explorer showing two USGS peak discharge Input Data elements](../images/peak-download-project-explorer.png)
-*Figure 1: Project Explorer with USGS peak discharge elements*
+*Properties for USGS - 01134500 - Peak Discharge. Check the source and settings before changing a working copy.* [Capture data](screenshots/peak-download-properties-current.json.gz)
 
-## Step-by-Step Guide
+## Saved configuration and sample
 
-### Opening the Project
+| Saved input | Year indexes | Exact-series rows | Flagged low outliers | Saved screening threshold |
+|---|---|---:|---:|---:|
+| USGS - 01134500 - Peak Discharge | 1947–2025 | 79 | 0 | 0 cfs |
+| USGS - 11274500 - Peak Discharge | 1932–2025 | 94 | 47 | 1,270 cfs |
 
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to `examples/2-input-data/2-usgs-peak-discharge/`
-3. Open `usgs-peak-download-example.bestfit`
-4. Expand **Input Data** in the Project Explorer
+## Work through the example
 
-### Exploring Moose River (01134500) -- No Low Outliers
+1. Open **Input Data** in the Project Explorer. This project has two direct peak-data inputs and does not require a daily time-series element.
+2. Select the Moose River input. Check its station number, **Data Entry Method = USGS Peak Discharge** and enabled **Multiple Grubbs-Beck Test** setting.
+3. Read **Chronology** and the data grid. Confirm the 79 year indexes, then inspect **Frequency**. A smooth sample plot is not a convergence check or proof of a distributional model.
+4. Select Orestimba Creek. Compare its chronology with the frequency view, and identify the 47 low-outlier flags and 1,270 cfs screening threshold.
+5. Keep the flagged observations in the record. The saved DataFrame retains all 94 rows in ExactSeries with low-outlier flags; it does not physically move them into a separate ThresholdSeries.
+6. Before fitting, record the chosen screening policy and assess how the selected estimator uses the flags. Review source qualifiers, historical information and the intended annual-peak definition together.
+7. For a new download, create a separate Input Data element, enter the station number and download into a working copy. Preserve the retrieval date and raw source evidence; a refreshed record need not reproduce this snapshot.
 
-1. Click **USGS - 01134500 - Peak Discharge** in the Project Explorer
-2. The **Chronology** tab shows the annual peak instantaneous discharge from 1947 to present
-3. Click the **Frequency** tab to see the empirical frequency curve -- note the smooth distribution with no obvious breaks or gaps in the lower tail
-4. This station has no MGBT low outliers -- the annual peak flows are consistent year to year, as expected for a perennial stream fed by snowmelt
+## Read the plots
 
-![Chronology of Moose River annual peak discharge](../images/peak-download-moose-river-chronology.png)
-*Figure 2: Moose River annual peak discharge -- no low outliers*
+![Moose River annual instantaneous peaks, with the saved year indexes.](screenshots/peak-download-moose-river-chronology-native.png)
 
-![Frequency plot for Moose River](../images/peak-download-moose-river-frequency.png)
-*Figure 3: Empirical frequency curve for Moose River*
+*Moose River annual instantaneous peaks, with the saved year indexes.* [Python SVG](images/usgs-peak-download-example-moose-chronology.svg) · [Python plot data](images/usgs-peak-download-example-moose-chronology.plotspec.json.gz) [Native SVG](screenshots/peak-download-moose-river-chronology-native.svg) [Capture data](screenshots/peak-download-moose-river-chronology-native.json.gz)
 
-### Exploring Orestimba Creek (11274500) -- 47 Low Outliers
+![Moose River empirical frequency. “Value” denotes discharge in cfs.](screenshots/peak-download-moose-river-frequency-native.png)
 
-1. Click **USGS - 11274500 - Peak Discharge** in the Project Explorer
-2. The **Chronology** tab reveals a striking pattern: many years have very low or zero peak flows, while a few years have large flood peaks exceeding 10,000 cfs
-3. Click the **Frequency** tab -- note the clear break in the lower tail where the MGBT has identified 47 low outliers
-4. The low outliers appear as threshold-censored observations (shown differently from exact observations in the data grid and plots)
+*Moose River empirical frequency. “Value” denotes discharge in cfs.* [Python SVG](images/usgs-peak-download-example-moose-frequency.svg) · [Python plot data](images/usgs-peak-download-example-moose-frequency.plotspec.json.gz) [Native SVG](screenshots/peak-download-moose-river-frequency-native.svg) [Capture data](screenshots/peak-download-moose-river-frequency-native.json.gz)
 
-![Chronology of Orestimba Creek showing many low/zero flow years](../images/peak-download-orestimba-chronology.png)
-*Figure 4: Orestimba Creek annual peak discharge -- note the many low-flow years*
+![Orestimba chronology retains the low-flow years and their flags.](screenshots/peak-download-orestimba-chronology-native.png)
 
-![Frequency plot for Orestimba Creek showing MGBT threshold](../images/peak-download-orestimba-frequency.png)
-*Figure 5: Empirical frequency curve for Orestimba Creek with MGBT low outliers*
+*Orestimba chronology retains the low-flow years and their flags.* [Python SVG](images/usgs-peak-download-example-orestimba-chronology.svg) · [Python plot data](images/usgs-peak-download-example-orestimba-chronology.plotspec.json.gz) [Native SVG](screenshots/peak-download-orestimba-chronology-native.svg) [Capture data](screenshots/peak-download-orestimba-chronology-native.json.gz)
 
-### Understanding the Multiple Grubbs-Beck Test (MGBT)
+![Orestimba empirical frequency with low outliers shown separately. Zero magnitudes cannot appear on a log axis.](screenshots/peak-download-orestimba-frequency-native.png)
 
-The MGBT is a statistical test that identifies anomalously low peaks in the annual maximum series. These low values often represent years when the stream barely flowed -- they come from a different flood-generating mechanism than the large peaks used for design.
+*Orestimba empirical frequency with low outliers shown separately. Zero magnitudes cannot appear on a log axis.* [Python SVG](images/usgs-peak-download-example-orestimba-frequency.svg) · [Python plot data](images/usgs-peak-download-example-orestimba-frequency.plotspec.json.gz) [Native SVG](screenshots/peak-download-orestimba-frequency-native.svg) [Capture data](screenshots/peak-download-orestimba-frequency-native.json.gz)
 
-**How it works in RMC-BestFit:**
+## Interpretation and limits
 
-1. When **Use Multiple Grubbs-Beck Test** is enabled, the MGBT analyzes the peak discharge series to find a low outlier threshold
-2. Peaks below the threshold are flagged as **threshold-censored observations** -- they are not discarded, but instead recorded as "the true peak was at or below this value"
-3. The frequency analysis (Bayesian or MLE) uses a censored likelihood for these observations, properly accounting for the information they contain without letting them distort the upper-tail estimates
+The Multiple Grubbs–Beck Test (MGBT) identifies potentially influential low floods under its statistical screening rule. A flag is not proof that a measurement is wrong or that the observation arose from a different physical population. Treating flagged values as censored information is different from deleting dry years, which would change the annual sample.
 
-**Orestimba Creek context:** This is an ephemeral stream in California's Central Valley. In dry years, the creek may not flow at all or may produce only minor runoff. The MGBT identifies 47 of 94 years as low outliers -- consistent with the semi-arid, rainfall-driven hydrology where large floods are driven by Pacific storm systems that only affect the watershed in some years.
+The log-magnitude frequency display cannot show zero flows. Use the chronology and data grid to retain visibility of the whole record; do not replace zero by a small invented positive number. The curve of plotted observations remains an empirical description, not a fitted distribution or confidence band.
 
-### Viewing the Properties Panel
+The block-maximum tutorial uses the same Moose River station but maxima of daily means and a different end date. Match complete years before comparing the two sources. A generic “Value” axis label does not remove the need to document cfs.
 
-1. With either Input Data element selected, open the **Properties** panel
-2. The panel shows the USGS peak discharge configuration:
-   - **Exact Data Method:** USGS Peak Discharge
-   - **USGS Site Number:** The 8-digit site identifier
-   - **Use Multiple Grubbs-Beck Test:** Checked (enabled by default)
-   - **Download** button to refresh the data from USGS NWIS
+## Check your understanding
 
-![Properties panel showing USGS peak discharge settings](../images/peak-download-properties.png)
-*Figure 6: Properties panel for a USGS peak discharge element*
+Identify the number of original observations, the number flagged and the screening threshold for Orestimba. Explain why retaining dry years matters and why a low-outlier test cannot identify a physical flood mechanism by itself.
 
-### Downloading Your Own USGS Peak Data
+Continue with the [block-maximum comparison](../1-block-maximum/usgs-block-max-example.md) or [univariate analysis examples](../../4-univariate-distribution-analysis/README.md). For formal B17C context, consult [USGS Bulletin 17C](https://doi.org/10.3133/tm4B5).
 
-To create a new USGS peak discharge Input Data element:
+## Reproduce the figures
 
-1. Right-click **Input Data** in the Project Explorer and select **Create New**
-2. Enter a descriptive name for the element
-3. In the Properties panel:
-   - Set **Exact Data Method** to **USGS Peak Discharge**
-   - Enter a valid **USGS Site Number** (8-15 digits). Look up site numbers at https://waterdata.usgs.gov
-   - Enable or disable the **Use Multiple Grubbs-Beck Test** checkbox
-4. Click **Download**
-5. The annual peak discharge series will be retrieved from the USGS NWIS peak-flow web service
-
-## Peak Download vs Block Maximum
-
-This example uses the same Moose River station (01134500) as the [Block Maximum example](../1-block-maximum/usgs-block-max-example.md). The key differences:
-
-| | Peak Download (this example) | Block Maximum |
-|---|---|---|
-| **Source** | USGS peak-flow database | Daily time series processed locally |
-| **Peak type** | Instantaneous (highest moment) | Daily mean (24-hour average) |
-| **Values** | Always >= block maximum | Always <= peak download |
-| **Requires time series** | No | Yes |
-| **MGBT support** | Yes (built in) | No (exact observations only) |
-| **Non-USGS data** | No (USGS only) | Yes (any time series) |
-
-For U.S. flood frequency analysis, the USGS peak download is generally preferred because instantaneous peaks better represent the true flood hazard. Block maximum from daily data is useful for non-USGS data sources or variables where instantaneous peaks are not available.
-
-## Key Settings Reference
-
-| Setting | Moose River | Orestimba Creek | Notes |
-|---------|-------------|-----------------|-------|
-| Exact Data Method | USGS Peak Discharge | USGS Peak Discharge | Downloads directly from USGS NWIS |
-| USGS Site Number | 01134500 | 11274500 | Must be a valid USGS surface water site |
-| Use MGBT | Enabled | Enabled | Identifies anomalously low peaks |
-| MGBT Low Outliers | 0 | 47 | Low outliers become threshold-censored |
-| Unit Label | Value | Value | USGS peaks are in cfs by convention |
-
-## Next Steps
-
-- **Distribution Fitting** -- Fit multiple distributions to the peak discharge series and compare goodness-of-fit, noting how censored observations affect the fitted distributions
-- **Univariate Distribution Analysis** -- Perform Bayesian frequency analysis with full uncertainty quantification
-- **Bulletin 17C** -- Use the Log-Pearson Type III distribution with MGBT censoring for regulatory flood frequency analysis per USGS guidelines
-- **Compare with Block Maximum** -- See the [Block Maximum example](../1-block-maximum/usgs-block-max-example.md) to compare USGS instantaneous peaks with daily maxima from the same station
-- **Peaks-Over-Threshold** -- See the [USGS POT example](../3-peaks-over-threshold/usgs-peaks-over-threshold-example.md) for an alternative to annual maxima using partial-duration series
+Follow the [shared figure-generation instructions](../../README.md#reproducing-the-figures) with `--only usgs-peak-download-example`. Native screenshots show the current desktop views of the saved inputs. The linked Python SVG and plot-data files remain companion exports; views without a native replacement retain their Python figure. No saved analysis is refitted. Threshold views, where present, call the desktop diagnostic fits on the saved source.

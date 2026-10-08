@@ -191,11 +191,15 @@ public class UnivariateAnalysisPositivePathReprocessTests
         //  1. Results.RecomputeParameterResults(1 - 0.95) — synchronous, in-place.
         //  2. Parent's BayesianAnalysis_PropertyChanged fires CIWidth branch →
         //     ReprocessIfEstimated → fire-and-forget CreateFrequencyAnalysisResultsAsync.
-        // We test (1) by checking Results reference unchanged, and (2) by awaiting the
-        // reprocess directly to avoid timing flakiness.
+        // We test (1) by checking Results reference unchanged, and (2) by waiting for the
+        // background reprocess to publish a new AnalysisResults instance. A second direct
+        // call would race the background reprocess (both null AnalysisResults first), which
+        // is the TR-090 flake; waiting on the published instance is deterministic.
         analysis.BayesianAnalysis.CredibleIntervalWidth = 0.95;
-        await analysis.CreateFrequencyAnalysisResultsAsync();
+        bool reprocessed = await WaitFor(() =>
+            analysis.AnalysisResults != null && !ReferenceEquals(analysis.AnalysisResults, analysisResultsAt90));
 
+        Assert.IsTrue(reprocessed, "The CredibleIntervalWidth change must publish reprocessed AnalysisResults.");
         Assert.IsNotNull(analysis.AnalysisResults);
         Assert.AreSame(resultsBefore, analysis.BayesianAnalysis.Results,
             "MCMC Results reference must be preserved across a CredibleIntervalWidth change.");

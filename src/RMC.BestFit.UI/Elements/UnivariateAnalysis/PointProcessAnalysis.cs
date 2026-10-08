@@ -30,7 +30,7 @@ namespace RMC.BestFit.UI
     /// <summary>
     /// UI wrapper for the model-layer <see cref="ModelAnalyses.PointProcessAnalysis"/>.
     /// Implements peaks-over-threshold (POT) flood-frequency analysis as a marked Poisson
-    /// point process â€” fits the threshold-exceedance rate together with a Generalized Pareto
+    /// point process — fits the threshold-exceedance rate together with a Generalized Pareto
     /// magnitude distribution via Bayesian MCMC and produces an annual-exceedance-probability
     /// stage-frequency curve.
     /// </summary>
@@ -88,7 +88,7 @@ namespace RMC.BestFit.UI
                 _badLODataMsg = new BasicMessageItem(MessageType.Error, "The selected input data cannot have any low outliers for this type of analysis.", this, ParentCollection.Name, Name, nameof(InputData), "PPA-ERR-015");
 
                 // ProbabilityOrdinates validation messages are surfaced by the model-layer
-                // ProbabilityOrdinates.Validate() routed through _validationAdapter â€” defining
+                // ProbabilityOrdinates.Validate() routed through _validationAdapter — defining
                 // duplicates here would produce two messages per error.
                 _messages = new List<BasicMessageItem>()
                 {   _descriptionMsg,
@@ -108,7 +108,7 @@ namespace RMC.BestFit.UI
 
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "PPA");
                 SetIsValid();
-                // Not a v1 feature â€” no legacy migration path, so no openedFromV1 flag.
+                // Not a v1 feature — no legacy migration path, so no openedFromV1 flag.
                 SetIsDirty(false);
             }
             finally
@@ -507,6 +507,57 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
+        /// Fills absent legacy point-process input fields on a working XML copy before restoration.
+        /// </summary>
+        /// <param name="serializedModel">The persisted point-process model XML.</param>
+        /// <returns>A working copy with only absent default-enabled input fields inferred.</returns>
+        /// <remarks>
+        /// Present threshold, exposure, and exposure-origin values are authoritative during import,
+        /// even when defaults are enabled. Normal default refresh after a later user edit is unchanged.
+        /// The temporary model disables parameter-default generation and is detached from the input
+        /// data after deriving the existing threshold/exposure defaults.
+        /// </remarks>
+        private XElement HydrateMissingPointProcessDefaults(XElement serializedModel)
+        {
+            var workingModel = new XElement(serializedModel);
+            bool useDefaults = true;
+            XAttribute useDefaultsAttribute = workingModel.Attribute(nameof(PointProcessModel.UseDefaults));
+            if (useDefaultsAttribute != null)
+                bool.TryParse(useDefaultsAttribute.Value, out useDefaults);
+            if (!useDefaults)
+                return workingModel;
+
+            bool missingThreshold = workingModel.Attribute(nameof(PointProcessModel.Threshold)) == null;
+            bool missingTotalYears = workingModel.Attribute(nameof(PointProcessModel.TotalYears)) == null;
+            bool missingOrigin = workingModel.Attribute(nameof(PointProcessModel.IsTotalYearsInferred)) == null;
+            if (!missingThreshold && !missingTotalYears && !missingOrigin)
+                return workingModel;
+
+            var defaults = new PointProcessModel
+            {
+                UseDefaultFlatPriors = false,
+                UseDefaults = false,
+                DataFrame = InputData.DataFrame
+            };
+            try
+            {
+                defaults.SetDefaultThresholdAndTotalYears(GetPeaksOverThresholdDefaultThreshold(), forceTotalYears: true);
+                if (missingThreshold)
+                    workingModel.SetAttributeValue(nameof(PointProcessModel.Threshold), defaults.Threshold.ToString("G17", CultureInfo.InvariantCulture));
+                if (missingTotalYears)
+                    workingModel.SetAttributeValue(nameof(PointProcessModel.TotalYears), defaults.TotalYears.ToString("G17", CultureInfo.InvariantCulture));
+                if (missingOrigin)
+                    workingModel.SetAttributeValue(nameof(PointProcessModel.IsTotalYearsInferred), defaults.IsTotalYearsInferred);
+            }
+            finally
+            {
+                defaults.DataFrame = null;
+            }
+
+            return workingModel;
+        }
+
+        /// <summary>
         /// Handles changes to the input data, updates threshold values, and validates the data.
         /// </summary>
         /// <param name="sender">The object that raised the event.</param>
@@ -571,7 +622,7 @@ namespace RMC.BestFit.UI
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // Check probability ordinates
-            // Validate ordinates locally only for the IsValid flag â€” diagnostic messages are
+            // Validate ordinates locally only for the IsValid flag — diagnostic messages are
             // surfaced by the model-layer ProbabilityOrdinates.Validate() routed through
             // _validationAdapter inside SetIsValid().
             _ordinatesValid = true;
@@ -749,7 +800,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -765,145 +817,144 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // open element
-            var dtView = sqlite.GetTableManager(CollectionName);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                if (dtView.ColumnNames.Contains(nameof(Name)))
+                if (wasOpen == false) sqlite.Open();
+
+                // open element
+                var dtView = sqlite.GetTableManager(CollectionName);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "PPA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                // Get input data
-                if (dtView.ColumnNames.Contains(nameof(InputData)))
-                {
-                    var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
                     {
-                        if (collection.GetType() == typeof(InputDataCollection))
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "PPA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                    // Get input data
+                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    {
+                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                         {
-                            foreach (IElement element in collection)
+                            if (collection.GetType() == typeof(InputDataCollection))
                             {
-                                if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                foreach (IElement element in collection)
                                 {
-                                    if (_inputData != null)
+                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
                                     {
-                                        _inputData.PropertyChanged -= InputDataChanged;
-                                        _inputData.Deleted -= OnInputDataDeleted;
+                                        if (_inputData != null)
+                                        {
+                                            _inputData.PropertyChanged -= InputDataChanged;
+                                            _inputData.Deleted -= OnInputDataDeleted;
+                                        }
+                                        _inputData = (InputData)element;
+                                        _inputData.PropertyChanged += InputDataChanged;
+                                        _inputData.Deleted += OnInputDataDeleted;
+                                        _inputDataValid = _inputData.IsValid;
+                                        if (!_inputDataValid)
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Add(_inputDataInValidMsg);
+                                        }
+                                        else
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Remove(_inputDataInValidMsg);
+                                        }
+                                        break;
                                     }
-                                    _inputData = (InputData)element;
-                                    _inputData.PropertyChanged += InputDataChanged;
-                                    _inputData.Deleted += OnInputDataDeleted;
-                                    _inputDataValid = _inputData.IsValid;
-                                    if (!_inputDataValid)
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Add(_inputDataInValidMsg);
-                                    }
-                                    else
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Remove(_inputDataInValidMsg);
-                                    }
-                                    break;
                                 }
                             }
                         }
                     }
-                }
-                // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
-                if (_inputData == null)
-                    _messenger.Add(_inputDataNullMsg);
+                    // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
+                    if (_inputData == null)
+                        _messenger.Add(_inputDataNullMsg);
 
-                // Plot Properties
-                DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                _bayesianController.Deserialize(dtView, rowIndex);
+                    // Plot Properties
+                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                    _bayesianController.Deserialize(dtView, rowIndex);
 
-                // Get probability ordinates (save to local â€” inner analysis gets reconstructed below)
-                string probOrdinatesStr = null;
-                if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                    probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
+                    // Get probability ordinates (save to local — inner analysis gets reconstructed below)
+                    string probOrdinatesStr = null;
+                    if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                        probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
 
-                // Get model and reconstruct the inner analysis
-                if (dtView.ColumnNames.Contains(nameof(PointProcess)) && InputData != null && InputData.DataFrame != null)
-                {
-                    var modelXElement = XElement.Parse(dtView.GetCell(nameof(PointProcess), rowIndex).ToString());
-                    var pointProcess = new PointProcessModel(InputData.DataFrame, modelXElement);
-
-                    // Refresh default inputs from the selected InputData. Persisted manual
-                    // values are preserved while UseDefaults is false.
-                    if (pointProcess.UseDefaults && InputData != null && InputData.DataFrame != null)
-                        pointProcess.SetDefaultThresholdAndTotalYears(GetPeaksOverThresholdDefaultThreshold(), forceTotalYears: true);
-                    else if (pointProcess.UseDefaults)
-                        pointProcess.Threshold = double.NaN;
-
-                    MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-                    XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
-
-                    // Get Bayesian analysis XElement
-                    XElement bayesianXElement = null;
-                    if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                    // Get model and reconstruct the inner analysis
+                    if (dtView.ColumnNames.Contains(nameof(PointProcess)) && InputData != null && InputData.DataFrame != null)
                     {
-                        var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                        bayesianXElement = XElement.Parse(xElementString);
+                        var modelXElement = HydrateMissingPointProcessDefaults(
+                            XElement.Parse(dtView.GetCell(nameof(PointProcess), rowIndex).ToString()));
+                        var pointProcess = new PointProcessModel(InputData.DataFrame, modelXElement);
+
+                        MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+                        XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+
+                        // Get Bayesian analysis XElement
+                        XElement bayesianXElement = null;
+                        if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                        {
+                            var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                            bayesianXElement = XElement.Parse(xElementString);
+                        }
+
+                        UncertaintyAnalysisResults analysisResults =
+                            AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                        // Reconstruct inner analysis from persisted data
+                        UnsubscribeInnerAnalysis();
+
+                        if (innerXElement == null && bayesianXElement != null)
+                        {
+                            // Build a combined XElement for the inner analysis constructor
+                            innerXElement = new XElement("PointProcessAnalysis",
+                                new XAttribute("IsEstimated", mcmcResults != null));
+
+                            // Add probability ordinates
+                            if (!string.IsNullOrEmpty(probOrdinatesStr))
+                                innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
+
+                            // Add Bayesian analysis element
+                            innerXElement.Add(bayesianXElement);
+
+                        }
+
+                        if (innerXElement != null)
+                        {
+                            _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess, innerXElement, mcmcResults, analysisResults);
+                        }
+                        else
+                        {
+                            _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess);
+
+                            // Load probability ordinates into the new inner analysis
+                            if (!string.IsNullOrEmpty(probOrdinatesStr))
+                                _innerAnalysis.ProbabilityOrdinates.FromDelimitedString(probOrdinatesStr, "|");
+                        }
+
+                        SubscribeInnerAnalysis();
                     }
-
-                    UncertaintyAnalysisResults analysisResults =
-                        AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                    // Reconstruct inner analysis from persisted data
-                    UnsubscribeInnerAnalysis();
-
-                    if (innerXElement == null && bayesianXElement != null)
-                    {
-                        // Build a combined XElement for the inner analysis constructor
-                        innerXElement = new XElement("PointProcessAnalysis",
-                            new XAttribute("IsEstimated", mcmcResults != null));
-
-                        // Add probability ordinates
-                        if (!string.IsNullOrEmpty(probOrdinatesStr))
-                            innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
-
-                        // Add Bayesian analysis element
-                        innerXElement.Add(bayesianXElement);
-
-                    }
-
-                    if (innerXElement != null)
-                    {
-                        _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess, innerXElement, mcmcResults, analysisResults);
-                    }
-                    else
-                    {
-                        _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess);
-
-                        // Load probability ordinates into the new inner analysis
-                        if (!string.IsNullOrEmpty(probOrdinatesStr))
-                            _innerAnalysis.ProbabilityOrdinates.FromDelimitedString(probOrdinatesStr, "|");
-                    }
-
-                    SubscribeInnerAnalysis();
                 }
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
             SetupBridges();
 
-            // Validate probability ordinates â€” ProbabilityOrdinates_CollectionChanged didn't fire
+            // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
             // during Open because SubscribeInnerAnalysis hadn't been called when the ordinates were loaded.
             // Diagnostic messages are surfaced by the model-layer Validate() routed through
             // _validationAdapter inside SetIsValid(); we only set the local flag here.
@@ -958,7 +1009,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1085,7 +1136,7 @@ namespace RMC.BestFit.UI
                         ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter),
                         ProbabilityOrdinates.DefaultDelimiter);
 
-                // Copy plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null) PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
                 _bayesianController.CopyTo(element._bayesianController);
 
@@ -1111,7 +1162,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             // Bug fix: was incorrectly creating MixtureAnalysis instead of PointProcessAnalysis
             var element = new PointProcessAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
@@ -1125,14 +1176,14 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // InputData setter â€” that would re-add _inputDataNullMsg and re-flip IsDirty=true).
+            // InputData setter — that would re-add _inputDataNullMsg and re-flip IsDirty=true).
             if (_inputData != null) _inputData.Deleted -= OnInputDataDeleted;
             DisposeBridges();
             _bayesianController?.Dispose();
             UnsubscribeInnerAnalysis();
             SetIsDirty(false);
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {
@@ -1204,7 +1255,7 @@ namespace RMC.BestFit.UI
             }
 
             // Delegate model validation to inner analysis.
-            // Skip model validation when InputData is invalid â€” the UI layer already reports that
+            // Skip model validation when InputData is invalid — the UI layer already reports that
             // via _inputDataNullMsg / _inputDataInValidMsg, and the model's "DataFrame is null"
             // message would be a confusing developer-facing duplicate.
             bool modelValid = _inputDataValid
@@ -1479,7 +1530,7 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // Model undo â€” capture baseline snapshot
+            // Model undo — capture baseline snapshot
             _modelSnapshot = _innerAnalysis?.PointProcess?.ToXElement();
 
             // Plot undo managers for element-level plots

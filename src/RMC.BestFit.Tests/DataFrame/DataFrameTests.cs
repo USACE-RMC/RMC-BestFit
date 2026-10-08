@@ -151,6 +151,25 @@ public class DataFrameTests
     }
 
     /// <summary>
+    /// Tests that replacing an exact series calculates Weibull plotting positions once the new
+    /// observations are attached to the data frame.
+    /// </summary>
+    [TestMethod]
+    public void ExactSeries_Replacement_CalculatesWeibullPlottingPositions()
+    {
+        var df = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries([10d, 30d, 20d])
+        };
+
+        var positionsByValue = df.ExactSeries.ToDictionary(item => item.Value, item => item.PlottingPosition);
+        Assert.AreEqual(0.75d, positionsByValue[10d], 1E-12d);
+        Assert.AreEqual(0.25d, positionsByValue[30d], 1E-12d);
+        Assert.AreEqual(0.50d, positionsByValue[20d], 1E-12d);
+        Assert.IsTrue(df.ExactSeries.All(item => item.PlottingPosition > 0d && item.PlottingPosition < 1d));
+    }
+
+    /// <summary>
     /// Tests that ExactSeries handles small samples.
     /// </summary>
     [TestMethod]
@@ -621,19 +640,10 @@ public class DataFrameTests
     /// <summary>
     /// Tests that Weibull plotting positions are calculated correctly.
     /// </summary>
-    /// <remarks>
-    /// The <c>DataFrame.PlottingParameter</c> setter only invokes
-    /// <c>DataFrame.CalculatePlottingPositions</c> when the value changes.
-    /// Because the default is already 0.0 (Weibull), assigning 0.0 is a no-op and leaves
-    /// plotting positions at their initial default (0). The test must explicitly call
-    /// <c>DataFrame.CalculatePlottingPositions</c> to populate them.
-    /// </remarks>
     [TestMethod]
     public void PlottingParameter_Weibull_CalculatesCorrectly()
     {
         var df = CreateTestDataFrame(10);
-        df.PlottingParameter = 0.0;  // Weibull: i / (n + 1). No-op if default is already 0.
-        df.CalculatePlottingPositions();
 
         // Weibull formula: p = i / (n + 1) where i is rank in descending order
         // of non-exceedance. For n=10 exact values, the largest value (rank 1 descending)
@@ -681,6 +691,34 @@ public class DataFrameTests
         for (int i = 0; i < originalValues.Length; i++)
         {
             Assert.AreEqual(originalValues[i], restoredValues[i], 1e-10);
+        }
+    }
+
+    /// <summary>
+    /// Tests that XML construction preserves persisted plotting positions instead of recalculating
+    /// them during the four data-series replacements.
+    /// </summary>
+    [TestMethod]
+    public void XmlRoundTrip_PreservesCustomPlottingPositionsWithoutRecalculation()
+    {
+        var original = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries([10d, 20d, 30d])
+        };
+        double[] persistedPositions = [0.17d, 0.43d, 0.81d];
+        for (int i = 0; i < persistedPositions.Length; i++)
+            original.ExactSeries[i].PlottingPosition = persistedPositions[i];
+
+        var restored = new BestFitDataFrame(original.ToXElement());
+
+        Assert.AreEqual(persistedPositions.Length, restored.ExactSeries.Count);
+        for (int i = 0; i < persistedPositions.Length; i++)
+        {
+            Assert.AreEqual(
+                persistedPositions[i],
+                restored.ExactSeries[i].PlottingPosition,
+                1E-15d,
+                $"Serialized plotting position {i} was recalculated during construction.");
         }
     }
 

@@ -1,0 +1,546 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "b809ca84f4792b029e0deca1718c0e394f5c87cea5e3a242028378eb54f52ba3",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "6886eb92b275aa2e8ccc9d3eb577eb572845ffe3f6be0e796e1b41776fb33fea",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+  "element": "USGS - 01134500 - Block Max - Calendar Year",
+  "plotId": "input_data.frequency",
+  "variant": "default",
+  "variantSelection": "app control defaults and saved element data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/InputData/InputData.cs::CreateDefaultFrequencyPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/InputData/InputDataControl.xaml.cs::UpdateFrequencyPlot",
+  "title": "Nonparametric Frequency",
+  "axes": [
+    {
+      "type": "LogarithmicAxis",
+      "Key": "Yaxis",
+      "Title": "Flow (cfs)",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 100.00000000000004,
+      "ActualMaximum": 10000.00000000001,
+      "labels": null
+    },
+    {
+      "type": "NormalProbabilityAxis",
+      "Key": "Xaxis",
+      "Title": "Exceedance Probability",
+      "position": "Bottom",
+      "Minimum": 1E-07,
+      "Maximum": 0.999,
+      "ActualMinimum": 1E-07,
+      "ActualMaximum": 0.999,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "ExactData",
+      "type": "ScatterSeries",
+      "Title": "Exact Data",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 0.5432098765432098,
+          "Y": 1770,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.6666666666666666,
+          "Y": 1520,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8888888888888888,
+          "Y": 1170,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.16049382716049382,
+          "Y": 2480,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9259259259259259,
+          "Y": 1130,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.4691358024691358,
+          "Y": 1860,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.1111111111111111,
+          "Y": 2540,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.14814814814814814,
+          "Y": 2500,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.2962962962962963,
+          "Y": 2120,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.654320987654321,
+          "Y": 1530,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.6790123456790124,
+          "Y": 1480,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5802469135802469,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.32098765432098764,
+          "Y": 2100,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.3333333333333333,
+          "Y": 2060,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7777777777777778,
+          "Y": 1350,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5925925925925926,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.49382716049382713,
+          "Y": 1820,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.12345679012345678,
+          "Y": 2540,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9506172839506173,
+          "Y": 965,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8148148148148148,
+          "Y": 1320,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8024691358024691,
+          "Y": 1320,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8518518518518519,
+          "Y": 1200,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.345679012345679,
+          "Y": 2040,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.1728395061728395,
+          "Y": 2470,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7654320987654321,
+          "Y": 1350,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.13580246913580246,
+          "Y": 2510,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.06172839506172839,
+          "Y": 3250,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.4567901234567901,
+          "Y": 1930,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9629629629629629,
+          "Y": 944,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.2222222222222222,
+          "Y": 2330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.6172839506172839,
+          "Y": 1590,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7901234567901234,
+          "Y": 1330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.691358024691358,
+          "Y": 1460,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8641975308641975,
+          "Y": 1190,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5555555555555556,
+          "Y": 1700,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.41975308641975306,
+          "Y": 1950,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.37037037037037035,
+          "Y": 1970,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.09876543209876543,
+          "Y": 2710,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9135802469135802,
+          "Y": 1140,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.30864197530864196,
+          "Y": 2120,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.012345679012345678,
+          "Y": 4100,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7283950617283951,
+          "Y": 1430,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.4444444444444444,
+          "Y": 1930,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.07407407407407407,
+          "Y": 3130,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.6296296296296297,
+          "Y": 1560,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.35802469135802467,
+          "Y": 2020,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7407407407407407,
+          "Y": 1420,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.2345679012345679,
+          "Y": 2270,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.024691358024691357,
+          "Y": 3840,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5308641975308642,
+          "Y": 1790,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9382716049382716,
+          "Y": 1080,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.20987654320987653,
+          "Y": 2370,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9012345679012346,
+          "Y": 1150,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.3950617283950617,
+          "Y": 1960,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.24691358024691357,
+          "Y": 2240,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.2839506172839506,
+          "Y": 2150,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5061728395061729,
+          "Y": 1810,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9753086419753086,
+          "Y": 841,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.19753086419753085,
+          "Y": 2400,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8765432098765432,
+          "Y": 1190,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5185185185185185,
+          "Y": 1800,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.5679012345679012,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.6419753086419753,
+          "Y": 1540,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.25925925925925924,
+          "Y": 2190,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.18518518518518517,
+          "Y": 2440,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8395061728395061,
+          "Y": 1240,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.6049382716049383,
+          "Y": 1640,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.04938271604938271,
+          "Y": 3330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7160493827160493,
+          "Y": 1460,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.48148148148148145,
+          "Y": 1850,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.4074074074074074,
+          "Y": 1950,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7037037037037037,
+          "Y": 1460,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.08641975308641975,
+          "Y": 3000,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.38271604938271603,
+          "Y": 1970,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.7530864197530864,
+          "Y": 1390,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.9876543209876543,
+          "Y": 756,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.2716049382716049,
+          "Y": 2180,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.037037037037037035,
+          "Y": 3440,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.43209876543209874,
+          "Y": 1940,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 0.8271604938271605,
+          "Y": 1270,
+          "Value": null,
+          "Size": null
+        }
+      ],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "MarkerFill": "#ff000000",
+        "MarkerStroke": "#ff000000",
+        "MarkerType": "Circle",
+        "MarkerSize": 3
+      }
+    }
+  ],
+  "annotations": []
+}

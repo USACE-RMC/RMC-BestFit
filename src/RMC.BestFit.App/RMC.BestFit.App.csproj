@@ -36,7 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
     <PackageReference Include="RMC.Wpf.Framework.Core" />
     <PackageReference Include="RMC.Wpf.Framework.Models" />
     <PackageReference Include="RMC.Wpf.Framework.Controls" />

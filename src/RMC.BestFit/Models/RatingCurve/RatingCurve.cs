@@ -160,6 +160,15 @@ namespace RMC.BestFit.Models
         private List<(DateTime Date, double Stage, double Discharge)>? _alignedObservationsCache;
 
         /// <summary>
+        /// Cached base-10 change-of-variables terms <c>-log(Q ln 10)</c>, one per aligned pair in
+        /// <see cref="GetAlignedObservations"/> order. Built on demand with the aligned-observation
+        /// cache and invalidated with it. A nonpositive or non-finite aligned discharge yields
+        /// <see cref="double.NegativeInfinity"/> so every likelihood path reports such an observation
+        /// as impossible in the same way.
+        /// </summary>
+        private double[]? _logJacobianTermsCache;
+
+        /// <summary>
         /// Gets or sets the stage (water level) time series data.
         /// </summary>
         [Category("Inputs")]
@@ -179,7 +188,7 @@ namespace RMC.BestFit.Models
                 if (_stageData != null)
                     _stageData.CollectionChanged += StageData_CollectionChanged;
 
-                _alignedObservationsCache = null;
+                InvalidateAlignedCaches();
                 RaisePropertyChange(nameof(StageData));
                 if (_stageData != null && UseDefaultFlatPriors)
                     SetDefaultParameters();
@@ -206,7 +215,7 @@ namespace RMC.BestFit.Models
                 if (_dischargeData != null)
                     _dischargeData.CollectionChanged += DischargeData_CollectionChanged;
 
-                _alignedObservationsCache = null;
+                InvalidateAlignedCaches();
                 RaisePropertyChange(nameof(DischargeData));
                 if (_dischargeData != null && UseDefaultFlatPriors)
                     SetDefaultParameters();
@@ -269,7 +278,7 @@ namespace RMC.BestFit.Models
         /// </summary>
         private void StageData_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            _alignedObservationsCache = null;
+            InvalidateAlignedCaches();
             RaisePropertyChange(nameof(StageData));
             if (UseDefaultFlatPriors)
                 SetDefaultParameters();
@@ -280,7 +289,7 @@ namespace RMC.BestFit.Models
         /// </summary>
         private void DischargeData_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            _alignedObservationsCache = null;
+            InvalidateAlignedCaches();
             RaisePropertyChange(nameof(DischargeData));
             if (UseDefaultFlatPriors)
                 SetDefaultParameters();
@@ -335,9 +344,9 @@ namespace RMC.BestFit.Models
             {
                 Name = "Exponent (β₁)",
                 Value = 2.0,
-                LowerBound = 0,
+                LowerBound = DefaultExponentLowerBound,
                 UpperBound = 5,
-                PriorDistribution = new Uniform(0, 5)
+                PriorDistribution = new Uniform(DefaultExponentLowerBound, 5)
             });
 
             if (NumberOfSegments >= 2)
@@ -371,9 +380,9 @@ namespace RMC.BestFit.Models
                 {
                     Name = "Exponent (β₂)",
                     Value = 2.0,
-                    LowerBound = 0,
+                    LowerBound = DefaultExponentLowerBound,
                     UpperBound = 5,
-                    PriorDistribution = new Uniform(0, 5)
+                    PriorDistribution = new Uniform(DefaultExponentLowerBound, 5)
                 });
             }
 
@@ -407,9 +416,9 @@ namespace RMC.BestFit.Models
                 {
                     Name = "Exponent (β₃)",
                     Value = 2.0,
-                    LowerBound = 0,
+                    LowerBound = DefaultExponentLowerBound,
                     UpperBound = 5,
-                    PriorDistribution = new Uniform(0, 5)
+                    PriorDistribution = new Uniform(DefaultExponentLowerBound, 5)
                 });
             }
 
@@ -640,6 +649,59 @@ namespace RMC.BestFit.Models
         /// </summary>
         public const int MinimumAlignedObservations = 10;
 
+        /// <summary>
+        /// Default lower bound of every control exponent β<sub>k</sub> and minimum of its default
+        /// uniform prior. An added control contributes 10<sup>a</sup>(h − h<sub>k</sub>)<sup>β</sup>
+        /// above its activation stage, which vanishes at the activation stage only for β &gt; 0; a
+        /// zero exponent would make the curve jump by 10<sup>a</sup> there. Legacy projects restore
+        /// their stored bounds verbatim and receive a validation warning when a bound admits zero.
+        /// </summary>
+        private const double DefaultExponentLowerBound = 0.1;
+
+        /// <summary>
+        /// Invalidates the aligned-observation and change-of-variables caches after any stage or
+        /// discharge data change.
+        /// </summary>
+        private void InvalidateAlignedCaches()
+        {
+            _alignedObservationsCache = null;
+            _logJacobianTermsCache = null;
+        }
+
+        /// <summary>
+        /// Gets the base-10 change-of-variables terms of the discharge-space likelihood, one per
+        /// aligned pair in <see cref="GetAlignedObservations"/> order.
+        /// </summary>
+        /// <returns>
+        /// The terms <c>-log(Q_i ln 10)</c>, or <see cref="double.NegativeInfinity"/> where the aligned
+        /// discharge is not positive and finite.
+        /// </returns>
+        /// <remarks>
+        /// The observation model treats <c>Z = log10 Q</c> as Normal; as a density of the observed
+        /// discharge this requires the Jacobian <c>dZ/dQ = 1/(Q ln 10)</c> per observation. The terms
+        /// do not depend on the parameters, so they shift every likelihood value by the same constant
+        /// without changing maximum-likelihood, MAP, or posterior parameter estimates.
+        /// </remarks>
+        private double[] GetLogJacobianTerms()
+        {
+            var aligned = GetAlignedObservations();
+            if (_logJacobianTermsCache != null && _logJacobianTermsCache.Length == aligned.Count)
+                return _logJacobianTermsCache;
+
+            var terms = new double[aligned.Count];
+            double logLn10 = Math.Log(Math.Log(10.0));
+            for (int i = 0; i < aligned.Count; i++)
+            {
+                double discharge = aligned[i].Discharge;
+                terms[i] = discharge > 0 && Tools.IsFinite(discharge)
+                    ? -Math.Log(discharge) - logLn10
+                    : double.NegativeInfinity;
+            }
+
+            _logJacobianTermsCache = terms;
+            return terms;
+        }
+
         /// <inheritdoc/>
         /// <remarks>
         /// Evaluated on the date-inner-join of <see cref="StageData"/> and
@@ -647,6 +709,11 @@ namespace RMC.BestFit.Models
         /// excluded. Returns <see cref="double.NegativeInfinity"/> when fewer than
         /// <see cref="MinimumAlignedObservations"/> pairs are available or when any
         /// segment-ordering / positivity guard is violated.
+        /// The value is the discharge-space log density: for each aligned pair the
+        /// log10-space Gaussian term of the residual plus the base-10 change-of-variables
+        /// term <c>-log(Q_i ln 10)</c> (equation RC.5 of the technical reference), so it is
+        /// directly comparable with densities of other discharge models and feeds AIC, BIC,
+        /// DIC, WAIC, and LOO on the discharge measure.
         /// </remarks>
         public override double DataLogLikelihood(double[] parameters)
         {
@@ -670,11 +737,17 @@ namespace RMC.BestFit.Models
 
             double sigma = parameters[parameters.Length - 1];
             var normDist = new Normal(0, sigma);
+            double[] jacobian = GetLogJacobianTerms();
             double logLH = 0;
 
-            // Compute log-likelihood in log-space
+            // Discharge-space log density: log10-space Gaussian residual term plus the
+            // base-10 change-of-variables term for each aligned pair.
             for (int i = 0; i < aligned.Count; i++)
             {
+                // A nonpositive observed discharge has no log10 image and no density.
+                if (double.IsNegativeInfinity(jacobian[i]))
+                    return double.NegativeInfinity;
+
                 double predQ = Predict(parameters, aligned[i].Stage);
 
                 // Check for invalid predictions (zero or negative discharge)
@@ -686,7 +759,7 @@ namespace RMC.BestFit.Models
 
                 // Log-space residual
                 double residual = obsLogQ - predLogQ;
-                logLH += normDist.LogPDF(residual);
+                logLH += normDist.LogPDF(residual) + jacobian[i];
             }
 
             return logLH;
@@ -696,7 +769,9 @@ namespace RMC.BestFit.Models
         /// <remarks>
         /// The returned array has one entry per date-aligned (stage, discharge) pair
         /// — observations not present in both series are excluded. Length equals the
-        /// result of <c>GetAlignedObservations().Count</c>.
+        /// result of <c>GetAlignedObservations().Count</c>. Each entry is the discharge-space
+        /// log density of its pair (log10-space Gaussian term plus <c>-log(Q_i ln 10)</c>), so the
+        /// entries sum to <see cref="DataLogLikelihood"/>.
         /// </remarks>
         public override double[] PointwiseDataLogLikelihood(double[] parameters)
         {
@@ -729,15 +804,17 @@ namespace RMC.BestFit.Models
 
             double sigma = parameters[parameters.Length - 1];
             var normDist = new Normal(0, sigma);
+            double[] jacobian = GetLogJacobianTerms();
             var result = new double[n];
 
-            // Compute pointwise log-likelihood in log-space
+            // Pointwise discharge-space log density: log10-space Gaussian residual term plus
+            // the base-10 change-of-variables term for each aligned pair.
             for (int i = 0; i < n; i++)
             {
                 double predQ = Predict(parameters, aligned[i].Stage);
 
-                // Check for invalid predictions
-                if (predQ <= 0)
+                // Check for invalid predictions and nonpositive observed discharge
+                if (predQ <= 0 || double.IsNegativeInfinity(jacobian[i]))
                 {
                     result[i] = double.NegativeInfinity;
                     continue;
@@ -746,7 +823,7 @@ namespace RMC.BestFit.Models
                 double obsLogQ = Math.Log10(aligned[i].Discharge);
                 double predLogQ = Math.Log10(predQ);
                 double residual = obsLogQ - predLogQ;
-                result[i] = normDist.LogPDF(residual);
+                result[i] = normDist.LogPDF(residual) + jacobian[i];
             }
 
             return result;
@@ -755,7 +832,8 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         /// <remarks>
         /// The returned list has one entry per date-aligned (stage, discharge) pair
-        /// — observations not present in both series are excluded.
+        /// — observations not present in both series are excluded. Each component holds the
+        /// discharge-space log density of its pair, including the base-10 change-of-variables term.
         /// </remarks>
         public override List<DataComponent> PointwiseDataLogLikelihoodComponents(double[] parameters)
         {
@@ -789,15 +867,17 @@ namespace RMC.BestFit.Models
 
             double sigma = parameters[parameters.Length - 1];
             var normDist = new Normal(0, sigma);
+            double[] jacobian = GetLogJacobianTerms();
 
-            // Compute pointwise log-likelihood in log-space
+            // Pointwise discharge-space log density components (Gaussian residual term plus
+            // the base-10 change-of-variables term) for each aligned pair.
             for (int i = 0; i < n; i++)
             {
                 double stage = aligned[i].Stage;
                 double predQ = Predict(parameters, stage);
 
                 double logLH;
-                if (predQ <= 0)
+                if (predQ <= 0 || double.IsNegativeInfinity(jacobian[i]))
                 {
                     logLH = double.NegativeInfinity;
                 }
@@ -806,7 +886,7 @@ namespace RMC.BestFit.Models
                     double obsLogQ = Math.Log10(aligned[i].Discharge);
                     double predLogQ = Math.Log10(predQ);
                     double residual = obsLogQ - predLogQ;
-                    logLH = normDist.LogPDF(residual);
+                    logLH = normDist.LogPDF(residual) + jacobian[i];
                 }
 
                 result.Add(new DataComponent(i, logLH, stage, DataComponentType.Exact, 1, $"Stage={stage:F2}"));
@@ -1207,18 +1287,43 @@ namespace RMC.BestFit.Models
 
             if (StageData != null && DischargeData != null)
             {
-                int alignedCount = GetAlignedObservations().Count;
+                // Validation must see in-place edits of either series, so the alignment is rebuilt.
+                InvalidateAlignedCaches();
+                var aligned = GetAlignedObservations();
+                int alignedCount = aligned.Count;
                 if (alignedCount < MinimumAlignedObservations)
                 {
                     isValid = false;
                     messages.Add($"Error: Stage and discharge time series must share at least {MinimumAlignedObservations} common dates to fit a rating curve (found {alignedCount}).");
                 }
 
-                // Check for non-positive discharge values
-                if (DischargeData.Any(d => d.Value <= 0))
+                // Only the date-aligned pairs enter the log-space likelihood, so only they must be positive.
+                int nonPositiveAligned = aligned.Count(pair => !(pair.Discharge > 0) || !Tools.IsFinite(pair.Discharge));
+                if (nonPositiveAligned > 0)
                 {
                     isValid = false;
-                    messages.Add("Error: All discharge values must be positive (log-space model requires Q > 0).");
+                    messages.Add($"Error: All date-aligned discharge values must be positive (log-space model requires Q > 0); {nonPositiveAligned} aligned value(s) are not.");
+                }
+
+                // Records without a partner date never enter the likelihood; report them instead of rejecting the fit.
+                var alignedDates = new HashSet<DateTime>(aligned.Select(pair => pair.Date));
+                int unmatchedDischarge = 0;
+                int unmatchedNonPositive = 0;
+                for (int j = 0; j < DischargeData.Count; j++)
+                {
+                    if (alignedDates.Contains(DischargeData[j].Index))
+                        continue;
+                    unmatchedDischarge++;
+                    if (!(DischargeData[j].Value > 0) || !Tools.IsFinite(DischargeData[j].Value))
+                        unmatchedNonPositive++;
+                }
+                int unmatchedStage = StageData.Count(ordinate => !alignedDates.Contains(ordinate.Index));
+                if (unmatchedDischarge > 0 || unmatchedStage > 0)
+                {
+                    string detail = unmatchedNonPositive > 0
+                        ? $"; {unmatchedNonPositive} of the ignored discharge record(s) are nonpositive"
+                        : string.Empty;
+                    messages.Add($"Warning: {unmatchedStage} stage and {unmatchedDischarge} discharge record(s) are unmatched by date and are ignored by the rating-curve likelihood{detail}.");
                 }
             }
 
@@ -1257,6 +1362,20 @@ namespace RMC.BestFit.Models
                     {
                         isValid = false;
                         messages.Add("Error: Segment ordering invalid. Require h₁ < h₂ < h₃.");
+                    }
+                }
+
+                // An exponent bound that admits zero allows a curve that jumps by 10^a at its
+                // activation stage; legacy projects keep their stored bounds, so warn rather than reject.
+                for (int segment = 0; segment < NumberOfSegments; segment++)
+                {
+                    int exponentIndex = 3 * segment + 2;
+                    if (exponentIndex >= Parameters.Count)
+                        break;
+                    var exponent = Parameters[exponentIndex];
+                    if (!(exponent.LowerBound > 0))
+                    {
+                        messages.Add($"Warning: {exponent.Name} lower bound {exponent.LowerBound.ToString("G4", CultureInfo.InvariantCulture)} admits a zero exponent, for which the rating curve is not continuous at its activation stage; set a positive lower bound (new analyses use {DefaultExponentLowerBound.ToString("G4", CultureInfo.InvariantCulture)}).");
                     }
                 }
             }

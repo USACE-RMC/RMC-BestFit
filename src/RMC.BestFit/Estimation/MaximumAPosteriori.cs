@@ -48,6 +48,31 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
+        /// Constructs a MAP estimator with an explicit optimizer starting point.
+        /// </summary>
+        /// <param name="model">The model to estimate.</param>
+        /// <param name="method">The optimization method.</param>
+        /// <param name="initialValues">The finite in-bounds parameter vector used to initialize a local optimizer.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> or <paramref name="initialValues"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the initial vector has the wrong dimension or contains a nonfinite or out-of-bounds value.</exception>
+        /// <remarks>
+        /// This internal construction path lets model-specific estimators, such as mixture EM,
+        /// provide a reliable basin for local full-posterior refinement without changing the
+        /// public MAP API or the model's current parameter values.
+        /// </remarks>
+        internal MaximumAPosteriori(
+            IModel model,
+            OptimizationMethod method,
+            IReadOnlyList<double> initialValues)
+        {
+            Model = model ?? throw new ArgumentNullException(nameof(model), "Model cannot be null.");
+            ArgumentNullException.ThrowIfNull(initialValues);
+            _optimizerMethod = method;
+            SetUpOptimizer(initialValues);
+            IsEstimated = false;
+        }
+
+        /// <summary>
         /// Gets the model to estimate.
         /// </summary>
         public IModel Model { get; private set; }
@@ -112,6 +137,7 @@ namespace RMC.BestFit.Estimation
                 _computeHessian = value;
                 if (!value)
                     _hessian = null;
+                ResetCovarianceStatus();
             }
         }
 
@@ -126,6 +152,23 @@ namespace RMC.BestFit.Estimation
         /// optimizer threw an exception.
         /// </remarks>
         public OptimizationStatus Status { get; private set; } = OptimizationStatus.None;
+        /// <summary>
+        /// Gets the outcome of the most recent covariance computation.
+        /// </summary>
+        /// <remarks>
+        /// The value resets to <see cref="CovarianceComputationStatus.NotComputed"/> whenever
+        /// estimation results are cleared or a new estimation run begins.
+        /// </remarks>
+        public CovarianceComputationStatus CovarianceStatus { get; private set; } = CovarianceComputationStatus.NotComputed;
+
+        /// <summary>
+        /// Gets a diagnostic message for the most recent covariance computation.
+        /// </summary>
+        /// <remarks>
+        /// This is <c>null</c> for an unregularized successful computation and before any
+        /// covariance attempt. Failed and regularized computations provide concise details.
+        /// </remarks>
+        public string? CovarianceDiagnostic { get; private set; }
 
         /// <summary>
         /// Gets the number of model parameters.
@@ -175,12 +218,15 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// Sets up the optimizer class based on the selected optimization method.
         /// </summary>
-        private void SetUpOptimizer()
+        private void SetUpOptimizer(IReadOnlyList<double>? explicitInitialValues = null)
         {
             // Store parameter constraints
-            InitialValues = Model.Parameters.Select(x => x.Value).ToArray();
             LowerBounds = Model.Parameters.Select(x => x.LowerBound).ToArray();
             UpperBounds = Model.Parameters.Select(x => x.UpperBound).ToArray();
+            InitialValues = explicitInitialValues?.ToArray() ??
+                Model.Parameters.Select(x => x.Value).ToArray();
+            if (explicitInitialValues != null)
+                ValidateInitialValues(InitialValues);
 
             // MAP estimation maximizes the full log-likelihood(data likelihood + prior)
             if (OptimizerMethod == OptimizationMethod.Brent)
@@ -220,6 +266,32 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
+        /// Validates an optimizer starting point against the current model parameter space.
+        /// </summary>
+        /// <param name="initialValues">The proposed optimizer starting point.</param>
+        /// <exception cref="ArgumentException">Thrown when the vector has the wrong dimension or contains a nonfinite or out-of-bounds value.</exception>
+        private void ValidateInitialValues(IReadOnlyList<double> initialValues)
+        {
+            if (initialValues.Count != NumberOfParameters)
+            {
+                throw new ArgumentException(
+                    "The initial parameter vector must match the model parameter count.",
+                    nameof(initialValues));
+            }
+
+            for (int index = 0; index < initialValues.Count; index++)
+            {
+                double value = initialValues[index];
+                if (!double.IsFinite(value) || value < LowerBounds[index] || value > UpperBounds[index])
+                {
+                    throw new ArgumentException(
+                        $"Initial parameter {index} must be finite and within its model bounds.",
+                        nameof(initialValues));
+                }
+            }
+        }
+
+        /// <summary>
         /// Estimates the model parameters that maximize the likelihood function.
         /// </summary>
         /// <returns>True if estimation was successful; otherwise, false.</returns>
@@ -228,6 +300,7 @@ namespace RMC.BestFit.Estimation
             IsEstimated = false;
             Status = OptimizationStatus.None;
             TotalFunctionEvaluations = 0;
+            ResetCovarianceStatus();
             _hessian = null;
 
             try
@@ -246,12 +319,18 @@ namespace RMC.BestFit.Estimation
                         // Uses full log-likelihood (data + prior) for posterior Fisher information.
                         try
                         {
-                            _hessian = NumericalDiff.ComputeHessian(Model.LogLikelihood, BestParameterSet.Values, NumberOfParameters);
+                            _hessian = NumericalDiff.ComputeHessian(
+                                Model.LogLikelihood,
+                                BestParameterSet.Values,
+                                NumberOfParameters,
+                                LowerBounds,
+                                UpperBounds);
                         }
                         catch (Exception ex)
                         {
                             Debug.WriteLine($"Hessian computation failed: {ex.Message}");
                             _hessian = null;
+                            SetCovarianceFailure($"Posterior Hessian computation failed: {ex.Message}");
                         }
                     }
 
@@ -277,15 +356,26 @@ namespace RMC.BestFit.Estimation
             TotalFunctionEvaluations = 0;
             BestParameterSet = new ParameterSet();
             _hessian = null;
+            ResetCovarianceStatus();
         }
 
         /// <summary>
-        /// Returns the profile likelihood for each model parameter.
+        /// Returns the profiled posterior kernel for each model parameter.
         /// </summary>
         /// <param name="bins">The number of bins in each profile. Default = 100.</param>
-        /// <returns>A list of arrays where each array contains [parameter value, log-likelihood] pairs.</returns>
+        /// <returns>
+        /// A list of arrays where each array contains [parameter value, log-posterior-kernel] pairs. A
+        /// grid point whose nuisance-parameter optimization produces no finite optimum is reported
+        /// with a <see cref="double.NaN"/> kernel value so the remainder of the profile is preserved.
+        /// </returns>
         /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when bins is less than 2.</exception>
+        /// <remarks>
+        /// Each grid point reoptimizes every free nuisance parameter, starting from the neighbouring
+        /// solution. A finite nuisance optimum is accepted even when the optimizer does not report
+        /// success, because bound-adjacent and flat grid points routinely end on an iteration or
+        /// tolerance limit. <see cref="ParameterConfidenceIntervals"/> requires converged solves.
+        /// </remarks>
         public List<double[,]> ProfileLikelihood(int bins = 100)
         {
             if (!IsEstimated)
@@ -293,35 +383,74 @@ namespace RMC.BestFit.Estimation
             if (bins < 2)
                 throw new ArgumentOutOfRangeException(nameof(bins), "Number of bins must be at least 2.");
 
-            var list = new List<double[,]>();
+            var profiles = new List<double[,]>();
 
-            for (int i = 0; i < NumberOfParameters; i++)
+            for (int parameterIndex = 0; parameterIndex < NumberOfParameters; parameterIndex++)
             {
-                var seq = Stratify.XValues(new StratificationOptions(Model.Parameters[i].LowerBound, Model.Parameters[i].UpperBound, bins));
-                var parms = new double[NumberOfParameters];
-                BestParameterSet.Values.CopyTo(parms, 0);
+                var sequence = Stratify.XValues(new StratificationOptions(
+                    Model.Parameters[parameterIndex].LowerBound,
+                    Model.Parameters[parameterIndex].UpperBound,
+                    bins));
                 var profile = new double[bins, 2];
+                int centerIndex = Enumerable.Range(0, bins)
+                    .OrderBy(index => Math.Abs(sequence[index].Midpoint - BestParameterSet.Values[parameterIndex]))
+                    .First();
 
-                for (int j = 0; j < bins; j++)
+                var centerResult = TryMaximizeProfileGridPoint(
+                    parameterIndex,
+                    sequence[centerIndex].Midpoint,
+                    BestParameterSet.Values);
+                profile[centerIndex, 0] = sequence[centerIndex].Midpoint;
+                profile[centerIndex, 1] = centerResult?.LogPosterior ?? double.NaN;
+                double[] centerStart = centerResult?.Parameters ?? BestParameterSet.Values.ToArray();
+
+                double[] lowerStart = centerStart;
+                for (int gridIndex = centerIndex - 1; gridIndex >= 0; gridIndex--)
                 {
-                    parms[i] = seq[j].Midpoint;
-                    profile[j, 0] = seq[j].Midpoint;
-                    profile[j, 1] = Model.LogLikelihood(parms);
+                    var result = TryMaximizeProfileGridPoint(
+                        parameterIndex,
+                        sequence[gridIndex].Midpoint,
+                        lowerStart);
+                    profile[gridIndex, 0] = sequence[gridIndex].Midpoint;
+                    profile[gridIndex, 1] = result?.LogPosterior ?? double.NaN;
+                    if (result.HasValue)
+                        lowerStart = result.Value.Parameters;
                 }
 
-                list.Add(profile);
+                double[] upperStart = centerStart;
+                for (int gridIndex = centerIndex + 1; gridIndex < bins; gridIndex++)
+                {
+                    var result = TryMaximizeProfileGridPoint(
+                        parameterIndex,
+                        sequence[gridIndex].Midpoint,
+                        upperStart);
+                    profile[gridIndex, 0] = sequence[gridIndex].Midpoint;
+                    profile[gridIndex, 1] = result?.LogPosterior ?? double.NaN;
+                    if (result.HasValue)
+                        upperStart = result.Value.Parameters;
+                }
+
+                profiles.Add(profile);
             }
 
-            return list;
+            return profiles;
         }
 
         /// <summary>
-        /// Returns the parameter confidence intervals based on profile likelihood using the chi-squared threshold.
+        /// Returns likelihood-ratio-style intervals from the profiled posterior kernel.
         /// </summary>
         /// <param name="alpha">The significance level. Default = 0.1 (90% confidence). Must be between 0 and 1.</param>
         /// <returns>A matrix where each row contains [lower bound, upper bound] for each parameter.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the model has not been estimated, nuisance-parameter optimization fails, or no finite
+        /// model-constrained profile threshold-crossing bracket can be found.
+        /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when alpha is not between 0 and 1.</exception>
+        /// <remarks>
+        /// At every candidate value of the parameter of interest, all non-fixed nuisance
+        /// parameters are reoptimized against the full posterior kernel. These intervals
+        /// are not posterior credible intervals; use MCMC marginal quantiles for that purpose.
+        /// </remarks>
         public double[,] ParameterConfidenceIntervals(double alpha = 0.1)
         {
             if (!IsEstimated)
@@ -330,86 +459,470 @@ namespace RMC.BestFit.Estimation
                 throw new ArgumentOutOfRangeException(nameof(alpha), "Alpha must be between 0 and 1.");
 
             var chiSquared = new ChiSquared(1);
-            double threshold = -BestParameterSet.Fitness - 0.5 * chiSquared.InverseCDF(1 - alpha);
-            var CIs = new double[NumberOfParameters, 2];
+            double threshold = MaximumLogLikelihood - 0.5 * chiSquared.InverseCDF(1 - alpha);
+            var confidenceIntervals = new double[NumberOfParameters, 2];
 
-            for (int i = 0; i < NumberOfParameters; i++)
+            for (int parameterIndex = 0; parameterIndex < NumberOfParameters; parameterIndex++)
             {
-                var parms = new double[NumberOfParameters];
-                BestParameterSet.Values.CopyTo(parms, 0);
+                double lowerBound = Model.Parameters[parameterIndex].LowerBound;
+                double upperBound = Model.Parameters[parameterIndex].UpperBound;
 
-                // Lower limit: Check if lower bound exceeds threshold
-                parms[i] = Model.Parameters[i].LowerBound;
-                var LLH = Model.LogLikelihood(parms);
-                if (LLH < threshold)
-                {
-                    CIs[i, 0] = Brent.Solve((x) =>
+                var lowerStarts = new ProfileLikelihoodWarmStartCache(
+                    BestParameterSet.Values[parameterIndex],
+                    BestParameterSet.Values);
+                confidenceIntervals[parameterIndex, 0] = ProfileLikelihoodIntervalBracketer.FindThresholdCrossing(
+                    value =>
                     {
-                        parms[i] = x;
-                        return Model.LogLikelihood(parms) - threshold;
-                    }, Model.Parameters[i].LowerBound, BestParameterSet.Values[i]);
-                }
-                else
-                {
-                    CIs[i, 0] = Model.Parameters[i].LowerBound;
-                }
+                        return lowerStarts.Evaluate(value, startingParameters =>
+                        {
+                            var result = MaximizeProfileLogPosterior(parameterIndex, value, startingParameters);
+                            return (result.LogPosterior - threshold, result.Parameters);
+                        });
+                    },
+                    BestParameterSet.Values[parameterIndex],
+                    lowerBound,
+                    isLower: true);
 
-                // Upper limit: Check if upper bound exceeds threshold
-                parms[i] = Model.Parameters[i].UpperBound;
-                var ULH = Model.LogLikelihood(parms);
-                if (ULH < threshold)
-                {
-                    CIs[i, 1] = Brent.Solve((x) =>
+                var upperStarts = new ProfileLikelihoodWarmStartCache(
+                    BestParameterSet.Values[parameterIndex],
+                    BestParameterSet.Values);
+                confidenceIntervals[parameterIndex, 1] = ProfileLikelihoodIntervalBracketer.FindThresholdCrossing(
+                    value =>
                     {
-                        parms[i] = x;
-                        return Model.LogLikelihood(parms) - threshold;
-                    }, BestParameterSet.Values[i], Model.Parameters[i].UpperBound);
-                }
-                else
-                {
-                    CIs[i, 1] = Model.Parameters[i].UpperBound;
-                }
+                        return upperStarts.Evaluate(value, startingParameters =>
+                        {
+                            var result = MaximizeProfileLogPosterior(parameterIndex, value, startingParameters);
+                            return (result.LogPosterior - threshold, result.Parameters);
+                        });
+                    },
+                    BestParameterSet.Values[parameterIndex],
+                    upperBound,
+                    isLower: false);
             }
 
-            return CIs;
+            return confidenceIntervals;
+        }
+
+        /// <summary>
+        /// Maximizes the posterior kernel at one grid point, accepting any finite nuisance optimum.
+        /// </summary>
+        /// <param name="parameterIndex">Index of the parameter held fixed.</param>
+        /// <param name="fixedValue">Value assigned to the parameter of interest.</param>
+        /// <param name="startingParameters">Full parameter vector used to initialize nuisance optimization.</param>
+        /// <returns>The profile result, or null when no finite nuisance optimum exists at the grid point.</returns>
+        private (double LogPosterior, double[] Parameters)? TryMaximizeProfileGridPoint(
+            int parameterIndex,
+            double fixedValue,
+            IReadOnlyList<double> startingParameters)
+        {
+            try
+            {
+                return MaximizeProfileLogPosterior(
+                    parameterIndex,
+                    fixedValue,
+                    startingParameters,
+                    requireConvergence: false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine($"MAP profile grid point {fixedValue} for parameter {parameterIndex} has no finite nuisance optimum: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Maximizes the posterior kernel over all free nuisance parameters while fixing one parameter.
+        /// </summary>
+        /// <param name="parameterIndex">Index of the parameter held fixed.</param>
+        /// <param name="fixedValue">Value assigned to the parameter of interest.</param>
+        /// <param name="startingParameters">Full parameter vector used to initialize nuisance optimization.</param>
+        /// <param name="requireConvergence">
+        /// When true, only an optimizer that reports <see cref="OptimizationStatus.Success"/> is
+        /// accepted. When false, the best finite optimum found by either optimizer is returned if
+        /// neither converges.
+        /// </param>
+        /// <returns>The profiled log-posterior kernel and the optimized full parameter vector.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when both bounded BFGS and bounded Nelder-Mead fail to produce an acceptable nuisance optimum.
+        /// </exception>
+        /// <remarks>
+        /// BFGS supplies the efficient primary solve. Nelder-Mead is a deterministic fallback for
+        /// nonsmooth or numerically difficult posterior surfaces. Fixed model parameters remain fixed.
+        /// </remarks>
+        private (double LogPosterior, double[] Parameters) MaximizeProfileLogPosterior(
+            int parameterIndex,
+            double fixedValue,
+            IReadOnlyList<double> startingParameters,
+            bool requireConvergence = true)
+        {
+            var fullStart = startingParameters.ToArray();
+            fullStart[parameterIndex] = fixedValue;
+            int[] nuisanceIndices = Enumerable.Range(0, NumberOfParameters)
+                .Where(index => index != parameterIndex && !Model.Parameters[index].IsFixed)
+                .ToArray();
+
+            if (nuisanceIndices.Length == 0)
+                return (Model.LogLikelihood(fullStart), fullStart);
+
+            double[] reducedStart = nuisanceIndices.Select(index => fullStart[index]).ToArray();
+            double[] reducedLower = nuisanceIndices.Select(index => Model.Parameters[index].LowerBound).ToArray();
+            double[] reducedUpper = nuisanceIndices.Select(index => Model.Parameters[index].UpperBound).ToArray();
+
+            double Objective(double[] nuisanceValues)
+            {
+                var fullParameters = fullStart.ToArray();
+                for (int index = 0; index < nuisanceIndices.Length; index++)
+                    fullParameters[nuisanceIndices[index]] = nuisanceValues[index];
+                return Model.LogLikelihood(fullParameters);
+            }
+
+            (double LogPosterior, double[] Parameters)? fallback = null;
+
+            try
+            {
+                var bfgs = new BFGS(
+                    Objective,
+                    nuisanceIndices.Length,
+                    reducedStart,
+                    reducedLower,
+                    reducedUpper)
+                {
+                    ReportFailure = false,
+                    RecordTraces = false,
+                    ComputeHessian = false
+                };
+                bfgs.Maximize();
+                if (TryCreateProfileResult(
+                    bfgs,
+                    nuisanceIndices,
+                    fullStart,
+                    Objective,
+                    out var bfgsResult))
+                {
+                    if (bfgs.Status == OptimizationStatus.Success)
+                        return bfgsResult;
+                    if (!requireConvergence)
+                        fallback = bfgsResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MAP profile BFGS nuisance optimization failed: {ex.Message}");
+            }
+
+            try
+            {
+                var nelderMead = new NelderMead(
+                    Objective,
+                    nuisanceIndices.Length,
+                    reducedStart,
+                    reducedLower,
+                    reducedUpper)
+                {
+                    ReportFailure = false,
+                    RecordTraces = false,
+                    ComputeHessian = false,
+                    EnableStartPointProbe = true
+                };
+                nelderMead.Maximize();
+                if (TryCreateProfileResult(
+                    nelderMead,
+                    nuisanceIndices,
+                    fullStart,
+                    Objective,
+                    out var nelderMeadResult))
+                {
+                    if (nelderMead.Status == OptimizationStatus.Success)
+                        return nelderMeadResult;
+                    if (!requireConvergence &&
+                        (!fallback.HasValue || nelderMeadResult.LogPosterior > fallback.Value.LogPosterior))
+                        fallback = nelderMeadResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"MAP profile Nelder-Mead nuisance optimization failed: {ex.Message}");
+            }
+
+            if (fallback.HasValue)
+                return fallback.Value;
+
+            throw new InvalidOperationException(
+                $"Unable to profile MAP parameter {parameterIndex}: nuisance-parameter optimization failed.");
+        }
+
+        /// <summary>
+        /// Converts a finite optimizer result into a full profiled parameter vector.
+        /// </summary>
+        /// <param name="optimizer">Completed nuisance optimizer.</param>
+        /// <param name="nuisanceIndices">Indices represented by the reduced optimizer vector.</param>
+        /// <param name="fullStart">Full parameter vector containing fixed values.</param>
+        /// <param name="objective">Reduced log-posterior-kernel objective.</param>
+        /// <param name="result">The completed profile result when successful.</param>
+        /// <returns>
+        /// <see langword="true"/> when the optimizer supplied finite values and objective. Whether
+        /// the optimizer converged is judged by the caller from its status.
+        /// </returns>
+        private static bool TryCreateProfileResult(
+            Optimizer optimizer,
+            IReadOnlyList<int> nuisanceIndices,
+            IReadOnlyList<double> fullStart,
+            Func<double[], double> objective,
+            out (double LogPosterior, double[] Parameters) result)
+        {
+            result = default;
+            double[] nuisanceValues = optimizer.BestParameterSet.Values;
+            if (nuisanceValues == null ||
+                nuisanceValues.Length != nuisanceIndices.Count ||
+                nuisanceValues.Any(value => !double.IsFinite(value)))
+            {
+                return false;
+            }
+
+            double logPosterior = objective(nuisanceValues);
+            if (!double.IsFinite(logPosterior))
+                return false;
+
+            var fullParameters = fullStart.ToArray();
+            for (int index = 0; index < nuisanceIndices.Count; index++)
+                fullParameters[nuisanceIndices[index]] = nuisanceValues[index];
+
+            result = (logPosterior, fullParameters);
+            return true;
         }
 
         /// <summary>
         /// Returns the parameter covariance matrix computed from the inverse of the Fisher Information Matrix (negative Hessian).
         /// </summary>
         /// <returns>The parameter covariance matrix.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters, the model has not been estimated, or the Hessian is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public Matrix GetCovarianceMatrix()
         {
-            if (NumberOfParameters < 2)
-                throw new InvalidOperationException("Cannot compute the covariance matrix with fewer than two parameters.");
+            if (!TryGetCovarianceMatrix(out Matrix covariance))
+            {
+                throw new InvalidOperationException(
+                    CovarianceDiagnostic ?? "The covariance matrix is unavailable.");
+            }
+
+            return covariance;
+        }
+
+        /// <summary>
+        /// Attempts to compute a finite posterior covariance matrix.
+        /// </summary>
+        /// <param name="covariance">
+        /// The covariance matrix when successful; otherwise, a zero matrix that must not
+        /// be interpreted as estimated uncertainty.
+        /// </param>
+        /// <returns><see langword="true"/> when a usable covariance matrix is available.</returns>
+        /// <remarks>
+        /// Inspect <see cref="CovarianceStatus"/> and <see cref="CovarianceDiagnostic"/> after
+        /// this method returns. Positive-definite regularization is reported explicitly.
+        /// </remarks>
+        public bool TryGetCovarianceMatrix(out Matrix covariance)
+        {
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
             if (!IsEstimated)
-                throw new InvalidOperationException("The model has not been estimated.");
+                return SetCovarianceFailure("The model has not been estimated.");
             if (_hessian == null)
-                throw new InvalidOperationException("The Hessian is null. Estimation may have failed.");
+                return SetCovarianceFailure("The posterior Hessian is unavailable. Estimation or Hessian computation may have failed.");
 
             try
             {
-                // Fisher Information Matrix is the negative Hessian
                 Matrix fisher = _hessian * -1d;
-                // Invert to get covariance matrix
-                var covariance = fisher.Inverse();
-                // Regularize to ensure positive definiteness
-                covariance = MatrixRegularization.MakeSymmetricPositiveDefinite(covariance);
-                return covariance;
+                Matrix candidate = fisher.Inverse();
+                if (MatrixIsUsableCovariance(candidate) && MatrixIsSymmetricPositiveDefinite(candidate))
+                {
+                    covariance = candidate;
+                    CovarianceStatus = CovarianceComputationStatus.Available;
+                    CovarianceDiagnostic = null;
+                    return true;
+                }
+
+                Matrix regularized = MatrixRegularization.MakeSymmetricPositiveDefinite(candidate);
+                if (!MatrixIsUsableCovariance(regularized))
+                    return SetCovarianceFailure(
+                        "Posterior covariance is non-finite or has a non-positive diagonal variance.");
+
+                double maxAbsDelta = MaximumAbsoluteDifference(candidate, regularized);
+                covariance = regularized;
+                CovarianceStatus = CovarianceComputationStatus.Regularized;
+                CovarianceDiagnostic =
+                    $"Posterior covariance was regularized to positive definiteness (maximum absolute adjustment {maxAbsDelta:G6}).";
+                Debug.WriteLine(CovarianceDiagnostic);
+
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to compute covariance matrix: {ex.Message}");
-                return new Matrix(NumberOfParameters, NumberOfParameters);
+                return SetCovarianceFailure($"Posterior covariance computation failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Attempts to obtain a finite local covariance for MAP-centered MCMC initialization.
+        /// </summary>
+        /// <param name="covariance">The initialization covariance when successful; otherwise, a zero matrix.</param>
+        /// <param name="diagnostic">A diagnostic describing any singular-information fallback that was required.</param>
+        /// <returns><see langword="true"/> when a finite positive-definite initialization covariance is available.</returns>
+        /// <remarks>
+        /// The public covariance contract remains governed by <see cref="TryGetCovarianceMatrix(out Matrix)"/>.
+        /// When that method rejects a singular posterior information matrix, initialization may
+        /// still use its Moore-Penrose inverse. Null-space directions are thereby anchored at the
+        /// MAP rather than assigned unbounded variance, after which only the established
+        /// positive-definite matrix regularization is applied. This covariance is intended solely
+        /// for initial population generation and must not be reported as posterior uncertainty.
+        /// </remarks>
+        internal bool TryGetInitializationCovarianceMatrix(
+            out Matrix covariance,
+            out string? diagnostic)
+        {
+            if (TryGetCovarianceMatrix(out covariance))
+            {
+                diagnostic = CovarianceDiagnostic;
+                return true;
+            }
+
+            diagnostic = CovarianceDiagnostic;
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+            if (!IsEstimated || _hessian == null)
+                return false;
+
+            try
+            {
+                Matrix fisher = _hessian * -1d;
+                var decomposition = new SingularValueDecomposition(fisher);
+                Matrix pseudoInverse = decomposition.Solve(Matrix.Identity(NumberOfParameters));
+                Matrix regularized = MatrixRegularization.MakeSymmetricPositiveDefinite(pseudoInverse);
+                if (!MatrixIsUsableCovariance(regularized) ||
+                    !MatrixIsSymmetricPositiveDefinite(regularized))
+                {
+                    diagnostic =
+                        "The Moore-Penrose posterior covariance could not be regularized for initialization.";
+                    return false;
+                }
+
+                covariance = regularized;
+                diagnostic =
+                    $"Posterior information was rank deficient ({decomposition.Rank()} of " +
+                    $"{NumberOfParameters}); MAP initialization uses a regularized Moore-Penrose covariance.";
+                Debug.WriteLine(diagnostic);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                diagnostic = $"Initialization covariance computation failed: {ex.Message}";
+                Debug.WriteLine(diagnostic);
+                covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Records an unavailable covariance result.
+        /// </summary>
+        /// <param name="diagnostic">Diagnostic explaining the failure.</param>
+        /// <returns><see langword="false"/> for direct use by Try methods.</returns>
+        private bool SetCovarianceFailure(string diagnostic)
+        {
+            CovarianceStatus = CovarianceComputationStatus.Failed;
+            CovarianceDiagnostic = diagnostic;
+            return false;
+        }
+
+        /// <summary>
+        /// Resets covariance status for a new or cleared estimator state.
+        /// </summary>
+        private void ResetCovarianceStatus()
+        {
+            CovarianceStatus = CovarianceComputationStatus.NotComputed;
+            CovarianceDiagnostic = null;
+        }
+
+        /// <summary>
+        /// Determines whether a covariance matrix is finite with positive diagonal variances.
+        /// </summary>
+        /// <param name="matrix">Matrix to validate.</param>
+        /// <returns><see langword="true"/> when the covariance matrix is usable.</returns>
+        private static bool MatrixIsUsableCovariance(Matrix matrix)
+        {
+            if (matrix.NumberOfRows == 0 || matrix.NumberOfRows != matrix.NumberOfColumns)
+                return false;
+
+            for (int row = 0; row < matrix.NumberOfRows; row++)
+            {
+                for (int column = 0; column < matrix.NumberOfColumns; column++)
+                {
+                    if (!double.IsFinite(matrix[row, column]))
+                        return false;
+                }
+
+                if (matrix[row, row] <= 0.0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether a covariance candidate is symmetric positive definite without modifying it.
+        /// </summary>
+        /// <param name="matrix">Matrix to inspect.</param>
+        /// <returns><see langword="true"/> when the matrix is symmetric positive definite.</returns>
+        private static bool MatrixIsSymmetricPositiveDefinite(Matrix matrix)
+        {
+            double scale = 0.0;
+            for (int row = 0; row < matrix.NumberOfRows; row++)
+            {
+                for (int column = 0; column < matrix.NumberOfColumns; column++)
+                    scale = Math.Max(scale, Math.Abs(matrix[row, column]));
+            }
+
+            double symmetryTolerance = 1e-10 * Math.Max(scale, 1e-12);
+            for (int row = 0; row < matrix.NumberOfRows; row++)
+            {
+                for (int column = row + 1; column < matrix.NumberOfColumns; column++)
+                {
+                    if (Math.Abs(matrix[row, column] - matrix[column, row]) > symmetryTolerance)
+                        return false;
+                }
+            }
+
+            try
+            {
+                _ = new CholeskyDecomposition(matrix);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Computes the maximum absolute elementwise difference between two matrices.
+        /// </summary>
+        /// <param name="left">First matrix.</param>
+        /// <param name="right">Second matrix.</param>
+        /// <returns>The maximum absolute elementwise difference.</returns>
+        private static double MaximumAbsoluteDifference(Matrix left, Matrix right)
+        {
+            double maximum = 0.0;
+            for (int row = 0; row < left.NumberOfRows; row++)
+            {
+                for (int column = 0; column < left.NumberOfColumns; column++)
+                    maximum = Math.Max(maximum, Math.Abs(left[row, column] - right[row, column]));
+            }
+
+            return maximum;
         }
 
         /// <summary>
         /// Returns the standard errors of the parameter estimates from the diagonal of the covariance matrix.
         /// </summary>
         /// <returns>An array of standard errors for each parameter.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters or the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public double[] GetStandardErrors()
         {
             var covariance = GetCovarianceMatrix();
@@ -427,7 +940,7 @@ namespace RMC.BestFit.Estimation
         /// Returns the correlation matrix from the covariance matrix.
         /// </summary>
         /// <returns>The parameter correlation matrix.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters or the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public Matrix GetCorrelationMatrix()
         {
             var covariance = GetCovarianceMatrix();
@@ -446,33 +959,27 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Computes the Akaike Information Criterion (AIC) for model selection at the
-        /// MAP estimate, using the full posterior log-likelihood (data + prior).
+        /// Computes the Akaike Information Criterion (AIC) from the data log-likelihood
+        /// evaluated at the MAP estimate.
         /// </summary>
         /// <returns>The AIC value. Lower values indicate better models.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated.</exception>
         /// <remarks>
         /// <para>
-        /// Uses <see cref="IModel.LogLikelihood(double[])"/> (data + prior), matching the
-        /// convention used elsewhere in the framework (UnivariateAnalysis, BivariateAnalysis,
-        /// CompetingRiskAnalysis, MixtureAnalysis, PointProcessAnalysis, RatingCurveAnalysis,
-        /// SpatialGEVAnalysis, the time-series analyses, B17C). With **uniform / improper-flat
-        /// priors** the prior contribution is constant in ?, and the value reduces to the
-        /// conventional MLE-based AIC.
+        /// Uses <see cref="IModel.DataLogLikelihood(double[])"/> at the posterior mode so
+        /// prior-density values and normalization constants are never included in AIC.
+        /// When every active prior is constant over the relevant parameter region, the MAP
+        /// and constrained MLE coincide and this value is directly comparable with MLE AIC,
+        /// subject to numerical accuracy of the MAP estimate.
         /// </para>
         /// <para>
-        /// **Caveat for informative priors.** When priors are informative, the prior log-density
-        /// at the MAP point is parameter-dependent and adds to the AIC value. AIC's effective-
-        /// parameter penalty (2k) is not adjusted for prior information, so direct AIC
-        /// comparison across analyses with different priors can be misleading. The same caveat
-        /// applies more strongly to BIC.
+        /// <b>Caveat for informative priors.</b> Informative priors can move the MAP away from
+        /// the MLE, while AIC's parameter penalty does not account for that prior information.
+        /// Consequently this MAP-evaluated value should not be interpreted as conventional AIC
+        /// when informative, Jeffreys, quantile, or other nonconstant priors are active.
         /// </para>
         /// <para>
-        /// **Recommended alternatives with informative priors:** prefer the Deviance Information
-        /// Criterion (DIC) or Watanabe-Akaike Information Criterion (WAIC), or LOO-CV with PSIS,
-        /// all of which integrate over the posterior and properly account for the effective
-        /// number of parameters under the prior. These are produced by <see cref="BayesianAnalysis"/>
-        /// after MCMC.
+        /// With informative priors, prefer DIC, WAIC, or LOO-CV with verified PSIS diagnostics.
         /// </para>
         /// </remarks>
         public double GetAIC()
@@ -480,12 +987,12 @@ namespace RMC.BestFit.Estimation
             if (!IsEstimated)
                 throw new InvalidOperationException("The model has not been estimated.");
 
-            return GoodnessOfFit.AIC(NumberOfParameters, Model.LogLikelihood(BestParameterSet.Values));
+            return GoodnessOfFit.AIC(NumberOfParameters, Model.DataLogLikelihood(BestParameterSet.Values));
         }
 
         /// <summary>
-        /// Computes the Bayesian Information Criterion (BIC) for model selection at the
-        /// MAP estimate, using the full posterior log-likelihood (data + prior).
+        /// Computes the Bayesian Information Criterion (BIC) from the data log-likelihood
+        /// evaluated at the MAP estimate.
         /// </summary>
         /// <param name="sampleSize">The sample size (number of observations).</param>
         /// <returns>The BIC value. Lower values indicate better models.</returns>
@@ -493,22 +1000,20 @@ namespace RMC.BestFit.Estimation
         /// <exception cref="ArgumentOutOfRangeException">Thrown when sample size is less than 1.</exception>
         /// <remarks>
         /// <para>
-        /// Uses <see cref="IModel.LogLikelihood(double[])"/> (data + prior), matching the
-        /// convention used elsewhere in the framework. With **uniform / improper-flat priors**
-        /// the prior contribution is constant in ? and the value reduces to the conventional
-        /// MLE-based BIC.
+        /// Uses <see cref="IModel.DataLogLikelihood(double[])"/> at the posterior mode so
+        /// prior-density values and normalization constants are never included in BIC. When
+        /// every active prior is constant over the relevant parameter region, the MAP and
+        /// constrained MLE coincide and this value is directly comparable with MLE BIC,
+        /// subject to numerical accuracy of the MAP estimate.
         /// </para>
         /// <para>
-        /// **Caveat for informative priors.** BIC was derived as a Laplace approximation to
-        /// the marginal likelihood under uniform priors, so its `k�ln(n)` penalty does not
-        /// adjust for prior information. With informative priors the value still rank-orders
-        /// candidate models at fixed prior, but absolute values and cross-prior comparisons
-        /// can be misleading.
+        /// <b>Caveat for informative priors.</b> Informative priors can move the MAP away from
+        /// the MLE, while BIC's <c>k*ln(n)</c> penalty does not account for that prior information.
+        /// Consequently this MAP-evaluated value should not be interpreted as conventional BIC
+        /// when informative, Jeffreys, quantile, or other nonconstant priors are active.
         /// </para>
         /// <para>
-        /// **Recommended alternatives with informative priors:** prefer DIC, WAIC, or LOO-CV
-        /// with PSIS � all are produced by <see cref="BayesianAnalysis"/> after MCMC and
-        /// properly account for effective parameter count under the prior.
+        /// With informative priors, prefer DIC, WAIC, or LOO-CV with verified PSIS diagnostics.
         /// </para>
         /// </remarks>
         public double GetBIC(int sampleSize)
@@ -518,7 +1023,7 @@ namespace RMC.BestFit.Estimation
             if (sampleSize < 1)
                 throw new ArgumentOutOfRangeException(nameof(sampleSize), "Sample size must be at least 1.");
 
-            return GoodnessOfFit.BIC(sampleSize, NumberOfParameters, Model.LogLikelihood(BestParameterSet.Values));
+            return GoodnessOfFit.BIC(sampleSize, NumberOfParameters, Model.DataLogLikelihood(BestParameterSet.Values));
         }
 
         /// <summary>
@@ -530,8 +1035,8 @@ namespace RMC.BestFit.Estimation
         /// <returns>A jagged array where gradients[i][j] is ?log f(y?|?)/???.</returns>
         /// <remarks>
         /// <para>
-        /// Uses the central difference formula: ?f/??? � [f(?+h?e?) - f(?-h?e?)] / (2h?),
-        /// where h? = max(|??| � 1e-4, 1e-3). Same step size strategy as
+        /// Uses the central difference formula: ∂f/∂θⱼ ≈ [f(θ+hⱼeⱼ) - f(θ-hⱼeⱼ)] / (2hⱼ),
+        /// where hⱼ = max(|θⱼ| × 1e-4, 1e-3). Same step size strategy as
         /// <see cref="MaximumLikelihood.GetCooksDistance"/> and
         /// <see cref="LeverageDiagnostics.ComputeNumericalHessianPublic"/>.
         /// </para>
@@ -568,24 +1073,13 @@ namespace RMC.BestFit.Estimation
 
             double[][] gradients = ComputePointwiseGradients(BestParameterSet.Values, n);
 
-            // Get inverse of the negative posterior Hessian (includes prior)
-            if (_hessian == null)
-                return new double[n, NumberOfParameters];
-            Matrix fisher = _hessian * -1d;
-            Matrix fisherInv;
-            try
-            {
-                fisherInv = fisher.Inverse();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Posterior Hessian inversion failed in GetObservationInfluence: {ex.Message}");
-                return new double[n, NumberOfParameters];
-            }
-
-            // Compute influence: I_ij = (H?� g?)_j / SE_j
+            // Use the validated covariance path so numerical failure is explicit.
+            Matrix fisherInv = GetCovarianceMatrix();
+            // Compute influence: I_ij = (H⁻¹ gᵢ)_j / SE_j
             var influence = new double[n, NumberOfParameters];
-            var se = GetStandardErrors();
+            var se = Enumerable.Range(0, NumberOfParameters)
+                .Select(index => Math.Sqrt(fisherInv[index, index]))
+                .ToArray();
 
             for (int i = 0; i < n; i++)
             {
@@ -612,7 +1106,7 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Cook's D_i = g?? H?� g? / p where H is the full posterior Hessian (data + prior)
+        /// Cook's D_i = gᵢᵀ H⁻¹ gᵢ / p where H is the full posterior Hessian (data + prior)
         /// and p is the number of parameters.
         /// </para>
         /// <para>
@@ -633,26 +1127,14 @@ namespace RMC.BestFit.Estimation
 
             double[][] gradients = ComputePointwiseGradients(BestParameterSet.Values, n);
 
-            // Get inverse of the negative posterior Hessian (includes prior)
-            if (_hessian == null)
-                return new double[n];
-            Matrix fisher = _hessian * -1d;
-            Matrix fisherInv;
-            try
-            {
-                fisherInv = fisher.Inverse();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Posterior Hessian inversion failed in GetCooksDistance: {ex.Message}");
-                return new double[n];
-            }
+            // Use the validated covariance path so numerical failure is explicit.
+            Matrix fisherInv = GetCovarianceMatrix();
 
             var cooksD = new double[n];
 
             for (int i = 0; i < n; i++)
             {
-                // Compute g?? H?� g?
+                // Compute gᵢᵀ H⁻¹ gᵢ
                 double quadForm = 0;
                 for (int j = 0; j < NumberOfParameters; j++)
                 {

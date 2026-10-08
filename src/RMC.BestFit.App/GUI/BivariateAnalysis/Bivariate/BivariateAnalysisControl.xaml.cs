@@ -75,7 +75,7 @@ namespace RMC_BestFit
                     oldElement.PropertyChanged -= thisControl.Element_PropertyChanged;
                     thisControl.CopulaPlotHost.Content = null;
                     thisControl.CopulaPlotToolbar.Plot = null;
-                    // NOTE: PropertiesCalled is wired in XAML — no programmatic -= needed.
+                    // NOTE: PropertiesCalled is wired in XAML â€” no programmatic -= needed.
                 }
             }
 
@@ -91,7 +91,7 @@ namespace RMC_BestFit
 
             // Attach plot, wire toolbar, and wire Bayesian sub-control plots inside a
             // bridge-suspension block. PropertiesCalled / PlotPropertiesCalled are wired
-            // in XAML — no programmatic += needed.
+            // in XAML â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.CopulaPlotHost.Content = newElement.CopulaPlot;
@@ -233,7 +233,7 @@ namespace RMC_BestFit
                 BindFrequencyCurveDataGrid();
 
                 // One-time setup: column headers and summary grid layout do not change
-                // on every transient visual-tree cycle — only re-run on the first load
+                // on every transient visual-tree cycle â€” only re-run on the first load
                 // after a new Element is assigned (BV3).
                 if (!_isLoaded)
                 {
@@ -331,7 +331,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {

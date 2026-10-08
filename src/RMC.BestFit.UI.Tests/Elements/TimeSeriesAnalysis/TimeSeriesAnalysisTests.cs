@@ -3,10 +3,18 @@ using FrameworkInterfaces;
 using FrameworkInterfaces.Messaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Numerics.Data;
+using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
+using Numerics.Utilities;
+using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.UI;
 using System.Data;
+using System.Data.SQLite;
 using System.IO;
+using System.Reflection;
+using System.Xml.Linq;
 
 namespace RMC.BestFit.UI.Tests.Elements.TimeSeriesAnalysis;
 
@@ -48,6 +56,43 @@ public class TimeSeriesAnalysisTests
         for (int i = 0; i < count; i++)
         {
             series.Add(new SeriesOrdinate<DateTime, double>(date, i + 1.0));
+            date = TimeSeries.AddTimeInterval(date, interval);
+        }
+
+        element.TimeSeries = series;
+        return element;
+    }
+
+    /// <summary>
+    /// Creates a time-series element with deterministic regularly spaced values, registered
+    /// against the given <see cref="TimeSeriesCollection"/> instead of the dummy singleton-backed
+    /// collection the parameterless <see cref="TimeSeriesElement"/> constructor would otherwise
+    /// create.
+    /// </summary>
+    /// <param name="name">The element name.</param>
+    /// <param name="count">The number of observations to create.</param>
+    /// <param name="interval">The interval between observations.</param>
+    /// <param name="start">The first observation timestamp.</param>
+    /// <param name="parentCollection">
+    /// The collection the element's <c>ParentCollection</c> resolves to. Must be supplied whenever
+    /// the element is later saved (e.g. via <see cref="TimeSeriesCollection.Add"/>), since
+    /// <see cref="UI.TimeSeriesElement.Save"/> persists to <c>ParentCollection.ParentProject</c>'s
+    /// file, not the caller's own project reference.
+    /// </param>
+    /// <param name="valueAt">
+    /// Optional value of the observation at each zero-based step; <see langword="null"/> uses
+    /// <c>i + 1</c>.
+    /// </param>
+    /// <returns>A populated time-series element bound to <paramref name="parentCollection"/>.</returns>
+    private static TimeSeriesElement CreateTimeSeriesElementInCollection(string name, int count, TimeInterval interval, DateTime start,
+        TimeSeriesCollection parentCollection, Func<int, double>? valueAt = null)
+    {
+        var element = new TimeSeriesElement(name, parentCollection);
+        var series = new TimeSeries(interval);
+        DateTime date = start;
+        for (int i = 0; i < count; i++)
+        {
+            series.Add(new SeriesOrdinate<DateTime, double>(date, valueAt?.Invoke(i) ?? i + 1.0));
             date = TimeSeries.AddTimeInterval(date, interval);
         }
 
@@ -373,10 +418,1091 @@ public class TimeSeriesAnalysisTests
         }
     }
 
+    // -----------------------------------------------------------------------------------------
+    // Task 2.9 / decision D2: warn when a time-series analysis opens with results computed by an
+    // earlier version of RMC-BestFit. IsPreV201TransformResult is the internal predicate Open()
+    // consults; it is exercised directly here with inline ARIMAX/XElement fixtures (no SQLite, no
+    // optimizer), plus a small number of true Open()-level round trips for the cases that need to
+    // prove the SQLite wiring itself (attribute detection on the persisted cell, message add/remove).
+    // -----------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Verifies the warning never fires for an unestimated analysis, regardless of model shape.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_NotEstimated_ReturnsFalse()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredNotEstTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredNotEstResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = CreateTimeSeriesElement("PredNotEstCovariate", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1)) });
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsFalse(UI.TimeSeriesAnalysis.IsPreV201TransformResult(false, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies a model saved by v2.0.1+ (the <c>TransformLambda</c> attribute is present) never
+    /// warns, even when it has a covariate.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_TransformLambdaPresent_ReturnsFalse()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredLambdaPresentTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredLambdaPresentResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = CreateTimeSeriesElement("PredLambdaPresentCovariate", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1)) });
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+
+        Assert.IsTrue(modelXml.Attribute(nameof(ARIMAX.TransformLambda)) != null,
+            "Sanity check: production ToXElement() must write TransformLambda unconditionally.");
+        Assert.IsFalse(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies the primary case from the task brief: an estimated model with a covariate, saved
+    /// without <c>TransformLambda</c> (a v2.0.0 save), must warn.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_EstimatedCovariateModelMissingTransformLambda_ReturnsTrue()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredCovariateTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredCovariateResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = CreateTimeSeriesElement("PredCovariateCovariate", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1)) });
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsTrue(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies a covariate-free, undifferenced, untransformed model saved without
+    /// <c>TransformLambda</c> does not warn: none of v2.0.1's changes (covariate alignment, fitted
+    /// transform, differenced training and reintegration windows, narrower conditioning window)
+    /// apply to it.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_NoCovariatesNoFittedTransform_ReturnsFalse()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredNoCovNoneTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredNoCovNoneResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        // Defaults: DiffOrderD = 0, TransformType = None, AROrderP = 1, MAOrderQ = 0, XOrderB = 0 (<= max(1, 0)).
+        Assert.AreEqual(0, tsa.ARIMAX.DiffOrderD, "Precondition: the model is not differenced.");
+        Assert.AreEqual(RMC.BestFit.Models.Transform.None, tsa.ARIMAX.TransformType, "Precondition: no transform.");
+        Assert.IsTrue(tsa.ARIMAX.XOrderB <= Math.Max(tsa.ARIMAX.AROrderP, tsa.ARIMAX.MAOrderQ), "Precondition: XOrderB <= max(p, q).");
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsFalse(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies a differenced (d = 1), covariate-free, untransformed model saved without
+    /// <c>TransformLambda</c> warns: v2.0.0 trained differenced models on the first T differences
+    /// instead of the T − d differences inside the raw training prefix (TR-041) and reintegrated
+    /// their saved curves one step off (TR-037).
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_DifferencedModelWithoutCovariatesOrFittedTransform_ReturnsTrue()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredDifferencedTSA", _collection!);
+        tsa.TimeSeriesData = CreateLevelTimeSeriesElement("PredDifferencedResponse");
+        tsa.ARIMAX.DiffOrderD = 1;
+        Assert.AreEqual(RMC.BestFit.Models.Transform.None, tsa.ARIMAX.TransformType, "Precondition: no transform.");
+        Assert.IsTrue(tsa.ARIMAX.XOrderB <= Math.Max(tsa.ARIMAX.AROrderP, tsa.ARIMAX.MAOrderQ), "Precondition: XOrderB <= max(p, q).");
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsTrue(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies a covariate-free model using a fitted Box-Cox transform warns, per the brief's
+    /// "or its TransformType is Box-Cox or Yeo-Johnson" clause.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_NoCovariatesBoxCoxTransform_ReturnsTrue()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredBoxCoxTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredBoxCoxResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        tsa.ARIMAX.TransformType = RMC.BestFit.Models.Transform.BoxCox;
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsTrue(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies the controller ruling's third clause: a covariate-free model where
+    /// <c>XOrderB &gt; max(AROrderP, MAOrderQ)</c> warns, because Task 2.8 narrowed the
+    /// conditioning window K for that combination.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_NoCovariatesNarrowerConditioningWindow_ReturnsTrue()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredNarrowKTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredNarrowKResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        // No covariates. AROrderP defaults to 1, MAOrderQ defaults to 0 -> max(p, q) = 1.
+        tsa.ARIMAX.XOrderB = 2; // 2 > 1: Task 2.8 narrowed K from the pre-2.8 window for this case.
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsTrue(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies the boundary of the third clause: <c>XOrderB == max(AROrderP, MAOrderQ)</c> uses
+    /// the same conditioning window before and after Task 2.8, so it must not warn.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_NoCovariatesXOrderBAtBoundary_ReturnsFalse()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredBoundaryKTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredBoundaryKResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        tsa.ARIMAX.AROrderP = 2;
+        tsa.ARIMAX.XOrderB = 2; // 2 <= max(2, 0) = 2: not narrower than before Task 2.8.
+        XElement modelXml = tsa.ARIMAX.ToXElement();
+        modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        Assert.IsFalse(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, modelXml, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Verifies a <see langword="null"/> model XElement (no ARIMAX XML was ever saved) is treated
+    /// the same as a missing attribute, not as a reason to skip the check.
+    /// </summary>
+    [STATestMethod]
+    public void IsPreV201TransformResult_NullModelXElement_TreatedAsMissingAttribute()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("PredNullXmlTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("PredNullXmlResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = CreateTimeSeriesElement("PredNullXmlCovariate", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1)) });
+
+        Assert.IsTrue(UI.TimeSeriesAnalysis.IsPreV201TransformResult(true, null, tsa.ARIMAX));
+    }
+
+    /// <summary>
+    /// Open()-level negative case: an unresolved input series ('MissingSeries') leaves the
+    /// reconstructed analysis unestimated, so the pre-v2.0.1 transform-results warning must not
+    /// appear. Exercises the real Open() wiring (as opposed to the predicate directly) for the
+    /// "no results" case without needing a resolvable time series.
+    /// </summary>
+    [STATestMethod]
+    public void Open_NoResults_DoesNotAddLegacyTransformWarning()
+    {
+        const string arimaxXmlWithoutTransformLambda =
+            "<ARIMAX TransformType=\"None\" IncludeIntercept=\"True\" IncludeSeasonality=\"False\" " +
+            "TrendType=\"None\" AROrderP=\"1\" DiffOrderD=\"0\" MAOrderQ=\"0\" XOrderB=\"0\" " +
+            "TrainingTimeSteps=\"4\" UseDefaultTrainingSteps=\"True\">" +
+            "<Parameters>" +
+            "<ModelParameter Name=\"Intercept (μ)\" Value=\"5.0\" />" +
+            "<ModelParameter Name=\"AR (𝚽₁)\" Value=\"0.45\" />" +
+            "<ModelParameter Name=\"Sigma (σ)\" Value=\"1.0\" />" +
+            "</Parameters>" +
+            "</ARIMAX>";
+
+        string tempPath = Path.Combine(Path.GetTempPath(), $"rmcbf-tsa-noresults-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            BuildTimeSeriesAnalysisDatabaseWithCorruptArimaxXml(tempPath, "NoResultsTSA", arimaxXmlWithoutTransformLambda);
+
+            var analysis = new UI.TimeSeriesAnalysis("NoResultsTSA", _collection!);
+            using (var sqlite = new SQLiteManager(tempPath))
+            {
+                analysis.Open(sqlite);
+            }
+
+            Assert.IsFalse(analysis.IsEstimated,
+                "Sanity check: the referenced input series is unresolved ('MissingSeries'), so nothing can be restored.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "No results were restored, so the pre-v2.0.1 transform-results warning must not appear.");
+        }
+        finally
+        {
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
+    }
+
+    /// <summary>
+    /// Open()-level positive case: an estimated covariate model saved without
+    /// <c>TransformLambda</c> (simulating a v2.0.0 save) must add the pre-v2.0.1
+    /// transform-results warning, and the warning must disappear once results are cleared.
+    /// </summary>
+    [STATestMethod]
+    public void Open_EstimatedCovariateModelMissingTransformLambda_AddsWarningThatClearsWithResults()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacyTransform-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "LegacyTransformTSA", includeCovariate: true, keepTransformLambda: false, isEstimated: true);
+
+            Assert.IsTrue(analysis.IsEstimated, "Sanity check: Open() must restore IsEstimated=true from the AnalysisXml cell.");
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "An estimated covariate model saved without TransformLambda must warn that results predate v2.0.1.");
+
+            analysis.ClearResults();
+
+            Assert.IsFalse(analysis.IsEstimated);
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "Clearing the results must remove the warning immediately, not only after a successful re-run.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Open()-level negative case: the same covariate model, but saved by the current version
+    /// (<c>TransformLambda</c> present), must not warn.
+    /// </summary>
+    [STATestMethod]
+    public void Open_EstimatedCovariateModelWithTransformLambda_DoesNotAddLegacyTransformWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSACurrentTransform-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "CurrentTransformTSA", includeCovariate: true, keepTransformLambda: true, isEstimated: true);
+
+            Assert.IsTrue(analysis.IsEstimated, "Sanity check: Open() must restore IsEstimated=true from the AnalysisXml cell.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "A model saved by the current version (TransformLambda present) must not warn.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Open()-level negative case: an estimated covariate-free, untransformed model saved without
+    /// <c>TransformLambda</c> must not warn, matching the brief's explicit acceptance criterion.
+    /// </summary>
+    [STATestMethod]
+    public void Open_EstimatedModelWithoutCovariatesOrFittedTransform_DoesNotAddLegacyTransformWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSANoCovariate-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "NoCovariateTransformTSA", includeCovariate: false, keepTransformLambda: false, isEstimated: true);
+
+            Assert.IsTrue(analysis.IsEstimated, "Sanity check: Open() must restore IsEstimated=true from the AnalysisXml cell.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "A covariate-free, untransformed model is unaffected by v2.0.1's changes, so it must not warn " +
+                "even though TransformLambda is absent.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Open()-level positive case for differenced models: an estimated d = 1 model without
+    /// covariates or a fitted transform, saved without <c>TransformLambda</c>, must warn, and the
+    /// warning must name the corrected differenced training and reintegration windows.
+    /// </summary>
+    [STATestMethod]
+    public void Open_EstimatedDifferencedModelMissingTransformLambda_AddsWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacyDifferenced-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "LegacyDifferencedTSA", includeCovariate: false, keepTransformLambda: false, isEstimated: true,
+                differenceOrder: 1);
+
+            Assert.IsTrue(analysis.IsEstimated, "Sanity check: Open() must restore IsEstimated=true from the AnalysisXml cell.");
+            Assert.AreEqual(1, analysis.ARIMAX.DiffOrderD, "Sanity check: the differenced model is restored.");
+            BasicMessageItem? warning = MessengerMessage(analysis, "TSA-WRN-LEGACY-TRANSFORM");
+            Assert.IsNotNull(warning, "An estimated differenced model saved before v2.0.1 must warn.");
+            Assert.AreEqual(
+                $"The results of time series analysis '{analysis.Name}' were computed by an earlier version of RMC-BestFit. " +
+                "This version fits the transform exponent on the training window, aligns covariates by date, trains and " +
+                "reintegrates differenced models on corrected windows, and uses a revised conditioning window, so " +
+                "reprocessed forecasts would combine the saved results with different model settings. Re-run the " +
+                "Bayesian analysis to refresh the results.",
+                warning.Description);
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies the pre-v2.0.1 results warning survives a save that does not re-run the analysis.
+    /// </summary>
+    /// <remarks>
+    /// The save rewrites the model XML with <c>TransformLambda</c>, so on the next open only the
+    /// persisted marker can still report that the unchanged results predate v2.0.1.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_LegacyResultsSavedWithoutRerun_KeepsWarningOnReopen()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacySave-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "LegacySaveTSA", includeCovariate: true, keepTransformLambda: false, isEstimated: true);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"), "Precondition: the legacy results warn on open.");
+
+            analysis.Description = "Edited after opening legacy results";
+            Assert.IsTrue(analysis.IsEstimated, "A description edit keeps the results.");
+            analysis.Save();
+
+            StringAssert.Contains(ReadSavedCell(path, analysis.Name, "ARIMAX"), nameof(ARIMAX.TransformLambda),
+                "Precondition: the save writes TransformLambda, so the model XML no longer reveals the legacy results.");
+            UI.TimeSeriesAnalysis reopened = ReopenAnalysis(analysis, path);
+
+            Assert.IsTrue(reopened.IsEstimated, "Sanity check: the saved results are restored.");
+            Assert.IsTrue(MessengerHas(reopened, "TSA-WRN-LEGACY-TRANSFORM"),
+                "Saving without a re-run leaves the legacy results in place, so the warning must survive the save.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies clearing the legacy results drops the persisted pre-v2.0.1 marker together with
+    /// the warning, so a save after the clear does not warn on the next open.
+    /// </summary>
+    [STATestMethod]
+    public void Open_LegacyResultsClearedAndSaved_DropsMarkerAndDoesNotWarnOnReopen()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacyClear-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "LegacyClearTSA", includeCovariate: true, keepTransformLambda: false, isEstimated: true);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"), "Precondition: the legacy results warn on open.");
+
+            analysis.ClearResults();
+            analysis.Save();
+
+            string? marker = ReadSavedCell(path, analysis.Name, "PreV201Results");
+            Assert.IsTrue(bool.TryParse(marker, out bool markerValue),
+                $"The save must write the pre-v2.0.1 results marker (read '{marker ?? "<absent>"}').");
+            Assert.IsFalse(markerValue, "The marker must drop with the results.");
+            UI.TimeSeriesAnalysis reopened = ReopenAnalysis(analysis, path);
+            Assert.IsFalse(reopened.IsEstimated, "Sanity check: the cleared results were saved.");
+            Assert.IsFalse(MessengerHas(reopened, "TSA-WRN-LEGACY-TRANSFORM"),
+                "Results cleared before the save cannot be legacy results, so the reopened analysis must not warn.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies an undo that rebuilds the model without its results also removes the pre-v2.0.1
+    /// results warning.
+    /// </summary>
+    /// <remarks>
+    /// Undoing a <see cref="UI.TimeSeriesAnalysis.CovariateExtension"/> edit rebuilds the inner
+    /// analysis, whose covariates are reattached (clearing its results) before this element
+    /// subscribes to it again. The edit itself only reprocesses the forecast, so the legacy results
+    /// and their warning survive it; the test waits for that background reprocess before undoing.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateExtensionUndo_OnLegacyResults_RemovesWarningOnceResultsAreGone()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacyUndo-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                path, "LegacyUndoTSA", includeCovariate: true, keepTransformLambda: false, isEstimated: true);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"), "Precondition: the legacy results warn on open.");
+
+            using (var reprocessed = new ManualResetEventSlim(false))
+            {
+                System.ComponentModel.PropertyChangedEventHandler onResults = (_, e) =>
+                {
+                    if (e.PropertyName == nameof(UI.TimeSeriesAnalysis.AnalysisResults)) reprocessed.Set();
+                };
+                analysis.PropertyChanged += onResults;
+                try
+                {
+                    analysis.CovariateExtension = ARIMAX.CovariateExtensionMethod.KNN;
+                    Assert.IsTrue(reprocessed.Wait(TimeSpan.FromSeconds(30)),
+                        "The forecast reprocess scheduled by the covariate-extension edit must finish.");
+                }
+                finally
+                {
+                    analysis.PropertyChanged -= onResults;
+                }
+            }
+
+            Assert.IsTrue(analysis.IsEstimated, "A covariate-extension edit keeps the fit.");
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "The results are unchanged by the edit, so the warning still stands.");
+            Assert.IsTrue(analysis.UndoManager.CanUndo, "Precondition: the edit is undoable.");
+
+            analysis.UndoManager.Undo();
+
+            Assert.AreEqual(ARIMAX.CovariateExtensionMethod.BlockBootstrap, analysis.CovariateExtension,
+                "Undo restores the covariate-extension method.");
+            Assert.IsFalse(analysis.IsEstimated, "The rebuilt analysis has no results.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "Once the legacy results are gone the warning must go with them.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies <see cref="UI.TimeSeriesAnalysis.Open(SQLiteManager)"/> starts from a clean
+    /// legacy-results state: after an element that showed the pre-v2.0.1 warning is opened again
+    /// from a row saved by the current version, its next save must not mark the results as legacy.
+    /// </summary>
+    /// <remarks>
+    /// The current-version row has no <c>Covariates</c> column, so nothing clears the replaced
+    /// analysis during that Open, and only the reset at the start of Open drops the earlier
+    /// warning's state.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_AgainFromCurrentVersionRow_DoesNotCarryLegacyStateIntoNextSave()
+    {
+        string legacyPath = Path.Combine(Path.GetTempPath(), $"BestFit-TSAReopenLegacy-{Guid.NewGuid():N}.bestfit");
+        string currentPath = Path.Combine(Path.GetTempPath(), $"BestFit-TSAReopenCurrent-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLegacyTransformFixture(
+                legacyPath, "ReopenResetTSA", includeCovariate: false, keepTransformLambda: false, isEstimated: true,
+                differenceOrder: 1);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"), "Precondition: the legacy results warn on open.");
+
+            BuildTimeSeriesAnalysisRow(currentPath, analysis.Name, analysis.TimeSeriesData.Name, covariateName: null,
+                analysis.ARIMAX.ToXElement().ToString(), "<ARIMAXAnalysis IsEstimated=\"True\" />");
+            using (var sqlite = new SQLiteManager(currentPath))
+            {
+                analysis.Open(sqlite);
+            }
+            Assert.IsTrue(analysis.IsEstimated, "Sanity check: the current-version row restores results.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"), "A row saved by the current version does not warn.");
+
+            analysis.Save();
+            UI.TimeSeriesAnalysis reopened = ReopenAnalysis(analysis, legacyPath);
+
+            Assert.IsTrue(reopened.IsEstimated, "Sanity check: the saved results are restored.");
+            Assert.IsFalse(MessengerHas(reopened, "TSA-WRN-LEGACY-TRANSFORM"),
+                "The earlier legacy state must not survive Open into the next save.");
+        }
+        finally
+        {
+            DeleteFixtureFile(legacyPath);
+            DeleteFixtureFile(currentPath);
+        }
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // Parameter-layout warning: when Open's layout guard replaces a saved parameter vector that no
+    // longer fits the covariates that resolved (for example, a covariate series missing from the
+    // project), the saved results are not restored and a warning is shown. Fixtures are real
+    // SQLite rows opened through Open(); the saved draws are synthetic, so no sampler runs.
+    // -----------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Verifies that opening a covariate model whose covariate series is missing from the project
+    /// warns, keeps the rebuilt default parameters without the saved results, and restores the
+    /// other saved settings.
+    /// </summary>
+    /// <remarks>
+    /// The saved draws have the one-covariate model's dimension, but only the response resolves, so
+    /// the layout guard rebuilds a covariate-free default vector. Restored next to that vector, the
+    /// draws would make a later point-estimator reprocess fail on the length mismatch. The row also
+    /// carries a true pre-v2.0.1 marker, which would raise the pre-v2.0.1 results warning had the
+    /// results been restored.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_SavedParametersNoLongerFitCovariates_WarnsAndSkipsSavedResults()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutMismatch-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutMismatchTSA", resolveCovariate: false, out int savedParameterCount);
+
+            BasicMessageItem? warning = MessengerMessage(analysis, "TSA-WRN-LAYOUT");
+            Assert.IsNotNull(warning, "Replacing the saved parameters on Open must warn.");
+            Assert.AreEqual(MessageType.Warning, warning.Type);
+            Assert.AreEqual(nameof(UI.TimeSeriesAnalysis), warning.ParameterName);
+            Assert.AreEqual(
+                $"The saved parameters of time series analysis '{analysis.Name}' no longer match its covariates " +
+                "(for example, a covariate time series could not be found), so default parameters were restored " +
+                "and the saved results were not loaded. Check the covariates and re-run the Bayesian analysis.",
+                warning.Description);
+
+            Assert.AreEqual(0, analysis.Covariates.Count, "Sanity check: the covariate series cannot be resolved.");
+            Assert.AreNotEqual(savedParameterCount, analysis.ARIMAX.NumberOfParameters,
+                "Sanity check: the layout guard replaced the saved vector with the covariate-free defaults.");
+            Assert.IsFalse(analysis.IsEstimated, "Results of the replaced vector must not be restored.");
+            Assert.IsFalse(analysis.BayesianAnalysis.IsEstimated, "The Bayesian analysis must not report a fit either.");
+            Assert.IsNull(analysis.BayesianAnalysis.Results, "The saved draws must not be restored.");
+            Assert.IsNull(analysis.AnalysisResults, "The saved uncertainty results must not be restored.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "No results were restored, so the pre-v2.0.1 marker must not raise the pre-v2.0.1 results warning.");
+
+            Assert.AreEqual(4321, analysis.BayesianAnalysis.Iterations, "The saved Bayesian settings are still restored.");
+            Assert.AreEqual(777, analysis.BayesianAnalysis.PRNGSeed, "The saved Bayesian settings are still restored.");
+            Assert.AreEqual(BayesianAnalysis.PointEstimateType.PosteriorMode, analysis.BayesianAnalysis.PointEstimator,
+                "The saved Bayesian settings are still restored.");
+            Assert.AreEqual(3, analysis.ForecastSteps, "The saved forecast horizon is still restored.");
+            Assert.IsFalse(analysis.IsDirty, "Open must not change the element's dirty state.");
+
+            analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMean;
+
+            Assert.IsFalse(analysis.IsEstimated, "With no restored results there is nothing to reprocess.");
+            Assert.IsNull(analysis.AnalysisResults);
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that the same saved row opens as before when its covariate series resolves: the
+    /// saved vector fits, the saved results are restored, and no layout warning is shown.
+    /// </summary>
+    [STATestMethod]
+    public void Open_SavedParametersFitCovariates_RestoresSavedResultsWithoutLayoutWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutFits-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutFitsTSA", resolveCovariate: true, out int savedParameterCount);
+
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LAYOUT"), "A saved vector that fits its covariates must not warn.");
+            Assert.AreEqual(1, analysis.Covariates.Count, "Sanity check: the covariate series resolves.");
+            Assert.AreEqual(savedParameterCount, analysis.ARIMAX.NumberOfParameters, "The saved vector is kept.");
+            Assert.IsTrue(analysis.IsEstimated, "The saved results are restored as before.");
+            Assert.IsNotNull(analysis.BayesianAnalysis.Results, "The saved draws are restored as before.");
+            Assert.AreEqual(savedParameterCount, analysis.BayesianAnalysis.Results.MAP.Values.Length,
+                "The restored draws have the saved model's dimension.");
+            Assert.IsNotNull(analysis.AnalysisResults, "The saved uncertainty results are restored as before.");
+            Assert.AreEqual(analysis.TimeSeriesData.TimeSeries.Count + 3, analysis.AnalysisResults.ModeCurve!.Length);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "The restored results carry the pre-v2.0.1 marker, so the pre-v2.0.1 results warning shows as before.");
+            Assert.AreEqual(4321, analysis.BayesianAnalysis.Iterations);
+            Assert.AreEqual(777, analysis.BayesianAnalysis.PRNGSeed);
+            Assert.AreEqual(BayesianAnalysis.PointEstimateType.PosteriorMode, analysis.BayesianAnalysis.PointEstimator);
+            Assert.AreEqual(3, analysis.ForecastSteps);
+            Assert.IsFalse(analysis.IsDirty);
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies the layout warning is never duplicated and that saving the element writes neither a
+    /// true pre-v2.0.1 marker nor anything that raises the pre-v2.0.1 results warning on the next
+    /// open.
+    /// </summary>
+    /// <remarks>
+    /// Opening the same element again from the unchanged row, with the covariate still missing, shows
+    /// the warning once, because Open starts from a clean message state. The element's save writes
+    /// the rebuilt default parameters and only the covariates that resolved, so the saved row no
+    /// longer names the missing series; the reopened analysis therefore fits its covariates and has
+    /// nothing to warn about.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_LayoutMismatchOpenedAgainAndSaved_WarnsOnceAndWritesNoPreV201Marker()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutSave-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutSaveTSA", resolveCovariate: false, out _);
+            Assert.AreEqual(1, MessengerCount(analysis, "TSA-WRN-LAYOUT"), "Precondition: the layout mismatch warns on open.");
+
+            using (var sqlite = new SQLiteManager(path))
+            {
+                analysis.Open(sqlite);
+            }
+
+            Assert.AreEqual(1, MessengerCount(analysis, "TSA-WRN-LAYOUT"), "Opening again must not duplicate the warning.");
+            Assert.IsFalse(analysis.IsEstimated, "Opening again must not restore the saved results either.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"));
+
+            analysis.Save();
+
+            string? marker = ReadSavedCell(path, analysis.Name, "PreV201Results");
+            Assert.IsTrue(bool.TryParse(marker, out bool markerValue),
+                $"The save must write the pre-v2.0.1 results marker (read '{marker ?? "<absent>"}').");
+            Assert.IsFalse(markerValue, "No results were restored, so the save must not mark any as predating v2.0.1.");
+            Assert.AreEqual("", ReadSavedCell(path, analysis.Name, "Covariates"),
+                "Sanity check: the save keeps only the covariates that resolved.");
+
+            UI.TimeSeriesAnalysis reopened = ReopenAnalysis(analysis, path);
+
+            Assert.IsFalse(reopened.IsEstimated);
+            Assert.IsFalse(MessengerHas(reopened, "TSA-WRN-LEGACY-TRANSFORM"),
+                "The saved row carries no results and a false marker, so the pre-v2.0.1 results warning must not appear.");
+            Assert.AreEqual(0, MessengerCount(reopened, "TSA-WRN-LAYOUT"),
+                "The saved default parameters fit the saved covariates, so the reopened analysis must not warn.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies a successful re-run removes the layout warning, at the step that removes the
+    /// legacy-schema warning.
+    /// </summary>
+    /// <remarks>
+    /// No existing test seam completes a time-series run without sampling, so the test swaps in an
+    /// inner analysis whose run completes at once (<see cref="CompletedRunARIMAXAnalysis"/>); the
+    /// wrapper's real <see cref="UI.TimeSeriesAnalysis.RunAsync"/> then takes its success path.
+    /// </remarks>
+    /// <returns>A task that completes when the test finishes.</returns>
+    [STATestMethod]
+    public async Task RunAsync_Succeeded_RemovesLayoutWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutRerun-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutRerunTSA", resolveCovariate: false, out _);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LAYOUT"), "Precondition: the layout mismatch warns on open.");
+
+            FieldInfo innerAnalysisField = typeof(UI.TimeSeriesAnalysis).GetField(
+                "_innerAnalysis", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            innerAnalysisField.SetValue(analysis, new CompletedRunARIMAXAnalysis(analysis.ARIMAX));
+
+            await analysis.RunAsync(new SafeProgressReporter());
+
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LAYOUT"),
+                "A successful re-run fits the current covariates, so the warning must be removed.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies a legacy 'ARMAX' row whose covariate resolves shows only its legacy warning, not the
+    /// layout warning.
+    /// </summary>
+    /// <remarks>
+    /// The legacy model is discarded and rebuilt from the defaults, so there is no saved parameter
+    /// vector for the layout warning to describe, although attaching the covariate still resizes the
+    /// default vector.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_LegacyArmaxRowWithCovariate_DoesNotAddLayoutWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacyLayout-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            BestFitProject project = CreateIsolatedProject(path);
+            var tsCollection = (TimeSeriesCollection)project.ElementCollections!.OfType<TimeSeriesCollection>().Single();
+            var tsaCollection = (TimeSeriesAnalysisCollection)project.ElementCollections!.OfType<TimeSeriesAnalysisCollection>().Single();
+            var start = new DateTime(1990, 1, 1);
+            TimeSeriesElement response = CreateTimeSeriesElementInCollection("LegacyLayoutTSA-Response", 30, TimeInterval.OneYear, start, tsCollection);
+            tsCollection.Add(response);
+            TimeSeriesElement covariate = CreateTimeSeriesElementInCollection("LegacyLayoutTSA-Covariate", 30, TimeInterval.OneYear, start, tsCollection);
+            tsCollection.Add(covariate);
+            BuildLegacyTimeSeriesAnalysisDatabase(path, "LegacyLayoutTSA", "<ARMAX />", response.Name, covariate.Name);
+
+            var analysis = new UI.TimeSeriesAnalysis("LegacyLayoutTSA", tsaCollection);
+            using (var sqlite = new SQLiteManager(path))
+            {
+                analysis.Open(sqlite);
+            }
+
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY"), "Sanity check: the legacy schema is detected.");
+            Assert.AreEqual(1, analysis.Covariates.Count, "Sanity check: the covariate series resolves.");
+            Assert.IsFalse(analysis.IsEstimated);
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LAYOUT"),
+                "A legacy model has no saved parameter vector, so only the legacy warning applies.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Opens a new time-series analysis element from the saved row of <paramref name="saved"/>,
+    /// the way reopening the project would, leaving the original instance untouched.
+    /// </summary>
+    /// <param name="saved">The analysis whose row was saved; supplies the name and parent collection.</param>
+    /// <param name="path">The project file the row was saved to.</param>
+    /// <returns>A new analysis instance opened from <paramref name="path"/>.</returns>
+    private static UI.TimeSeriesAnalysis ReopenAnalysis(UI.TimeSeriesAnalysis saved, string path)
+    {
+        var reopened = new UI.TimeSeriesAnalysis(saved.Name, saved.ParentCollection);
+        using (var sqlite = new SQLiteManager(path))
+        {
+            reopened.Open(sqlite);
+        }
+
+        return reopened;
+    }
+
+    /// <summary>
+    /// Reads one cell of a saved time-series analysis row as text.
+    /// </summary>
+    /// <param name="path">The project file to read.</param>
+    /// <param name="analysisName">The name of the saved analysis row.</param>
+    /// <param name="columnName">The column to read.</param>
+    /// <returns>The cell text, or <see langword="null"/> when the column or the row is absent.</returns>
+    private static string? ReadSavedCell(string path, string analysisName, string columnName)
+    {
+        using (var sqlite = new SQLiteManager(path))
+        {
+            sqlite.Open();
+            try
+            {
+                DataTableView view = sqlite.GetTableManager("Time Series Analysis");
+                if (!view.ColumnNames.Contains(columnName)) return null;
+                int rowIndex = view.SearchColumn(0, view.NumberOfRows - 1, "Name", analysisName, true, true);
+                return rowIndex < 0 ? null : view.GetCell(columnName, rowIndex)?.ToString();
+            }
+            finally
+            {
+                sqlite.Close();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns the active messenger item for the supplied source and code.
+    /// </summary>
+    /// <param name="source">The expected owner of the message.</param>
+    /// <param name="code">The stable message code to find.</param>
+    /// <returns>The matching message item, or <c>null</c> when no matching message is active.</returns>
+    private static BasicMessageItem? MessengerMessage(object source, string code)
+    {
+        return Messenger.GetInstance().AllMessageItems()
+            .OfType<BasicMessageItem>()
+            .FirstOrDefault(m => ReferenceEquals(m.Source, source) && m.Code == code);
+    }
+
+    /// <summary>
+    /// Returns whether the global messenger contains a message from the supplied source and code.
+    /// </summary>
+    /// <param name="source">The expected owner of the message.</param>
+    /// <param name="code">The stable message code to find.</param>
+    /// <returns><c>true</c> when a matching message is active; otherwise, <c>false</c>.</returns>
+    private static bool MessengerHas(object source, string code)
+    {
+        return MessengerMessage(source, code) != null;
+    }
+
+    /// <summary>
+    /// Counts the active messenger items from the supplied source with the supplied code.
+    /// </summary>
+    /// <param name="source">The expected owner of the messages.</param>
+    /// <param name="code">The stable message code to count.</param>
+    /// <returns>The number of matching active messages.</returns>
+    private static int MessengerCount(object source, string code)
+    {
+        return Messenger.GetInstance().AllMessageItems()
+            .OfType<BasicMessageItem>()
+            .Count(m => ReferenceEquals(m.Source, source) && m.Code == code);
+    }
+
+    /// <summary>
+    /// Creates a test-local project instance without replacing the application's singleton.
+    /// </summary>
+    /// <param name="path">The temporary project path.</param>
+    /// <returns>An isolated project instance targeting the temporary copy.</returns>
+    private static BestFitProject CreateIsolatedProject(string path)
+    {
+        var project = (BestFitProject)Activator.CreateInstance(typeof(BestFitProject), nonPublic: true)!;
+        project.FullFileName = path;
+        return project;
+    }
+
+    /// <summary>
+    /// Deletes a temporary fixture file, retrying briefly if a pooled SQLite connection has not
+    /// yet released its file handle.
+    /// </summary>
+    /// <param name="path">The file to delete, if it exists.</param>
+    /// <remarks>
+    /// <see cref="BuildAndOpenLegacyTransformFixture"/> opens several short-lived SQLite
+    /// connections against the same file in sequence (element saves via
+    /// <see cref="TimeSeriesCollection.Add"/>, the analysis row builder, then
+    /// <see cref="UI.TimeSeriesAnalysis.Open(SQLiteManager)"/>). On Windows the pooled native
+    /// handle can outlive the last <c>Close()</c> by a short interval, so a single
+    /// <see cref="File.Delete(string)"/> immediately afterward can race it; clearing the pool and
+    /// retrying after a short pause resolves the race deterministically.
+    /// </remarks>
+    private static void DeleteFixtureFile(string path)
+    {
+        const int maxAttempts = 5;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                SQLiteConnection.ClearAllPools();
+                if (File.Exists(path)) File.Delete(path);
+                return;
+            }
+            catch (IOException) when (attempt < maxAttempts)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Thread.Sleep(50);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Builds and opens a real time-series analysis for the Task 2.9 legacy-transform-warning
+    /// tests, using an isolated <see cref="BestFitProject"/> (never the shared application
+    /// singleton) so the input series referenced by name in the saved cells can be resolved by
+    /// the real <see cref="UI.TimeSeriesAnalysis.Open(SQLiteManager)"/> lookup.
+    /// </summary>
+    /// <param name="path">The temporary <c>.bestfit</c> file backing the isolated project.</param>
+    /// <param name="analysisName">The analysis name, unique per test.</param>
+    /// <param name="includeCovariate">Whether to attach one covariate series to the model.</param>
+    /// <param name="keepTransformLambda">
+    /// When <see langword="false"/>, the <c>TransformLambda</c> attribute is stripped from the
+    /// saved <c>ARIMAX</c> cell to simulate a save made before v2.0.1 started writing it.
+    /// </param>
+    /// <param name="isEstimated">The <c>IsEstimated</c> value written to the saved <c>AnalysisXml</c> cell.</param>
+    /// <param name="differenceOrder">
+    /// The saved model's <see cref="ARIMAX.DiffOrderD"/>. A positive order uses a response with
+    /// varying first differences (the default response is linear, so its differences are constant
+    /// and would leave the differenced scale defaults degenerate).
+    /// </param>
+    /// <returns>The freshly constructed analysis, already opened from the fixture.</returns>
+    private static UI.TimeSeriesAnalysis BuildAndOpenLegacyTransformFixture(
+        string path, string analysisName, bool includeCovariate, bool keepTransformLambda, bool isEstimated,
+        int differenceOrder = 0)
+    {
+        BestFitProject project = CreateIsolatedProject(path);
+        var tsCollection = (TimeSeriesCollection)project.ElementCollections!.OfType<TimeSeriesCollection>().Single();
+        var tsaCollection = (TimeSeriesAnalysisCollection)project.ElementCollections!.OfType<TimeSeriesAnalysisCollection>().Single();
+
+        var start = new DateTime(1990, 1, 1);
+        Func<int, double>? responseValue = differenceOrder > 0 ? i => 1000.0 + 25.0 * Math.Sin(i / 3.0) + i : null;
+        TimeSeriesElement response = CreateTimeSeriesElementInCollection(analysisName + "-Response", 30, TimeInterval.OneYear, start, tsCollection, responseValue);
+        tsCollection.Add(response);
+
+        var arimax = new ARIMAX(response.TimeSeries);
+        if (differenceOrder > 0)
+            arimax.DiffOrderD = differenceOrder;
+        string covariateName = "";
+        if (includeCovariate)
+        {
+            TimeSeriesElement covariate = CreateTimeSeriesElementInCollection(analysisName + "-Covariate", 30, TimeInterval.OneYear, start, tsCollection);
+            tsCollection.Add(covariate);
+            covariateName = covariate.Name;
+            arimax.SetCovariates(new List<TimeSeries> { covariate.TimeSeries });
+        }
+
+        XElement modelXml = arimax.ToXElement();
+        if (!keepTransformLambda)
+            modelXml.Attribute(nameof(ARIMAX.TransformLambda))!.Remove();
+
+        string analysisXml = $"<ARIMAXAnalysis IsEstimated=\"{isEstimated}\" />";
+        BuildTimeSeriesAnalysisRow(path, analysisName, response.Name, covariateName, modelXml.ToString(), analysisXml);
+
+        var analysis = new UI.TimeSeriesAnalysis(analysisName, tsaCollection);
+        using (var sqlite = new SQLiteManager(path))
+        {
+            analysis.Open(sqlite);
+        }
+
+        return analysis;
+    }
+
+    /// <summary>
+    /// Builds and opens a time-series analysis for the parameter-layout tests: its saved row holds
+    /// a one-covariate ARIMAX model with MCMC and uncertainty results of that model's dimension.
+    /// </summary>
+    /// <param name="path">The temporary <c>.bestfit</c> file backing the isolated project.</param>
+    /// <param name="analysisName">The analysis name, unique per test.</param>
+    /// <param name="resolveCovariate">
+    /// <see langword="true"/> to add the covariate series to the project, so Open reattaches it;
+    /// <see langword="false"/> to leave it out, so the saved <c>Covariates</c> cell names a series
+    /// the project does not contain.
+    /// </param>
+    /// <param name="savedParameterCount">The parameter count of the saved model and of every saved draw.</param>
+    /// <returns>The freshly constructed analysis, already opened from the fixture.</returns>
+    /// <remarks>
+    /// The row also stores a true pre-v2.0.1 results marker, so restored results raise the
+    /// pre-v2.0.1 results warning, and non-default Bayesian settings (4321 iterations, seed 777,
+    /// posterior mode) and three forecast steps, so a test can tell which saved state Open kept.
+    /// The draws are small deterministic perturbations of the model's default values; no sampler
+    /// runs.
+    /// </remarks>
+    private static UI.TimeSeriesAnalysis BuildAndOpenLayoutMismatchFixture(
+        string path, string analysisName, bool resolveCovariate, out int savedParameterCount)
+    {
+        BestFitProject project = CreateIsolatedProject(path);
+        var tsCollection = (TimeSeriesCollection)project.ElementCollections!.OfType<TimeSeriesCollection>().Single();
+        var tsaCollection = (TimeSeriesAnalysisCollection)project.ElementCollections!.OfType<TimeSeriesAnalysisCollection>().Single();
+
+        var start = new DateTime(1990, 1, 1);
+        TimeSeriesElement response = CreateTimeSeriesElementInCollection(analysisName + "-Response", 30, TimeInterval.OneYear, start, tsCollection);
+        tsCollection.Add(response);
+        TimeSeriesElement covariate = CreateTimeSeriesElementInCollection(analysisName + "-Covariate", 30, TimeInterval.OneYear, start, tsCollection);
+        if (resolveCovariate)
+            tsCollection.Add(covariate);
+
+        var arimax = new ARIMAX(response.TimeSeries);
+        arimax.SetCovariates(new List<TimeSeries> { covariate.TimeSeries });
+        savedParameterCount = arimax.NumberOfParameters;
+
+        double[] mode = arimax.Parameters.Select(p => p.Value).ToArray();
+        var draws = new List<ParameterSet>();
+        for (int i = 0; i < 20; i++)
+            draws.Add(new ParameterSet(mode.Select((value, j) => value + 0.001 * (i + j)).ToArray(), 0.0));
+        var mcmcResults = new MCMCResults(new ParameterSet(mode, 0.0), draws, alpha: 0.10);
+
+        const int forecastSteps = 3;
+        int horizon = response.TimeSeries.Count + forecastSteps;
+        var analysisResults = new UncertaintyAnalysisResults
+        {
+            ModeCurve = Enumerable.Range(1, horizon).Select(t => (double)t).ToArray(),
+            MeanCurve = Enumerable.Range(1, horizon).Select(t => (double)t).ToArray(),
+            ConfidenceIntervals = new double[horizon, 3]
+        };
+
+        string analysisXml =
+            $"<ARIMAXAnalysis IsEstimated=\"True\" ForecastingTimeSteps=\"{forecastSteps}\">" +
+            "<BayesianAnalysis UseSimulationDefaults=\"False\" Iterations=\"4321\" PRNGSeed=\"777\" " +
+            "PointEstimator=\"PosteriorMode\" IsEstimated=\"True\" />" +
+            "</ARIMAXAnalysis>";
+        BuildTimeSeriesAnalysisRow(path, analysisName, response.Name, covariate.Name, arimax.ToXElement().ToString(), analysisXml,
+            AnalysisPersistenceHelper.SerializeMCMCResults(mcmcResults),
+            AnalysisPersistenceHelper.SerializeAnalysisResults(analysisResults),
+            preV201Results: true);
+
+        var analysis = new UI.TimeSeriesAnalysis(analysisName, tsaCollection);
+        using (var sqlite = new SQLiteManager(path))
+        {
+            analysis.Open(sqlite);
+        }
+
+        return analysis;
+    }
+
+    /// <summary>
+    /// An ARIMAX analysis whose run completes at once without sampling, standing in for a
+    /// successful Bayesian re-run so a fast test can reach the wrapper's post-run message handling.
+    /// </summary>
+    private sealed class CompletedRunARIMAXAnalysis : RMC.BestFit.Analyses.ARIMAXAnalysis
+    {
+        /// <summary>
+        /// Creates the stand-in analysis for the supplied model.
+        /// </summary>
+        /// <param name="model">The model of the analysis being replaced.</param>
+        public CompletedRunARIMAXAnalysis(ARIMAX model) : base(model)
+        {
+        }
+
+        /// <summary>
+        /// Completes immediately without running the sampler.
+        /// </summary>
+        /// <param name="progressReporter">Not used.</param>
+        /// <returns>A completed task.</returns>
+        public override Task RunAsync(SafeProgressReporter? progressReporter = null)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Builds the "Time Series Analysis" table row for the Task 2.9 fixtures, hand-writing only
+    /// the cells that matter for the legacy-transform-warning check (mirrors the relevant subset
+    /// of the cells <see cref="UI.TimeSeriesAnalysis.Save"/> writes).
+    /// </summary>
+    /// <param name="path">The <c>.bestfit</c> file to create the table in.</param>
+    /// <param name="analysisName">The analysis name written to the <c>Name</c> cell.</param>
+    /// <param name="timeSeriesDataName">The response element name written to the <c>TimeSeriesData</c> cell.</param>
+    /// <param name="covariateName">
+    /// The covariate element name written to the <c>Covariates</c> cell (empty for none), or
+    /// <see langword="null"/> to omit the <c>Covariates</c> column entirely.
+    /// </param>
+    /// <param name="arimaxXml">The model XML written to the <c>ARIMAX</c> cell.</param>
+    /// <param name="analysisXml">The inner-analysis XML written to the <c>AnalysisXml</c> cell.</param>
+    /// <param name="mcmcResults">
+    /// The serialized MCMC results written to the <c>MCMCResults</c> cell, or <see langword="null"/>
+    /// to omit the column.
+    /// </param>
+    /// <param name="analysisResults">
+    /// The serialized uncertainty results written to the <c>AnalysisResults</c> cell, or
+    /// <see langword="null"/> to omit the column.
+    /// </param>
+    /// <param name="preV201Results">
+    /// The pre-v2.0.1 results marker written to the <c>PreV201Results</c> cell, or
+    /// <see langword="null"/> to omit the column.
+    /// </param>
+    private static void BuildTimeSeriesAnalysisRow(string path, string analysisName, string timeSeriesDataName,
+        string? covariateName, string arimaxXml, string analysisXml,
+        byte[]? mcmcResults = null, string? analysisResults = null, bool? preV201Results = null)
+    {
+        var anTable = new DataTable("Time Series Analysis");
+        anTable.Columns.Add("Name", typeof(string));
+        anTable.Columns.Add("Description", typeof(string));
+        anTable.Columns.Add("CreationDate", typeof(string));
+        anTable.Columns.Add("LastModified", typeof(string));
+        anTable.Columns.Add("TimeSeriesData", typeof(string));
+        if (covariateName != null)
+            anTable.Columns.Add("Covariates", typeof(string));
+        anTable.Columns.Add("ARIMAX", typeof(string));
+        anTable.Columns.Add("AnalysisXml", typeof(string));
+        if (mcmcResults != null)
+            anTable.Columns.Add("MCMCResults", typeof(byte[]));
+        if (analysisResults != null)
+            anTable.Columns.Add("AnalysisResults", typeof(string));
+        if (preV201Results != null)
+            anTable.Columns.Add("PreV201Results", typeof(bool));
+
+        using (var sqlite = new SQLiteManager(path))
+        {
+            sqlite.Open();
+            sqlite.SaveDataTable(anTable);
+
+            var anView = sqlite.GetTableManager("Time Series Analysis");
+            anView.AddRow();
+            anView.EditCell(0, "Name", analysisName);
+            anView.EditCell(0, "Description", "");
+            anView.EditCell(0, "CreationDate", DateTime.Now.ToString("o"));
+            anView.EditCell(0, "LastModified", DateTime.Now.ToString("o"));
+            anView.EditCell(0, "TimeSeriesData", timeSeriesDataName);
+            if (covariateName != null)
+                anView.EditCell(0, "Covariates", covariateName);
+            anView.EditCell(0, "ARIMAX", arimaxXml);
+            anView.EditCell(0, "AnalysisXml", analysisXml);
+            if (mcmcResults != null)
+                anView.EditCell(0, "MCMCResults", mcmcResults);
+            if (analysisResults != null)
+                anView.EditCell(0, "AnalysisResults", analysisResults);
+            if (preV201Results != null)
+                anView.EditCell(0, "PreV201Results", preV201Results.Value);
+            anView.ApplyEdits();
+            sqlite.Close();
+        }
+    }
+
     /// <summary>
     /// Builds a minimal SQLite <c>.bestfit</c> fixture with a corrupt <c>ARIMAX</c> XML cell.
     /// The referenced input series is intentionally absent.
     /// </summary>
+    /// <param name="path">The <c>.bestfit</c> file to create the table in.</param>
+    /// <param name="analysisName">The analysis name written to the <c>Name</c> cell.</param>
+    /// <param name="corruptXml">The text written to the <c>ARIMAX</c> cell; callers pass malformed
+    /// XML, or model XML whose analysis cannot resolve its input series.</param>
     private static void BuildTimeSeriesAnalysisDatabaseWithCorruptArimaxXml(string path, string analysisName, string corruptXml)
     {
         var anTable = new DataTable("Time Series Analysis");
@@ -408,11 +1534,20 @@ public class TimeSeriesAnalysisTests
     /// <summary>
     /// Builds a SQLite <c>.bestfit</c> file with only the pre-v2.0 schema for time-series
     /// analysis: an <c>ARMAX</c> TEXT column (not the new <c>ARIMAX</c>) holds the model XML.
-    /// The referenced input series is intentionally omitted to keep the test self-contained
-    /// without touching the singleton project state — the legacy detection path runs even
-    /// when the input series cannot be resolved.
+    /// By default the referenced input series is intentionally omitted to keep the test
+    /// self-contained without touching the singleton project state — the legacy detection path
+    /// runs even when the input series cannot be resolved.
     /// </summary>
-    private static void BuildLegacyTimeSeriesAnalysisDatabase(string path, string analysisName, string armaxXml)
+    /// <param name="path">The <c>.bestfit</c> file to create the table in.</param>
+    /// <param name="analysisName">The analysis name written to the <c>Name</c> cell.</param>
+    /// <param name="armaxXml">The pre-v2.0 model XML written to the <c>ARMAX</c> cell.</param>
+    /// <param name="timeSeriesDataName">The response element name written to the <c>TimeSeriesData</c> cell.</param>
+    /// <param name="covariateName">
+    /// The covariate element name written to the <c>Covariates</c> cell, or <see langword="null"/>
+    /// to omit the <c>Covariates</c> column.
+    /// </param>
+    private static void BuildLegacyTimeSeriesAnalysisDatabase(string path, string analysisName, string armaxXml,
+        string timeSeriesDataName = "MissingSeries", string? covariateName = null)
     {
         var anTable = new DataTable("Time Series Analysis");
         anTable.Columns.Add("Name", typeof(string));
@@ -420,6 +1555,8 @@ public class TimeSeriesAnalysisTests
         anTable.Columns.Add("CreationDate", typeof(string));
         anTable.Columns.Add("LastModified", typeof(string));
         anTable.Columns.Add("TimeSeriesData", typeof(string));
+        if (covariateName != null)
+            anTable.Columns.Add("Covariates", typeof(string));
         anTable.Columns.Add("ARMAX", typeof(string));
 
         using (var sqlite = new SQLiteManager(path))
@@ -433,7 +1570,9 @@ public class TimeSeriesAnalysisTests
             anView.EditCell(0, "Description", "");
             anView.EditCell(0, "CreationDate", DateTime.Now.ToString("o"));
             anView.EditCell(0, "LastModified", DateTime.Now.ToString("o"));
-            anView.EditCell(0, "TimeSeriesData", "MissingSeries");
+            anView.EditCell(0, "TimeSeriesData", timeSeriesDataName);
+            if (covariateName != null)
+                anView.EditCell(0, "Covariates", covariateName);
             anView.EditCell(0, "ARMAX", armaxXml);
             anView.ApplyEdits();
             sqlite.Close();
@@ -727,6 +1866,511 @@ public class TimeSeriesAnalysisTests
     {
         var tsa = new UI.TimeSeriesAnalysis("BPTSA", _collection!);
         Assert.IsNotNull(tsa.BayesianPlots);
+    }
+
+    /// <summary>
+    /// Verifies UI copy and model-snapshot undo/redo preserve the effective manual transform
+    /// exponent without adding a public UI wrapper property.
+    /// </summary>
+    [STATestMethod]
+    public void ManualTransformLambda_CopyUndoAndRedoPreserveEffectiveState()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("LambdaLifecycleTSA", _collection!);
+        tsa.ARIMAX.TransformType = RMC.BestFit.Models.Transform.YeoJohnson;
+        tsa.ARIMAX.SetTransformParameters(0.4, double.NaN);
+        tsa.TimeSeriesData = CreateTimeSeriesElement(
+            "LambdaLifecycleSeries",
+            20,
+            TimeInterval.OneYear,
+            new DateTime(2000, 1, 1));
+        tsa.ARIMAX.UseDefaultTrainingSteps = false;
+        tsa.ARIMAX.TrainingTimeSteps = 16;
+
+        tsa.ARIMAX.SetTransformParameters(0.75, double.PositiveInfinity);
+        Assert.AreEqual(0.75, tsa.ARIMAX.TransformLambda, 1E-12);
+        Assert.IsTrue(tsa.UndoManager.CanUndo);
+
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(0.4, tsa.ARIMAX.TransformLambda, 1E-12);
+
+        tsa.UndoManager.Redo();
+        Assert.AreEqual(0.75, tsa.ARIMAX.TransformLambda, 1E-12);
+
+        var copy = (UI.TimeSeriesAnalysis)tsa.Copy("LambdaLifecycleTSA-Copy");
+        Assert.AreEqual(0.75, copy.ARIMAX.TransformLambda, 1E-12);
+        Assert.AreEqual("True", copy.ARIMAX.ToXElement().Attribute("TransformLambdaIsManual")?.Value);
+    }
+
+    /// <summary>
+    /// Verifies model-snapshot undo and UI copy keep a covariate model's coefficient value,
+    /// bounds, and custom prior instead of rebuilding defaults when the covariates are reattached.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateModel_UndoAndCopyPreserveCustomParameters()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("CovariatePriorLifecycleTSA", _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("CovariatePriorResponse", 30, TimeInterval.OneYear, start);
+        tsa.Covariates.Add(new CovariateData
+        {
+            TimeSeriesElement = CreateTimeSeriesElement("CovariatePriorCovariate", 30, TimeInterval.OneYear, start)
+        });
+        tsa.ARIMAX.UseDefaultFlatPriors = false;
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        // The prior change is the recorded model edit, so its snapshot also holds the value and bounds.
+        beta.PriorDistribution = new global::Numerics.Distributions.Normal(0.5, 0.1);
+
+        // Undoing a later recorded change replays the snapshot that holds the custom coefficient.
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+        Assert.IsTrue(tsa.UndoManager.CanUndo);
+        tsa.UndoManager.Undo();
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "after undo");
+
+        var copy = (UI.TimeSeriesAnalysis)tsa.Copy("CovariatePriorLifecycleTSA-Copy");
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(copy.ARIMAX), "in the copy");
+    }
+
+    /// <summary>
+    /// Verifies that undoing a model edit made after a covariate swap does not carry the replaced
+    /// covariate's coefficient, bounds, and prior over to the new covariate.
+    /// </summary>
+    /// <remarks>
+    /// The swap rebuilds the default parameters without recording a model-undo step, so the undo
+    /// baseline must follow the rebuilt model; otherwise undo replays the pre-swap vector onto the
+    /// new covariate, which has the same parameter count.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateSwap_ThenUndoOfModelEdit_KeepsNewCovariateDefaults()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("CovariateSwapUndoTSA", _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("CovariateSwapResponse", 30, TimeInterval.OneYear, start);
+        tsa.Covariates.Add(new CovariateData
+        {
+            TimeSeriesElement = CreateTimeSeriesElement("CovariateSwapA", 30, TimeInterval.OneYear, start)
+        });
+        tsa.ARIMAX.UseDefaultFlatPriors = false;
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        beta.PriorDistribution = new global::Numerics.Distributions.Normal(0.5, 0.1);
+
+        tsa.Covariates[0].TimeSeriesElement = CreateTimeSeriesElement("CovariateSwapC", 30, TimeInterval.OneYear, start);
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+        tsa.UndoManager.Undo();
+
+        ModelParameter restored = GetCovariateCoefficient(tsa.ARIMAX);
+        Assert.IsInstanceOfType(restored.PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Undo must not attach the replaced covariate's custom prior to the new covariate.");
+        Assert.AreEqual(0.0, restored.Value, 0.0, "The new covariate keeps its default coefficient.");
+    }
+
+    /// <summary>
+    /// Verifies that undoing and redoing a prior edit recorded before a covariate swap does not
+    /// apply the replaced covariate's coefficient, bounds, and prior to the new covariate.
+    /// </summary>
+    /// <remarks>
+    /// The swap itself is not an undo step, so steps recorded against the previous covariate stay
+    /// on the stacks; their snapshots must only be reapplied to the covariates they were taken with.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateSwap_ThenUndoAndRedoOfEarlierPriorEdit_KeepsNewCovariateDefaults()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("SwapRedoTSA", out _);
+        tsa.Covariates[0].TimeSeriesElement = CreateTimeSeriesElement("SwapRedoTSA-C", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+
+        tsa.UndoManager.Undo();
+        tsa.UndoManager.Redo();
+
+        Assert.IsInstanceOfType(GetCovariateCoefficient(tsa.ARIMAX).PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Redo must not apply the replaced covariate's custom prior to the new covariate.");
+    }
+
+    /// <summary>
+    /// Verifies that undoing a model edit recorded before a covariate swap restores the edited
+    /// setting without applying the replaced covariate's prior to the new covariate.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateSwap_ThenUndoOfEditRecordedBeforeSwap_KeepsNewCovariateDefaults()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("SwapUndoEarlierTSA", out _);
+        bool originalJeffreys = tsa.ARIMAX.UseJeffreysRuleForScale;
+        tsa.ARIMAX.UseJeffreysRuleForScale = !originalJeffreys;
+        tsa.Covariates[0].TimeSeriesElement = CreateTimeSeriesElement("SwapUndoEarlierTSA-C", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+
+        tsa.UndoManager.Undo();
+
+        Assert.AreEqual(originalJeffreys, tsa.ARIMAX.UseJeffreysRuleForScale, "Undo restores the edited setting.");
+        Assert.IsInstanceOfType(GetCovariateCoefficient(tsa.ARIMAX).PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Undo must not apply the replaced covariate's custom prior to the new covariate.");
+    }
+
+    /// <summary>
+    /// Verifies that model-snapshot undo and redo leave only the current model subscribed to the
+    /// live response and covariate series.
+    /// </summary>
+    [STATestMethod]
+    public void ModelUndoAndRedo_LeaveOnlyTheCurrentModelSubscribedToLiveSeries()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("UndoSubscriptionTSA", out TimeSeriesElement covariate);
+        TimeSeries response = tsa.TimeSeriesData.TimeSeries;
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+
+        tsa.UndoManager.Undo();
+        tsa.UndoManager.Redo();
+
+        Assert.AreEqual(1, CountModelSubscribers(response), "Only the current model may stay on the response series.");
+        Assert.AreEqual(1, CountModelSubscribers(covariate.TimeSeries), "Only the current model may stay on the covariate series.");
+    }
+
+    /// <summary>
+    /// Verifies that metadata edits on a covariate series do not rebuild the model's parameters.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="CovariateData"/> forwards every property change of its series element; a
+    /// description or unit-label edit is not a covariate change and must keep the fitted model.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateSeriesMetadataEdit_KeepsCustomParameters()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CovariateMetadataTSA", out TimeSeriesElement covariate);
+
+        covariate.Description = "Edited covariate description";
+        covariate.UnitLabel = "Edited unit";
+
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "after a covariate metadata edit");
+    }
+
+    /// <summary>
+    /// Verifies that assigning a covariate row the series it already holds keeps the model's
+    /// parameters, as a data-binding write-back of an unchanged selection does.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateRowReassignedToSameSeries_KeepsCustomParameters()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CovariateSameSeriesTSA", out TimeSeriesElement covariate);
+
+        tsa.Covariates[0].TimeSeriesElement = covariate;
+
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "after reassigning the same series");
+    }
+
+    /// <summary>
+    /// Verifies that replacing a covariate element's series is still a covariate change that
+    /// rebuilds the default coefficient.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateSeriesReplaced_RebuildsDefaultCoefficient()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CovariateReplacedTSA", out TimeSeriesElement covariate);
+
+        covariate.TimeSeries = CreateTimeSeriesElement("CovariateReplacementSource", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1)).TimeSeries;
+
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        Assert.AreEqual(0.0, beta.Value, 0.0);
+        Assert.IsInstanceOfType(beta.PriorDistribution, typeof(global::Numerics.Distributions.Uniform));
+    }
+
+    /// <summary>
+    /// Verifies that copying an analysis carries its model unchanged and leaves only the copy's
+    /// model subscribed to the live response and covariate series.
+    /// </summary>
+    /// <remarks>
+    /// Copy first attaches the inputs to the new element's default model and then replaces that
+    /// model; a replaced model that stayed subscribed would keep reacting to every later data edit.
+    /// </remarks>
+    [STATestMethod]
+    public void Copy_KeepsModelAndSubscribesOnlyTheCopiedModelToLiveSeries()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CopySubscriptionTSA", out TimeSeriesElement covariate);
+        tsa.ARIMAX.UseDefaultTrainingSteps = false;
+        tsa.ARIMAX.TrainingTimeSteps = 24;
+        tsa.ARIMAX.CovariateExtension = ARIMAX.CovariateExtensionMethod.None;
+        TimeSeries response = tsa.TimeSeriesData.TimeSeries;
+        int responseModels = CountModelSubscribers(response);
+        int covariateModels = CountModelSubscribers(covariate.TimeSeries);
+
+        var copy = (UI.TimeSeriesAnalysis)tsa.Copy("CopySubscriptionTSA-Copy");
+
+        Assert.IsFalse(copy.ARIMAX.UseDefaultTrainingSteps, "The copy keeps the manual training window.");
+        Assert.AreEqual(24, copy.ARIMAX.TrainingTimeSteps);
+        Assert.AreEqual(ARIMAX.CovariateExtensionMethod.None, copy.ARIMAX.CovariateExtension);
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(copy.ARIMAX), "in the copy");
+        Assert.IsTrue(System.Xml.Linq.XNode.DeepEquals(tsa.ARIMAX.ToXElement(), copy.ARIMAX.ToXElement()),
+            "The copy must carry the source model unchanged.");
+        Assert.AreEqual(responseModels + 1, CountModelSubscribers(response),
+            "Only the copy's model may join the response series.");
+        Assert.AreEqual(covariateModels + 1, CountModelSubscribers(covariate.TimeSeries),
+            "Only the copy's model may join the covariate series.");
+    }
+
+    /// <summary>
+    /// Counts the ARIMAX models subscribed to a series' collection-change event.
+    /// </summary>
+    /// <param name="series">The series whose subscribers are counted.</param>
+    /// <returns>The number of handlers whose target is an <see cref="ARIMAX"/> model.</returns>
+    private static int CountModelSubscribers(TimeSeries series)
+    {
+        return ModelSubscriptionCounter.Count(series);
+    }
+
+    /// <summary>
+    /// Creates a time-series analysis with one covariate whose coefficient carries the value 0.42,
+    /// bounds [-3, 3], and a Normal(0.5, 0.1) prior.
+    /// </summary>
+    /// <param name="name">The analysis name, unique per test.</param>
+    /// <param name="covariate">Receives the covariate series element.</param>
+    /// <returns>The configured analysis, with default flat priors disabled.</returns>
+    private static UI.TimeSeriesAnalysis CreateAnalysisWithCustomizedCovariate(string name, out TimeSeriesElement covariate)
+    {
+        var tsa = new UI.TimeSeriesAnalysis(name, _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement(name + "-Response", 30, TimeInterval.OneYear, start);
+        covariate = CreateTimeSeriesElement(name + "-Covariate", 30, TimeInterval.OneYear, start);
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = covariate });
+        tsa.ARIMAX.UseDefaultFlatPriors = false;
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        beta.PriorDistribution = new global::Numerics.Distributions.Normal(0.5, 0.1);
+        return tsa;
+    }
+
+    /// <summary>
+    /// Verifies that redoing an AR-order change restores a parameter vector that fits the new
+    /// model structure.
+    /// </summary>
+    /// <remarks>
+    /// The order setter rebuilds the parameters before it notifies, so the recorded redo snapshot
+    /// holds the new order with a vector that fits it; the restore's layout guard remains a
+    /// backstop for a snapshot whose vector does not fit its structure.
+    /// </remarks>
+    [STATestMethod]
+    public void AROrderChange_UndoThenRedo_RestoresConsistentParameterLayout()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("AROrderRedoTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("AROrderRedoResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        Assert.AreEqual(1, tsa.ARIMAX.AROrderP);
+        tsa.ARIMAX.AROrderP = 2;
+        Assert.AreEqual(4, tsa.ARIMAX.NumberOfParameters, "Intercept, two AR coefficients, and the scale.");
+
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(3, tsa.ARIMAX.NumberOfParameters, "Intercept, one AR coefficient, and the scale.");
+        tsa.UndoManager.Redo();
+
+        Assert.AreEqual(2, tsa.ARIMAX.AROrderP);
+        Assert.AreEqual(4, tsa.ARIMAX.NumberOfParameters, "Redo must restore a vector that fits AR(2).");
+    }
+
+    /// <summary>
+    /// Verifies that undoing an edit made after a differencing-order change returns to the
+    /// differenced model with the intercept bounds built for it.
+    /// </summary>
+    /// <remarks>
+    /// The undo step of the later edit restores the state recorded when the differencing order
+    /// changed. That state must hold the defaults rebuilt for d = 1, not the level model's
+    /// intercept bounds carried over with the new order.
+    /// </remarks>
+    [STATestMethod]
+    public void DiffOrderChange_ThenUndoOfLaterEdit_KeepsDifferencedInterceptBounds()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("DiffOrderLaterUndoTSA", _collection!);
+        tsa.TimeSeriesData = CreateLevelTimeSeriesElement("DiffOrderLaterUndoResponse");
+        (double Lower, double Upper) levelBounds = GetInterceptBounds(tsa.ARIMAX);
+        tsa.ARIMAX.DiffOrderD = 1;
+        (double Lower, double Upper) differencedBounds = GetInterceptBounds(tsa.ARIMAX);
+        Assert.AreNotEqual(levelBounds, differencedBounds, "Precondition: differencing changes the default intercept bounds.");
+
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+        Assert.IsTrue(tsa.UndoManager.CanUndo);
+        tsa.UndoManager.Undo();
+
+        Assert.AreEqual(1, tsa.ARIMAX.DiffOrderD, "Undo of the later edit keeps the differencing order.");
+        Assert.AreEqual(differencedBounds, GetInterceptBounds(tsa.ARIMAX),
+            "Undo must restore the intercept bounds built for d = 1.");
+    }
+
+    /// <summary>
+    /// Verifies that undoing and redoing a differencing-order change restores the intercept
+    /// bounds built for each order.
+    /// </summary>
+    /// <remarks>
+    /// The redo step restores the state recorded when the order changed, which must hold the
+    /// defaults rebuilt for d = 1.
+    /// </remarks>
+    [STATestMethod]
+    public void DiffOrderChange_UndoThenRedo_RestoresDifferencedInterceptBounds()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("DiffOrderRedoTSA", _collection!);
+        tsa.TimeSeriesData = CreateLevelTimeSeriesElement("DiffOrderRedoResponse");
+        (double Lower, double Upper) levelBounds = GetInterceptBounds(tsa.ARIMAX);
+        tsa.ARIMAX.DiffOrderD = 1;
+        (double Lower, double Upper) differencedBounds = GetInterceptBounds(tsa.ARIMAX);
+        Assert.AreNotEqual(levelBounds, differencedBounds, "Precondition: differencing changes the default intercept bounds.");
+
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(0, tsa.ARIMAX.DiffOrderD);
+        Assert.AreEqual(levelBounds, GetInterceptBounds(tsa.ARIMAX), "Undo must restore the intercept bounds built for d = 0.");
+        tsa.UndoManager.Redo();
+
+        Assert.AreEqual(1, tsa.ARIMAX.DiffOrderD);
+        Assert.AreEqual(differencedBounds, GetInterceptBounds(tsa.ARIMAX),
+            "Redo must restore the intercept bounds built for d = 1.");
+    }
+
+    /// <summary>
+    /// Verifies that an AR-order change that moves the default training window is one undo step,
+    /// and that undo and redo restore the order together with its window.
+    /// </summary>
+    /// <remarks>
+    /// On a 20-step series the default window is max(d + K + k + 10, floor(0.8 * 20)): 16 for
+    /// AR(1) and 3 + 5 + 10 = 18 for AR(3). The order setter rebuilds the window before it
+    /// notifies and raises the window afterwards, so the undo step recorded on the order's
+    /// notification already holds the new window and the later window notification adds none.
+    /// </remarks>
+    [STATestMethod]
+    public void AROrderChange_ThatMovesTheDefaultWindow_IsOneUndoStepRestoringBoth()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("WindowUndoTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("WindowUndoResponse", 20, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        Assert.AreEqual(16, tsa.ARIMAX.TrainingTimeSteps, "Precondition: the AR(1) default window.");
+        int undoDepth = tsa.UndoManager.UndoStack.Count;
+
+        tsa.ARIMAX.AROrderP = 3;
+
+        Assert.AreEqual(18, tsa.ARIMAX.TrainingTimeSteps, "AR(3) default window.");
+        Assert.AreEqual(undoDepth + 1, tsa.UndoManager.UndoStack.Count, "One edit records one undo step.");
+        Assert.AreEqual("Change AROrderP", tsa.UndoManager.UndoDescription);
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(1, tsa.ARIMAX.AROrderP);
+        Assert.AreEqual(16, tsa.ARIMAX.TrainingTimeSteps, "Undo restores the AR(1) window.");
+        tsa.UndoManager.Redo();
+        Assert.AreEqual(3, tsa.ARIMAX.AROrderP);
+        Assert.AreEqual(18, tsa.ARIMAX.TrainingTimeSteps, "Redo restores the AR(3) window.");
+    }
+
+    /// <summary>
+    /// Verifies that adding a covariate that moves the default training window raises the
+    /// analysis's own <c>TrainingTimeSteps</c> notification, so bindings to the window refresh.
+    /// </summary>
+    /// <remarks>
+    /// The model moves the window without raising it, so the undo recorder does not record the
+    /// covariate change as a separate window edit. With b = 2, one covariate adds three
+    /// coefficients and raises K to 3, so the 20-step default window moves from 16 to
+    /// 3 + 6 + 10 = 19.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateAdded_RaisesTrainingTimeStepsForTheMovedDefaultWindow()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("CovariateWindowTSA", _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("CovariateWindowResponse", 20, TimeInterval.OneYear, start);
+        tsa.ARIMAX.XOrderB = 2;
+        Assert.AreEqual(16, tsa.ARIMAX.TrainingTimeSteps, "Precondition: without covariates the lag order has no role.");
+        var raised = new List<string>();
+        tsa.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? string.Empty);
+
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = CreateTimeSeriesElement("CovariateWindowCovariate", 20, TimeInterval.OneYear, start) });
+
+        Assert.AreEqual(19, tsa.ARIMAX.TrainingTimeSteps);
+        CollectionAssert.Contains(raised, nameof(UI.TimeSeriesAnalysis.TrainingTimeSteps));
+    }
+
+    /// <summary>
+    /// Verifies that turning default flat priors on is an undoable step: undo restores the flag
+    /// and the custom covariate prior, and redo restores the rebuilt default prior.
+    /// </summary>
+    /// <remarks>
+    /// The redo step restores the state recorded on the flag's notification, so the defaults must
+    /// already be rebuilt when the flag notifies; otherwise redo turns the flag on while keeping
+    /// the custom prior.
+    /// </remarks>
+    [STATestMethod]
+    public void DefaultFlatPriorsTurnedOn_UndoRestoresCustomPriorAndRedoRestoresDefaults()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("FlatPriorUndoTSA", out _);
+        tsa.ARIMAX.UseDefaultFlatPriors = true;
+        Assert.IsInstanceOfType(GetCovariateCoefficient(tsa.ARIMAX).PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Precondition: turning default flat priors on rebuilds the default prior.");
+
+        tsa.UndoManager.Undo();
+        Assert.IsFalse(tsa.ARIMAX.UseDefaultFlatPriors, "Undo must turn default flat priors back off.");
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "undoing the flat-prior toggle");
+
+        tsa.UndoManager.Redo();
+        Assert.IsTrue(tsa.ARIMAX.UseDefaultFlatPriors, "Redo must turn default flat priors back on.");
+        ModelParameter redone = GetCovariateCoefficient(tsa.ARIMAX);
+        Assert.IsInstanceOfType(redone.PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Redo must restore the rebuilt default prior, not the custom prior.");
+        Assert.AreEqual(0.0, redone.Value, 0.0, "Redo must restore the default coefficient value.");
+    }
+
+    /// <summary>
+    /// Creates a 40-step annual time-series element whose level is near 1000 with visible
+    /// variation (value = 1000 + 25·sin(i/3) + i).
+    /// </summary>
+    /// <param name="name">The element name.</param>
+    /// <returns>A populated time-series element starting in 1980.</returns>
+    /// <remarks>
+    /// The level series and its first differences have very different means, so the default
+    /// intercept bounds built for d = 0 and d = 1 differ.
+    /// </remarks>
+    private static TimeSeriesElement CreateLevelTimeSeriesElement(string name)
+    {
+        var element = new TimeSeriesElement(name);
+        var series = new TimeSeries(TimeInterval.OneYear);
+        DateTime date = new DateTime(1980, 1, 1);
+        for (int i = 0; i < 40; i++)
+        {
+            series.Add(new SeriesOrdinate<DateTime, double>(date, 1000.0 + 25.0 * Math.Sin(i / 3.0) + i));
+            date = TimeSeries.AddTimeInterval(date, TimeInterval.OneYear);
+        }
+
+        element.TimeSeries = series;
+        return element;
+    }
+
+    /// <summary>
+    /// Returns the lower and upper bounds of a model's intercept parameter.
+    /// </summary>
+    /// <param name="model">A model that includes an intercept.</param>
+    /// <returns>The intercept's lower and upper bounds.</returns>
+    private static (double Lower, double Upper) GetInterceptBounds(ARIMAX model)
+    {
+        ModelParameter intercept = model.Parameters.Single(p => p.Name.StartsWith("Intercept", StringComparison.Ordinal));
+        return (intercept.LowerBound, intercept.UpperBound);
+    }
+
+    /// <summary>
+    /// Returns the covariate coefficient of a model with exactly one zero-lag covariate.
+    /// </summary>
+    /// <param name="model">The model whose parameter list is searched.</param>
+    /// <returns>The single covariate coefficient parameter.</returns>
+    private static ModelParameter GetCovariateCoefficient(ARIMAX model)
+    {
+        return model.Parameters.Single(p => p.Name.StartsWith("Covariate", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Asserts that a covariate coefficient still carries the value 0.42, bounds [-3, 3], and
+    /// Normal(0.5, 0.1) prior set by <see cref="CovariateModel_UndoAndCopyPreserveCustomParameters"/>.
+    /// </summary>
+    /// <param name="beta">The covariate coefficient to check.</param>
+    /// <param name="context">Where the coefficient was read, for the failure message.</param>
+    private static void AssertCustomizedCovariateCoefficient(ModelParameter beta, string context)
+    {
+        Assert.AreEqual(0.42, beta.Value, 0.0, $"The coefficient value must survive {context}.");
+        Assert.AreEqual(-3.0, beta.LowerBound, 0.0, $"The lower bound must survive {context}.");
+        Assert.AreEqual(3.0, beta.UpperBound, 0.0, $"The upper bound must survive {context}.");
+        var prior = beta.PriorDistribution as global::Numerics.Distributions.Normal;
+        Assert.IsNotNull(prior, $"The custom Normal prior must survive {context}.");
+        Assert.AreEqual(0.5, prior.Mu, 0.0);
+        Assert.AreEqual(0.1, prior.Sigma, 0.0);
     }
 
     /// <summary>

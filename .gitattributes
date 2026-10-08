@@ -1,0 +1,3 @@
+# Reference bytes are checksummed across Windows and non-Windows consumers.
+validation/plot-parity/app-reference/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+skills/bestfit-frequency/references/app-plot-map.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

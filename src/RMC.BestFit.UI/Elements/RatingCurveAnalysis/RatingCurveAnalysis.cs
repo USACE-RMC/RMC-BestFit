@@ -903,7 +903,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -920,218 +921,223 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // open element
-            var dtView = sqlite.GetTableManager(ParentCollection.Name);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
-                // The StageData/DischargeData setters trigger SetIsValid(), ClearResults(), and sync the inner RatingCurve;
-                // calling them here would prematurely clear results before the model XElement and MCMC bytes have been loaded.
-                // A single SetIsValid() call at the end of Open() is sufficient; the inner analysis is reconstructed below.
-                if (dtView.ColumnNames.Contains(nameof(Name)))
+                if (wasOpen == false) sqlite.Open();
+
+                // open element
+                var dtView = sqlite.GetTableManager(ParentCollection.Name);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "RCA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
+                    // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
+                    // The StageData/DischargeData setters trigger SetIsValid(), ClearResults(), and sync the inner RatingCurve;
+                    // calling them here would prematurely clear results before the model XElement and MCMC bytes have been loaded.
+                    // A single SetIsValid() call at the end of Open() is sufficient; the inner analysis is reconstructed below.
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
+                    {
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "RCA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+
+                    // Get stage time series — use backing field to avoid SetIsValid(), ClearResults(),
+                    // and premature inner-analysis sync (the inner analysis is reconstructed below).
+                    if (dtView.ColumnNames.Contains(nameof(StageData)))
+                    {
+                        var elementName = dtView.GetCell(nameof(StageData), rowIndex).ToString();
+                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        {
+                            if (collection.GetType() == typeof(TimeSeriesCollection))
+                            {
+                                foreach (IElement element in collection)
+                                {
+                                    if (element.Name == elementName && element.GetType() == typeof(TimeSeriesElement))
+                                    {
+                                        _stageData = (TimeSeriesElement)element;
+                                        _stageData.PropertyChanged += StageSeriesElementChanged;
+                                        _stageData.Deleted += OnStageDataDeleted;
+                                        _stageDataValid = _stageData.IsValid;
+                                        if (!_stageDataValid)
+                                            _messenger.Add(_stageDataInValidMsg);
+                                        else
+                                            _messenger.Remove(_stageDataInValidMsg);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Get discharge time series — same backing-field pattern as StageData above.
+                    if (dtView.ColumnNames.Contains(nameof(DischargeData)))
+                    {
+                        var elementName = dtView.GetCell(nameof(DischargeData), rowIndex).ToString();
+                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        {
+                            if (collection.GetType() == typeof(TimeSeriesCollection))
+                            {
+                                foreach (IElement element in collection)
+                                {
+                                    if (element.Name == elementName && element.GetType() == typeof(TimeSeriesElement))
+                                    {
+                                        _dischargeData = (TimeSeriesElement)element;
+                                        _dischargeData.PropertyChanged += DischargeSeriesElementChanged;
+                                        _dischargeData.Deleted += OnDischargeDataDeleted;
+                                        _dischargeDataValid = _dischargeData.IsValid;
+                                        if (!_dischargeDataValid)
+                                            _messenger.Add(_dischargeDataInValidMsg);
+                                        else
+                                            _messenger.Remove(_dischargeDataInValidMsg);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Plot Properties
+                    DeserializePlotSettings(dtView, rowIndex, "RatingCurvePlotSettings", _ratingCurvePlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualPlotSettings", _residualPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualHistogramPlotSettings", _residualHistogramPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualQQPlotSettings", _residualQQPlot);
+                    _bayesianController.Deserialize(dtView, rowIndex);
+
+                    // Get model XElement
+                    XElement modelXElement = null;
+                    if (dtView.ColumnNames.Contains(nameof(RatingCurve)) && StageData != null && DischargeData != null)
+                    {
+                        try { modelXElement = XElement.Parse(dtView.GetCell(nameof(RatingCurve), rowIndex).ToString()); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load RatingCurve for '{Name}': {ex.Message}"); }
+                    }
+
+                    // Earlier rating-curve implementations saved parameter layouts that do not
+                    // map onto the current BaRatin addition-mode model
+                    // ([h₁, log₁₀α₁, β₁, h₂, log₁₀α₂, β₂, …, σ]). Legacy shapes recognized:
+                    //   (a) pre-v2.0 v1 additive (Coefficient (α), Location (ξ), … — different order)
+                    //   (b) v2.0 interim "piecewise-without-continuity" (Zero-Flow Stage (ξ) shared)
+                    //   (c) v2.0 interim NVE-style (fit Location (ξ2) / (ξ3) directly)
+                    // In every legacy case we rebuild the model with fresh defaults and drop
+                    // the stale parameters, MCMC samples, and uncertainty results. Projects
+                    // saved under the transient v2.0 piecewise-continuity era share parameter
+                    // names and layout with the current model and load without intervention;
+                    // their stored fits are reinterpreted under the new additive semantics, so
+                    // the user may see a different curve until they re-run the analysis.
+                    bool isLegacyFormat = IsLegacyRatingCurveXml(modelXElement);
+                    openedFromV1 = isLegacyFormat;
+
+                    MCMCResults mcmcResults = isLegacyFormat
+                        ? null
+                        : AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+                    XElement innerXElement = isLegacyFormat
+                        ? null
+                        : AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+
+                    // Get Bayesian analysis XElement — ignored for legacy files (we
+                    // construct a fresh BayesianAnalysis with new defaults below).
+                    XElement analysisXElement = null;
+                    if (!isLegacyFormat && dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                    {
+                        var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                        try { analysisXElement = XElement.Parse(xElementString); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load BayesianAnalysis for '{Name}': {ex.Message}"); }
+                    }
+
+                    // Read stage bin settings
+                    double minStage = 0;
+                    double maxStage = 100;
+                    int stageBins = 100;
+                    bool useDefaultStageBins = true;
+                    if (dtView.ColumnNames.Contains(nameof(MinStage))) double.TryParse(dtView.GetCell(nameof(MinStage), rowIndex).ToString(), out minStage);
+                    if (dtView.ColumnNames.Contains(nameof(MaxStage))) double.TryParse(dtView.GetCell(nameof(MaxStage), rowIndex).ToString(), out maxStage);
+                    if (dtView.ColumnNames.Contains(nameof(StageBins))) int.TryParse(dtView.GetCell(nameof(StageBins), rowIndex).ToString(), out stageBins);
+                    if (dtView.ColumnNames.Contains(nameof(UseDefaultStageBins))) bool.TryParse(dtView.GetCell(nameof(UseDefaultStageBins), rowIndex).ToString(), out useDefaultStageBins);
+
+                    // Reconstruct inner analysis from persisted data
+                    _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
+
+                    UncertaintyAnalysisResults analysisResults = isLegacyFormat
+                        ? null
+                        : AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                    if (modelXElement != null && StageData != null && DischargeData != null)
+                    {
+                        RatingCurve rc;
+                        if (isLegacyFormat)
+                        {
+                            // Preserve segment count from the old file (clamped to 1..3)
+                            // but rebuild parameters via the new data-only constructor so
+                            // priors match the new layout.
+                            int legacySegments = 1;
+                            var segAttr = modelXElement.Attribute("NumberOfSegments");
+                            if (segAttr != null && int.TryParse(segAttr.Value, out var parsedSegments))
+                                legacySegments = Math.Max(1, Math.Min(3, parsedSegments));
+                            rc = new RatingCurve(StageData.TimeSeries, DischargeData.TimeSeries, legacySegments);
+                        }
+                        else
+                        {
+                            // Reconstruct RatingCurve model from persisted XElement
+                            rc = new RatingCurve(StageData.TimeSeries, DischargeData.TimeSeries, modelXElement);
+                        }
+
+                        if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
+                        {
+                            // Build a combined XElement for the inner analysis constructor
+                            innerXElement = new XElement("RatingCurveAnalysis",
+                                new XAttribute("IsEstimated", mcmcResults != null),
+                                new XAttribute(nameof(MinStage), minStage),
+                                new XAttribute(nameof(MaxStage), maxStage),
+                                new XAttribute(nameof(StageBins), stageBins),
+                                new XAttribute(nameof(UseDefaultStageBins), useDefaultStageBins));
+
+                            // Add Bayesian analysis element
+                            innerXElement.Add(analysisXElement);
+
+                        }
+
+                        if (innerXElement != null)
+                        {
+                            _innerAnalysis = new ModelAnalyses.RatingCurveAnalysis(rc, innerXElement, mcmcResults, analysisResults);
+                        }
+                        else
+                        {
+                            _innerAnalysis = new ModelAnalyses.RatingCurveAnalysis(rc);
+                            _innerAnalysis.MinStage = minStage;
+                            _innerAnalysis.MaxStage = maxStage;
+                            _innerAnalysis.StageBins = stageBins;
+                            _innerAnalysis.UseDefaultStageBins = useDefaultStageBins;
+                        }
+                    }
                     else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-
-                // Get stage time series — use backing field to avoid SetIsValid(), ClearResults(),
-                // and premature inner-analysis sync (the inner analysis is reconstructed below).
-                if (dtView.ColumnNames.Contains(nameof(StageData)))
-                {
-                    var elementName = dtView.GetCell(nameof(StageData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                     {
-                        if (collection.GetType() == typeof(TimeSeriesCollection))
-                        {
-                            foreach (IElement element in collection)
-                            {
-                                if (element.Name == elementName && element.GetType() == typeof(TimeSeriesElement))
-                                {
-                                    _stageData = (TimeSeriesElement)element;
-                                    _stageData.PropertyChanged += StageSeriesElementChanged;
-                                    _stageData.Deleted += OnStageDataDeleted;
-                                    _stageDataValid = _stageData.IsValid;
-                                    if (!_stageDataValid)
-                                        _messenger.Add(_stageDataInValidMsg);
-                                    else
-                                        _messenger.Remove(_stageDataInValidMsg);
-                                    break;
-                                }
-                            }
-                        }
+                        _innerAnalysis = new ModelAnalyses.RatingCurveAnalysis(new RatingCurve());
                     }
-                }
-                // Get discharge time series — same backing-field pattern as StageData above.
-                if (dtView.ColumnNames.Contains(nameof(DischargeData)))
-                {
-                    var elementName = dtView.GetCell(nameof(DischargeData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
-                    {
-                        if (collection.GetType() == typeof(TimeSeriesCollection))
-                        {
-                            foreach (IElement element in collection)
-                            {
-                                if (element.Name == elementName && element.GetType() == typeof(TimeSeriesElement))
-                                {
-                                    _dischargeData = (TimeSeriesElement)element;
-                                    _dischargeData.PropertyChanged += DischargeSeriesElementChanged;
-                                    _dischargeData.Deleted += OnDischargeDataDeleted;
-                                    _dischargeDataValid = _dischargeData.IsValid;
-                                    if (!_dischargeDataValid)
-                                        _messenger.Add(_dischargeDataInValidMsg);
-                                    else
-                                        _messenger.Remove(_dischargeDataInValidMsg);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
 
-                // Plot Properties
-                DeserializePlotSettings(dtView, rowIndex, "RatingCurvePlotSettings", _ratingCurvePlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualPlotSettings", _residualPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualHistogramPlotSettings", _residualHistogramPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualQQPlotSettings", _residualQQPlot);
-                _bayesianController.Deserialize(dtView, rowIndex);
+                    _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
 
-                // Get model XElement
-                XElement modelXElement = null;
-                if (dtView.ColumnNames.Contains(nameof(RatingCurve)) && StageData != null && DischargeData != null)
-                {
-                    try { modelXElement = XElement.Parse(dtView.GetCell(nameof(RatingCurve), rowIndex).ToString()); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load RatingCurve for '{Name}': {ex.Message}"); }
-                }
-
-                // Earlier rating-curve implementations saved parameter layouts that do not
-                // map onto the current BaRatin addition-mode model
-                // ([h₁, log₁₀α₁, β₁, h₂, log₁₀α₂, β₂, …, σ]). Legacy shapes recognized:
-                //   (a) pre-v2.0 v1 additive (Coefficient (α), Location (ξ), … — different order)
-                //   (b) v2.0 interim "piecewise-without-continuity" (Zero-Flow Stage (ξ) shared)
-                //   (c) v2.0 interim NVE-style (fit Location (ξ2) / (ξ3) directly)
-                // In every legacy case we rebuild the model with fresh defaults and drop
-                // the stale parameters, MCMC samples, and uncertainty results. Projects
-                // saved under the transient v2.0 piecewise-continuity era share parameter
-                // names and layout with the current model and load without intervention;
-                // their stored fits are reinterpreted under the new additive semantics, so
-                // the user may see a different curve until they re-run the analysis.
-                bool isLegacyFormat = IsLegacyRatingCurveXml(modelXElement);
-                openedFromV1 = isLegacyFormat;
-
-                MCMCResults mcmcResults = isLegacyFormat
-                    ? null
-                    : AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-                XElement innerXElement = isLegacyFormat
-                    ? null
-                    : AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
-
-                // Get Bayesian analysis XElement — ignored for legacy files (we
-                // construct a fresh BayesianAnalysis with new defaults below).
-                XElement analysisXElement = null;
-                if (!isLegacyFormat && dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                {
-                    var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                    try { analysisXElement = XElement.Parse(xElementString); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load BayesianAnalysis for '{Name}': {ex.Message}"); }
-                }
-
-                // Read stage bin settings
-                double minStage = 0;
-                double maxStage = 100;
-                int stageBins = 100;
-                bool useDefaultStageBins = true;
-                if (dtView.ColumnNames.Contains(nameof(MinStage))) double.TryParse(dtView.GetCell(nameof(MinStage), rowIndex).ToString(), out minStage);
-                if (dtView.ColumnNames.Contains(nameof(MaxStage))) double.TryParse(dtView.GetCell(nameof(MaxStage), rowIndex).ToString(), out maxStage);
-                if (dtView.ColumnNames.Contains(nameof(StageBins))) int.TryParse(dtView.GetCell(nameof(StageBins), rowIndex).ToString(), out stageBins);
-                if (dtView.ColumnNames.Contains(nameof(UseDefaultStageBins))) bool.TryParse(dtView.GetCell(nameof(UseDefaultStageBins), rowIndex).ToString(), out useDefaultStageBins);
-
-                // Reconstruct inner analysis from persisted data
-                _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
-
-                UncertaintyAnalysisResults analysisResults = isLegacyFormat
-                    ? null
-                    : AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                if (modelXElement != null && StageData != null && DischargeData != null)
-                {
-                    RatingCurve rc;
                     if (isLegacyFormat)
                     {
-                        // Preserve segment count from the old file (clamped to 1..3)
-                        // but rebuild parameters via the new data-only constructor so
-                        // priors match the new layout.
-                        int legacySegments = 1;
-                        var segAttr = modelXElement.Attribute("NumberOfSegments");
-                        if (segAttr != null && int.TryParse(segAttr.Value, out var parsedSegments))
-                            legacySegments = Math.Max(1, Math.Min(3, parsedSegments));
-                        rc = new RatingCurve(StageData.TimeSeries, DischargeData.TimeSeries, legacySegments);
+                        _legacyMigrationMsg = new BasicMessageItem(
+                            MessageType.Warning,
+                            $"The rating curve analysis '{Name}' was created with an earlier version of RMC-BestFit whose parameter layout is not compatible with the current BaRatin addition-mode model (Le Coz et al. 2014). Previous parameter estimates, MCMC samples, and uncertainty results were discarded. Re-run the Bayesian analysis to refresh the results.",
+                            this, ParentCollection.Name, Name, nameof(RatingCurveAnalysis), "RCA-WRN-LEGACY");
+                        _messenger.Add(_legacyMigrationMsg);
                     }
-                    else
-                    {
-                        // Reconstruct RatingCurve model from persisted XElement
-                        rc = new RatingCurve(StageData.TimeSeries, DischargeData.TimeSeries, modelXElement);
-                    }
-
-                    if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
-                    {
-                        // Build a combined XElement for the inner analysis constructor
-                        innerXElement = new XElement("RatingCurveAnalysis",
-                            new XAttribute("IsEstimated", mcmcResults != null),
-                            new XAttribute(nameof(MinStage), minStage),
-                            new XAttribute(nameof(MaxStage), maxStage),
-                            new XAttribute(nameof(StageBins), stageBins),
-                            new XAttribute(nameof(UseDefaultStageBins), useDefaultStageBins));
-
-                        // Add Bayesian analysis element
-                        innerXElement.Add(analysisXElement);
-
-                    }
-
-                    if (innerXElement != null)
-                    {
-                        _innerAnalysis = new ModelAnalyses.RatingCurveAnalysis(rc, innerXElement, mcmcResults, analysisResults);
-                    }
-                    else
-                    {
-                        _innerAnalysis = new ModelAnalyses.RatingCurveAnalysis(rc);
-                        _innerAnalysis.MinStage = minStage;
-                        _innerAnalysis.MaxStage = maxStage;
-                        _innerAnalysis.StageBins = stageBins;
-                        _innerAnalysis.UseDefaultStageBins = useDefaultStageBins;
-                    }
-                }
-                else
-                {
-                    _innerAnalysis = new ModelAnalyses.RatingCurveAnalysis(new RatingCurve());
-                }
-
-                _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
-
-                if (isLegacyFormat)
-                {
-                    _legacyMigrationMsg = new BasicMessageItem(
-                        MessageType.Warning,
-                        $"The rating curve analysis '{Name}' was created with an earlier version of RMC-BestFit whose parameter layout is not compatible with the current BaRatin addition-mode model (Le Coz et al. 2014). Previous parameter estimates, MCMC samples, and uncertainty results were discarded. Re-run the Bayesian analysis to refresh the results.",
-                        this, ParentCollection.Name, Name, nameof(RatingCurveAnalysis), "RCA-WRN-LEGACY");
-                    _messenger.Add(_legacyMigrationMsg);
                 }
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
             SetupBridges();
             SetIsValid();
             // Leave the project dirty when we discarded legacy content so the user
@@ -1238,7 +1244,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1389,7 +1395,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new RatingCurveAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1410,7 +1416,7 @@ namespace RMC.BestFit.UI
             _bayesianController?.Dispose();
             if (_innerAnalysis != null) _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

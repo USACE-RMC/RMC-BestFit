@@ -103,7 +103,7 @@ namespace RMC.BestFit.Models
         /// The number of data points below the threshold during the threshold window.
         /// </summary>
         /// <remarks>
-        /// <b>Derived value — not user-settable.</b>
+        /// <b>Derived value â€” not user-settable.</b>
         /// Automatically computed by <see cref="DataFrame.ProcessThresholdSeries"/> as
         /// <c>Duration - source NumberAbove - (overlapping exact / interval / uncertain data points)</c>
         /// whenever a threshold is added to <see cref="DataFrame.ThresholdSeries"/> or any

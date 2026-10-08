@@ -229,7 +229,7 @@ namespace RMC_BestFit
         /// </summary>
         private bool _suppressUIUpdate;
 
-        // Dirty flags for lazy plot/stats/tests updates � only the visible tab is updated immediately;
+        // Dirty flags for lazy plot/stats/tests updates — only the visible tab is updated immediately;
         // hidden tabs are updated on demand when the user switches to them.
         /// <summary>Dirty flag indicating the chronology plot needs to be redrawn.</summary>
         private bool _chronologyPlotDirty;
@@ -426,7 +426,15 @@ namespace RMC_BestFit
                 e.PropertyName == nameof(Element.DataFrame.PlottingParameter) ||
                 e.PropertyName == nameof(Element.DataFrame.LowOutlierThreshold) ||
                 e.PropertyName == "LowOutliers" ||
-                e.PropertyName == "TimeSeries")
+                e.PropertyName == "TimeSeries" ||
+                // The POT diagnostics operate on the smoothed series, so editing the smoothing
+                // configuration (or swapping the source element) must mark them dirty; formerly the
+                // only refresh path was an incidental IsProcessed transition, which does not fire
+                // when the element was not yet processed and recomputed the same raw values anyway.
+                e.PropertyName == nameof(Element.SmoothingFunction) ||
+                e.PropertyName == nameof(Element.Period) ||
+                e.PropertyName == nameof(Element.MinStepsBetweenPeaks) ||
+                e.PropertyName == nameof(Element.TimeSeriesElement))
             {
                 Mouse.OverrideCursor = Cursors.Wait;
                 try
@@ -490,7 +498,7 @@ namespace RMC_BestFit
         /// This replaces the old UndoManager.StateChanged approach. When undo/redo replays a collection
         /// action, the bridge modifies the model series which fires CollectionChanged. The bridge's own
         /// handler skips re-recording (IsExecutingAction check), but this UI handler still receives the
-        /// event and updates the RowItems accordingly � matching the ProbabilityOrdinatesControl pattern.
+        /// event and updates the RowItems accordingly — matching the ProbabilityOrdinatesControl pattern.
         /// </remarks>
         /// <param name="element">The InputData element whose series to subscribe to.</param>
         private void SubscribeSeriesCollectionChanged(InputData element)
@@ -530,7 +538,7 @@ namespace RMC_BestFit
             if (e.Action == NotifyCollectionChangedAction.Replace)
             {
                 // Suppress PropertyChanged handlers during SetOrdinate to prevent redundant
-                // ValidateTable calls (SetOrdinate fires 5� NotifyPropertyChanged).
+                // ValidateTable calls (SetOrdinate fires 5× NotifyPropertyChanged).
                 _suppressUIUpdate = true;
                 try
                 {
@@ -554,7 +562,7 @@ namespace RMC_BestFit
             }
             else if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                // Full rebuild � undo of paste/add/delete
+                // Full rebuild — undo of paste/add/delete
                 MarkAllDirty();
                 BindExactDataGrid();
                 // Disable undo during plot updates so Series.Clear/Add don't record as undo entries
@@ -700,6 +708,12 @@ namespace RMC_BestFit
         /// </summary>
         private void UpdateControl()
         {
+            // Source removal can hide the diagnostics tab before its lazy updater runs.
+            // Discard unavailable results even while a different tab is selected.
+            var diagnosticSource = Element.TimeSeriesElement?.TimeSeries;
+            if (diagnosticSource == null || diagnosticSource.Count < 20)
+                ClearThresholdDiagnosticsPlots();
+
             // Show/hide threshold diagnostics tab based on POT method and time series availability
             if (Element.ExactDataMethod == InputData.ExactDataEntryType.PeaksOverThresholdSeries
                 && Element.TimeSeriesElement?.TimeSeries != null)
@@ -1871,7 +1885,8 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Computes and draws all three threshold diagnostic plots (MRL, Modified Scale, Shape).
-        /// Requires a time series with at least 20 observations.
+        /// Requires a time series with at least 20 observations and a smoothing period that is
+        /// valid for the current smoothing function.
         /// </summary>
         /// <remarks>
         /// Callers that invoke this method from a lazy UI path should wrap it in wait-cursor
@@ -1883,9 +1898,37 @@ namespace RMC_BestFit
             if (Element == null) return;
 
             var ts = Element.TimeSeriesElement?.TimeSeries;
-            if (ts == null || ts.Count < 20) return;
+            if (ts == null || ts.Count < 20)
+            {
+                ClearThresholdDiagnosticsPlots();
+                return;
+            }
 
-            var values = ts.Select(s => s.Value).ToList();
+            // Numerics' MovingAverage/MovingSum/Difference all throw when the period is not
+            // strictly less than the series length (and the moving-window pair also throws below
+            // a period of 1). Bail out before SmoothedSeries reaches that guard, or an invalid
+            // period closes the App instead of showing a validation message.
+            if (!Element.IsSmoothingPeriodValid())
+            {
+                ClearThresholdDiagnosticsPlots();
+                return;
+            }
+
+            // The diagnostics must operate on the same smoothed series the peaks-over-threshold
+            // extraction thresholds: SmoothedSeries is the exact preprocessing
+            // PeaksOverThresholdSeries applies, so the threshold annotation drawn on these plots
+            // and the diagnostic curves share one value scale. The former raw-series input never
+            // changed when the user edited the smoothing function or period.
+            var diagnosticSeries = ts.SmoothedSeries(Element.SmoothingFunction, Element.Period);
+            var values = diagnosticSeries
+                .Select(s => s.Value)
+                .Where(v => !double.IsNaN(v))
+                .ToList();
+            if (values.Count < 20)
+            {
+                ClearThresholdDiagnosticsPlots();
+                return;
+            }
             var sorted = values.OrderBy(v => v).ToArray();
             double uMin = sorted[(int)(sorted.Length * 0.5)];
             double uMax = sorted[sorted.Length - 1];
@@ -1898,6 +1941,26 @@ namespace RMC_BestFit
             DrawShapePlot(UserSettings.ValueStringFormat);
 
             ShowSelectedDiagnosticPlot();
+        }
+
+        /// <summary>
+        /// Clears the three threshold diagnostic plots (MRL, Modified Scale, Shape) by discarding
+        /// the cached diagnostic results and redrawing each plot, so a stale curve from a
+        /// previously valid period/smoothing configuration is never left on screen.
+        /// </summary>
+        /// <remarks>
+        /// Discarding the results and calling the existing <see cref="DrawMRLPlot"/>,
+        /// <see cref="DrawModifiedScalePlot"/>, and <see cref="DrawShapePlot"/> methods reuses their
+        /// null-result branch, which clears each plot's series and annotations inside
+        /// <c>SuspendPlotBridges</c> instead of duplicating that logic here.
+        /// </remarks>
+        private void ClearThresholdDiagnosticsPlots()
+        {
+            _mrlResult = null;
+            _stabilityResult = null;
+            DrawMRLPlot(UserSettings.ValueStringFormat);
+            DrawModifiedScalePlot(UserSettings.ValueStringFormat);
+            DrawShapePlot(UserSettings.ValueStringFormat);
         }
 
         /// <summary>

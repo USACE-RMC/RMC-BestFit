@@ -1,0 +1,32 @@
+{
+  "fullTracePath": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\trace-bfgs-roundoff.jsonl",
+  "fullTraceSha256": "9a1b40a5e1b9344a587e2c4381f3532c82c506758f6efa96d9ebf9afc1457873",
+  "events": {
+    "pass-start": 18808,
+    "fixture": 1001,
+    "pass-end": 18808,
+    "cholesky-probe": 23331,
+    "regularization-return": 22731,
+    "fit-end": 1001,
+    "bfgs-failure": 77,
+    "bfgs-detail": 77,
+    "debug": 77,
+    "covariance-result": 1000,
+    "fit-result": 1000,
+    "roundoff-convergence": 707
+  },
+  "exceptions": 0,
+  "fixturesIdentical": true,
+  "returnedMatrices": 22731,
+  "minimumReturnedEigenvalue": 7.366136339294137e-07,
+  "nonPositiveReturnedMatrices": 0,
+  "remainingFailureGradientRange": [
+    1.0046972920285668e-08,
+    6.8837898714591e-08
+  ],
+  "productionSourceHashes": {
+    "C:\\GIT\\Numerics\\Numerics\\Mathematics\\Optimization\\Local\\BFGS.cs": "f02be8c04063d84a9af4cac9129aff966087ba17fbbfdb720f061424752c2a65",
+    "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\Estimation\\GeneralizedMethodOfMoments.cs": "b4c22dcf0885575a79e50f03bff878470ed4d5d3f19bb23d8ebdd25ed2a9112e",
+    "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\Models\\UnivariateDistribution\\Bulletin17CDistribution.cs": "b19378f266849a1e59ae5ec3b650ff493de0bc661979e86116ef052e109f43f6"
+  }
+}

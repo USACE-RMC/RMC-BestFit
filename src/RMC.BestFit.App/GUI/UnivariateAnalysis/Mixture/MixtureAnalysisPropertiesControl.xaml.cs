@@ -7,6 +7,7 @@ using RMC.BestFit.UI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -39,7 +40,8 @@ namespace RMC_BestFit
         {
             InitializeComponent();
             DataContext = this;
-            // RowType set to null — enum types cannot be default-constructed by DataGrid toolbar
+            DistributionDataGrid.SetBinding(ItemsControl.ItemsSourceProperty, new Binding { Source = _distributionRows });
+            // RowType set to null â€” enum types cannot be default-constructed by DataGrid toolbar
             // (Activator.CreateInstance on an enum yields the 0-value, which is not a supported mixture type).
             // Add/remove is handled via PreviewAddRows/PreviewDeleteRows to inject Normal as the default.
             DistributionDataGrid.RowType = null;
@@ -52,6 +54,17 @@ namespace RMC_BestFit
         /// Stores the previous name value for validation and rollback purposes.
         /// </summary>
         private string _previousName;
+
+        /// <summary>
+        /// Suppresses combo writeback while source collection changes update the displayed rows.
+        /// </summary>
+        private bool _suppressDistributionSelection = false;
+
+        /// <summary>Retains one grid source and reference identities for equal component types.</summary>
+        private readonly ObservableCollection<MixtureDistributionRow> _distributionRows = new ObservableCollection<MixtureDistributionRow>();
+
+        /// <summary>Tracks the public collection currently mirrored by the grid.</summary>
+        private ObservableCollection<UnivariateDistributionType> _subscribedDistributions;
 
         /// <summary>
         /// Tracks the InputDataCollection currently subscribed to, so it can be unsubscribed when the control unloads or the element changes.
@@ -84,7 +97,7 @@ namespace RMC_BestFit
             if (d as MixtureAnalysisPropertiesControl == null) return;
             var thisControl = (MixtureAnalysisPropertiesControl)d;
 
-            // Unsubscribe from old element — both PropertyChanged (element-scoped) and
+            // Unsubscribe from old element â€” both PropertyChanged (element-scoped) and
             // InputDataCollection subscriptions so the new element's LoadInputData starts clean.
             if (e.OldValue is MixtureAnalysis oldElement)
             {
@@ -92,6 +105,7 @@ namespace RMC_BestFit
                 thisControl.UnsubscribeInputDataCollection();
             }
 
+            thisControl.BindDistributions((e.NewValue as MixtureAnalysis)?.Distributions);
             if (e.NewValue == null) return;
             var newElement = e.NewValue as MixtureAnalysis;
             if (newElement == null) return;
@@ -100,8 +114,6 @@ namespace RMC_BestFit
             thisControl._previousName = newElement.Name;
             thisControl.PropertyAttributes.GetClassAttributes(newElement);
             thisControl.LoadInputData();
-            thisControl.DistributionDataGrid.ItemsSource = newElement.Distributions;
-            thisControl.DistributionDataGrid.Items.Refresh();
         }
 
         /// <summary>
@@ -240,16 +252,16 @@ namespace RMC_BestFit
         /// </summary>
         private void DistributionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // A source notification must never write back into its own collection.
+            if (_suppressDistributionSelection) return;
             if (Element == null) return;
             var comboBox = sender as System.Windows.Controls.ComboBox;
             if (comboBox == null) return;
             var selectedItem = comboBox.SelectedValue;
             if (selectedItem == null || !(selectedItem is UnivariateDistributionType newType)) return;
 
-            // Find the row index for this combo box
-            var row = DistributionDataGrid.ItemContainerGenerator.ContainerFromItem(comboBox.DataContext);
-            if (row == null) return;
-            int index = DistributionDataGrid.ItemContainerGenerator.IndexFromContainer(row);
+            if (!(comboBox.DataContext is MixtureDistributionRow row)) return;
+            int index = _distributionRows.IndexOf(row);
             if (index < 0 || index >= Element.Distributions.Count) return;
 
             if (Element.Distributions[index] != newType)
@@ -378,17 +390,39 @@ namespace RMC_BestFit
         }
 
         /// <summary>
-        /// Intercepts the DataGrid delete-row operation. Enforces a minimum of 1 distribution.
+        /// Intercepts the DataGrid delete-row operation: cancels the grid's own delete and performs
+        /// the removal after the grid's pipeline unwinds. Enforces a minimum of 1 distribution.
         /// </summary>
+        /// <remarks>
+        /// The grid displays reference rows while the model owns enum values. Defer removal until
+        /// the grid's pipeline unwinds and retain the selected row identities so intervening edits
+        /// cannot redirect the deletion to another component or another analysis.
+        /// </remarks>
+        /// <param name="rowIndices">The grid-selected row indices to delete.</param>
+        /// <param name="cancel">Set to <see langword="true"/> to cancel the grid's own delete.</param>
         private void DistributionDataGrid_PreviewDeleteRows(List<int> rowIndices, ref bool cancel)
         {
-            if (Element == null) { cancel = true; return; }
-            // Prevent deleting all distributions — at least 1 must remain
-            if (Element.Distributions.Count - rowIndices.Count < 1)
+            cancel = true;
+            if (Element == null) return;
+            // Prevent deleting all distributions - at least 1 must remain
+            var owner = Element;
+            var source = _subscribedDistributions;
+            var rows = rowIndices.Distinct().Where(i => i >= 0 && i < _distributionRows.Count)
+                .Select(i => _distributionRows[i]).ToArray();
+            if (source == null || source.Count - rows.Length < 1) return;
+
+            Dispatcher.BeginInvoke(new Action(() =>
             {
-                cancel = true;
-                return;
-            }
+                if (!ReferenceEquals(Element, owner) || !ReferenceEquals(owner.Distributions, source)
+                    || !ReferenceEquals(_subscribedDistributions, source)) return;
+                foreach (var row in rows)
+                {
+                    if (source.Count <= 1) return;
+                    int rowIndex = _distributionRows.IndexOf(row);
+                    if (rowIndex >= 0 && rowIndex < source.Count)
+                        source.RemoveAt(rowIndex);
+                }
+            }));
         }
 
         /// <summary>
@@ -413,23 +447,91 @@ namespace RMC_BestFit
         /// <param name="e">The event data containing the name of the changed property.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Model object replaced (e.g., during undo) — push to sub-controls
+            // Model object replaced (e.g., during undo) â€” push to sub-controls
             if (e.PropertyName == nameof(Element.MixtureDistribution))
             {
                 ParameterPriorsControl.Model = Element.MixtureDistribution;
                 QuantilePriorsControl.Model = Element.MixtureDistribution;
             }
-            // BayesianAnalysis replaced — push to sub-controls
+            // BayesianAnalysis replaced â€” push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;
                 BayesianOutputControl.Analysis = Element.BayesianAnalysis;
             }
-            // Distributions collection changed — refresh the data grid
             if (e.PropertyName == nameof(Element.Distributions))
             {
-                DistributionDataGrid.ItemsSource = null;
-                DistributionDataGrid.ItemsSource = Element.Distributions;
+                BindDistributions(Element.Distributions);
+            }
+        }
+
+        /// <summary>Switches the mirrored public collection without replacing the grid's binding.</summary>
+        /// <param name="source">The current element's collection, or null when detached.</param>
+        private void BindDistributions(ObservableCollection<UnivariateDistributionType> source)
+        {
+            if (ReferenceEquals(source, _subscribedDistributions)) return;
+            if (_subscribedDistributions != null)
+                _subscribedDistributions.CollectionChanged -= Distributions_CollectionChanged;
+            _subscribedDistributions = source;
+            if (source != null)
+                source.CollectionChanged += Distributions_CollectionChanged;
+            ResetDistributionRows();
+        }
+
+        /// <summary>Rebuilds row identities when a collection is replaced or explicitly reset.</summary>
+        private void ResetDistributionRows()
+        {
+            bool wasSuppressed = _suppressDistributionSelection;
+            _suppressDistributionSelection = true;
+            try
+            {
+                _distributionRows.Clear();
+                if (_subscribedDistributions != null)
+                    foreach (var type in _subscribedDistributions)
+                        _distributionRows.Add(new MixtureDistributionRow(type));
+            }
+            finally
+            {
+                _suppressDistributionSelection = wasSuppressed;
+            }
+        }
+
+        /// <summary>Mirrors collection edits while preserving unaffected row identities.</summary>
+        /// <param name="sender">The public collection publishing the edit.</param>
+        /// <param name="e">The ordered collection change.</param>
+        private void Distributions_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (!ReferenceEquals(sender, _subscribedDistributions)) return;
+            bool wasSuppressed = _suppressDistributionSelection;
+            _suppressDistributionSelection = true;
+            try
+            {
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        for (int i = 0; i < e.NewItems.Count; i++)
+                            _distributionRows.Insert(e.NewStartingIndex + i,
+                                new MixtureDistributionRow((UnivariateDistributionType)e.NewItems[i]));
+                        break;
+                    case NotifyCollectionChangedAction.Remove:
+                        for (int i = 0; i < e.OldItems.Count; i++)
+                            _distributionRows.RemoveAt(e.OldStartingIndex);
+                        break;
+                    case NotifyCollectionChangedAction.Replace:
+                        for (int i = 0; i < e.NewItems.Count; i++)
+                            _distributionRows[e.NewStartingIndex + i].UpdateType((UnivariateDistributionType)e.NewItems[i]);
+                        break;
+                    case NotifyCollectionChangedAction.Move:
+                        _distributionRows.Move(e.OldStartingIndex, e.NewStartingIndex);
+                        break;
+                    default:
+                        ResetDistributionRows();
+                        break;
+                }
+            }
+            finally
+            {
+                _suppressDistributionSelection = wasSuppressed;
             }
         }
 

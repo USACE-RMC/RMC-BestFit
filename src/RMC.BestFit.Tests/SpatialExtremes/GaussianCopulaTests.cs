@@ -507,4 +507,196 @@ public class GaussianCopulaTests
     }
 
     #endregion
+
+    #region Observed-Subset Evaluation Tests
+
+    /// <summary>
+    /// Verifies that the observed-subset evaluation of a complete row takes the full-dimensional path
+    /// and equals <c>LogPDF(z)</c> exactly.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_AllSitesObserved_EqualsFullEvaluation()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        copula.SetParameterValues(new List<double> { 25.0 });
+        var z = new double[] { 0.4, -1.1, 0.7, 1.9, -0.3 };
+
+        double full = copula.LogPDF(z);
+        double subset = copula.LogPDF(z, new[] { 0, 1, 2, 3, 4 });
+
+        Assert.IsTrue(double.IsFinite(full));
+        Assert.AreEqual(full, subset, 0.0, "A complete row must reproduce the full-dimensional density exactly.");
+    }
+
+    /// <summary>
+    /// Verifies that a row with fewer than two observed sites has no dependence term: the marginal
+    /// copula density of a single coordinate is one.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_FewerThanTwoSites_IsZero()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        copula.SetParameterValues(new List<double> { 25.0 });
+        var z = new double[] { 0.4, -1.1, 0.7, 1.9, -0.3 };
+
+        Assert.AreEqual(0.0, copula.LogPDF(z, new[] { 2 }), 0.0, "One observed site.");
+        Assert.AreEqual(0.0, copula.LogPDF(z, Array.Empty<int>()), 0.0, "No observed site.");
+    }
+
+    /// <summary>
+    /// Verifies that marginalizing the unobserved sites equals the Gaussian copula built on the observed
+    /// sites alone: the correlation depends only on inter-site distances, so both constructions share
+    /// the observed-site correlation submatrix. Entries of <c>z</c> at unobserved sites are ignored.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_EqualsCopulaBuiltOnObservedSites()
+    {
+        double[,] coordinates = CreateRiverCoordinates();
+        var full = new GaussianCopula(coordinates, CorrelationFunctionType.Exponential);
+        full.SetParameterValues(new List<double> { 25.0 });
+        int[] observed = { 0, 2, 4 };
+        var observedCoordinates = new double[,]
+        {
+            { coordinates[0, 0], coordinates[0, 1] },
+            { coordinates[2, 0], coordinates[2, 1] },
+            { coordinates[4, 0], coordinates[4, 1] }
+        };
+        var reduced = new GaussianCopula(observedCoordinates, CorrelationFunctionType.Exponential);
+        reduced.SetParameterValues(new List<double> { 25.0 });
+
+        var z = new double[] { 0.4, double.NaN, 0.7, double.NaN, -0.3 };
+        double expected = reduced.LogPDF(new[] { 0.4, 0.7, -0.3 });
+        double actual = full.LogPDF(z, observed);
+
+        Assert.IsTrue(double.IsFinite(expected));
+        Assert.AreNotEqual(0.0, expected, "The three observed sites carry a dependence term.");
+        Assert.AreEqual(expected, actual, 1e-12, "Observed-subset evaluation versus the copula built on the observed sites.");
+    }
+
+    /// <summary>
+    /// Verifies that the per-pattern factorization cache is reused for repeated rows and invalidated when
+    /// the correlation parameters change.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_TracksParameterChanges()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        int[] observed = { 1, 2, 3 };
+        var z = new double[] { 0.2, 0.9, -0.4, 1.3, 0.0 };
+
+        copula.SetParameterValues(new List<double> { 10.0 });
+        double first = copula.LogPDF(z, observed);
+        double firstAgain = copula.LogPDF(z, observed);
+        copula.SetParameterValues(new List<double> { 60.0 });
+        double second = copula.LogPDF(z, observed);
+
+        var fresh = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        fresh.SetParameterValues(new List<double> { 60.0 });
+
+        Assert.AreEqual(first, firstAgain, 0.0, "Repeated evaluation of the same pattern.");
+        Assert.AreNotEqual(first, second, "A new range changes the observed-subset density.");
+        Assert.AreEqual(fresh.LogPDF(z, observed), second, 0.0, "The cache must not serve the old factorization.");
+    }
+
+    /// <summary>
+    /// Verifies the argument validation of the observed-subset evaluation.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_InvalidArguments_Throw()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        copula.SetParameterValues(new List<double> { 25.0 });
+        var z = new double[5];
+
+        Assert.ThrowsException<ArgumentNullException>(() => copula.LogPDF(null!, new[] { 0, 1 }));
+        Assert.ThrowsException<ArgumentNullException>(() => copula.LogPDF(z, null!));
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(new double[4], new[] { 0, 1 }), "z must have one entry per site.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 0, 5 }), "Index outside the site range.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 2, 1 }), "Indices must increase.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 1, 1 }), "Duplicate index.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 0, 1, 2, 3, 4, 4 }), "More indices than sites.");
+    }
+
+    #endregion
+
+    #region Correlation Matrix Accessor Tests
+
+    /// <summary>
+    /// Verifies that the correlation matrix accessor is null before the parameters are set and afterwards
+    /// returns an independent copy of the fitted correlation matrix.
+    /// </summary>
+    [TestMethod]
+    public void GetCorrelationMatrix_ReturnsCopyOfTheFittedMatrix()
+    {
+        double[,] coordinates = CreateRiverCoordinates();
+        var copula = new GaussianCopula(coordinates, CorrelationFunctionType.Exponential);
+        Assert.IsNull(copula.GetCorrelationMatrix(), "No matrix before the parameters are set.");
+
+        copula.SetParameterValues(new List<double> { 25.0 });
+        double[,]? matrix = copula.GetCorrelationMatrix();
+
+        Assert.IsNotNull(matrix);
+        Assert.AreEqual(5, matrix!.GetLength(0));
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.AreEqual(1.0, matrix[i, i], 0.0);
+            for (int j = 0; j < 5; j++)
+            {
+                double h = Numerics.Tools.Distance(coordinates[i, 0], coordinates[i, 1], coordinates[j, 0], coordinates[j, 1]);
+                Assert.AreEqual(i == j ? 1.0 : Math.Exp(-h / 25.0), matrix[i, j], 1e-12, $"Entry ({i + 1}, {j + 1}).");
+            }
+        }
+        matrix[0, 1] = 99.0;
+        Assert.AreNotEqual(99.0, copula.GetCorrelationMatrix()![0, 1], "The accessor returns a copy.");
+    }
+
+    #endregion
+
+    #region Distance Metric Tests
+
+    /// <summary>
+    /// Verifies that the geodesic copula builds its correlation from great-circle kilometres (hand haversine),
+    /// that the Cartesian constructor is unchanged, that the clone keeps the metric, and that invalid
+    /// latitude/longitude pairs are rejected.
+    /// </summary>
+    [TestMethod]
+    public void GeodesicMetric_BuildsCorrelationFromGreatCircleKilometres()
+    {
+        var latLon = new double[,] { { 38.90, -77.04 }, { 39.29, -76.61 }, { 40.44, -79.99 } };
+        var copula = new GaussianCopula(latLon, CorrelationFunctionType.Exponential, SpatialDistanceMetric.Geodesic);
+        copula.SetParameterValues(new List<double> { 150.0 });
+
+        double[,] correlation = copula.GetCorrelationMatrix()!;
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                double expected = i == j ? 1.0 : Math.Exp(-Haversine(latLon[i, 0], latLon[i, 1], latLon[j, 0], latLon[j, 1]) / 150.0);
+                Assert.AreEqual(expected, correlation[i, j], 1e-12, $"Geodesic correlation ({i + 1}, {j + 1}).");
+            }
+        }
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, copula.Clone().DistanceMetric, "The clone keeps the metric.");
+        Assert.AreEqual(SpatialDistanceMetric.Cartesian, new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential).DistanceMetric);
+        Assert.ThrowsException<ArgumentException>(() => new GaussianCopula(new double[,] { { 95.0, 10.0 }, { 0.0, 0.0 } }, CorrelationFunctionType.Exponential, SpatialDistanceMetric.Geodesic), "Latitude beyond 90 degrees.");
+        Assert.ThrowsException<ArgumentException>(() => new GaussianCopula(new double[,] { { 10.0, 190.0 }, { 0.0, 0.0 } }, CorrelationFunctionType.Exponential, SpatialDistanceMetric.Geodesic), "Longitude beyond 180 degrees.");
+    }
+
+    /// <summary>
+    /// Hand haversine distance in kilometres (mean Earth radius 6371.0088 km).
+    /// </summary>
+    /// <param name="lat1">Latitude of the first point.</param>
+    /// <param name="lon1">Longitude of the first point.</param>
+    /// <param name="lat2">Latitude of the second point.</param>
+    /// <param name="lon2">Longitude of the second point.</param>
+    /// <returns>The great-circle distance in kilometres.</returns>
+    private static double Haversine(double lat1, double lon1, double lat2, double lon2)
+    {
+        double rad = Math.PI / 180.0;
+        double dPhi = (lat2 - lat1) * rad;
+        double dLambda = (lon2 - lon1) * rad;
+        double a = Math.Sin(dPhi / 2) * Math.Sin(dPhi / 2) + Math.Cos(lat1 * rad) * Math.Cos(lat2 * rad) * Math.Sin(dLambda / 2) * Math.Sin(dLambda / 2);
+        return 2 * 6371.0088 * Math.Asin(Math.Sqrt(a));
+    }
+
+    #endregion
 }

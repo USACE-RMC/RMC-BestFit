@@ -735,6 +735,14 @@ namespace RMC_BestFit
                                     "Low Outlier Test Complete", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 }
             }
+            catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+            {
+                // The setters validate their preconditions by throwing - for example a threshold
+                // that would censor more than half the record - and the former try/finally had no
+                // catch, so the exception reached the dispatcher and terminated the application.
+                Mouse.OverrideCursor = null;
+                GenericControls.MessageBox.Show(ex.Message, "Low Outlier Test", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             finally
             {
                 Mouse.OverrideCursor = null;

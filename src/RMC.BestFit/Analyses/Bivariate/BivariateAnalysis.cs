@@ -336,7 +336,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -484,12 +484,9 @@ namespace RMC.BestFit.Analyses
 
                     AnalysisResults.RMSE = Math.Sqrt(sse / (n - 1));
                 }
-                // AIC and BIC are computed at the MAP estimate using the full
-                // log-likelihood (data + prior). With uniform priors this matches
-                // the conventional MLE-based AIC/BIC; with informative priors the
-                // metric reflects the prior contribution as well — intentional in
-                // a Bayesian-first framework where model comparison includes priors.
-                double mapLogLH = BivariateDistribution.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the copula data likelihood at MAP and are comparable
+                // with MLE criteria only when all active priors are flat.
+                double mapLogLH = BivariateDistribution.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 AnalysisResults.AIC = GoodnessOfFit.AIC(BivariateDistribution.Copula.NumberOfCopulaParameters, mapLogLH);
                 AnalysisResults.BIC = GoodnessOfFit.BIC(n, BivariateDistribution.Copula.NumberOfCopulaParameters, mapLogLH);
                 AnalysisResults.DIC = BayesianAnalysis.DIC;

@@ -1,133 +1,83 @@
-# ABOM Download Example
+# Australian Water Data Online: inspect flow, stage and rainfall records
 
-## Overview
+This project contains six saved Bureau of Meteorology time series from three Australian stations. Use it to distinguish rainfall depth, discharge and stage, and to inspect missing values before extracting a frequency-analysis dataset.
 
-This example demonstrates downloading hydrological data from the **Australian Bureau of Meteorology (BOM) Water Data Online** API. It includes daily and instantaneous series for discharge, stage, and precipitation from three monitoring stations in the Australian Capital Territory (ACT) and New South Wales (NSW).
+## Open the example
 
-The Bureau of Meteorology collects water data from over 3,500 stations across Australia. RMC-BestFit connects to the BOM Water Data Online API to download streamflow, water level, and precipitation records.
+Open [abom-download-example.bestfit](abom-download-example.bestfit) in RMC-BestFit and save a working copy before importing or editing data. The figures use the saved snapshot; downloading again may change the record. You do not need to run an analysis to follow this exercise.
 
-## Data Source
+## Find the controls
 
-- **Agency:** Australian Bureau of Meteorology (BOM)
-- **API:** Water Data Online
-- **Website:** http://www.bom.gov.au/waterdata/
-- **Entry Method in BestFit:** `ABOM`
-- **Required Parameter:** Station ID (6 digits)
-- **Additional Parameter:** Depth Unit (for precipitation series only)
+Expand **Time Series Data** in the **Project Explorer** and select **ABOM - 410730 - Daily Precipitation**. In **Properties**, read **Data Entry Method = ABOM**, **Data Type = Daily Precipitation**, **Site Number = 410730**, and **Depth Unit = Millimeters**. The **Time Series** tab contains the **Time Series Data** grid and chronological plot; **Summary Statistics** is beside the grid. Use the left-side **Seasonality Plot**, **ACF Plot**, and **PACF Plot** tabs for the corresponding views.
 
-### ABOM Series Types
+For a new source in a working copy, right-click **Time Series Data**, choose **New Time Series...**, enter a name, and configure **Properties** before importing or downloading.
 
-| Series Type | Description | Typical Interval | Use Case |
-|-------------|-------------|-------------------|----------|
-| Daily Discharge | Daily mean streamflow | 1 day | Long-term flow statistics, flood frequency |
-| Daily Stage | Daily mean water level | 1 day | Long-term stage statistics |
-| Daily Precipitation | Daily rainfall total | 1 day | Rainfall frequency analysis |
-| Instantaneous Discharge | Irregular-interval streamflow | Variable | High-resolution flood hydrographs |
-| Instantaneous Stage | Irregular-interval water level | Variable | High-resolution stage records |
+![Project Explorer for this saved project, with ABOM - 410730 - Daily Precipitation selected.](screenshots/abom-project-explorer-current.png)
 
-## What's Inside
+*Project Explorer for this saved project, with ABOM - 410730 - Daily Precipitation selected.* [Capture data](screenshots/abom-project-explorer-current.json.gz)
 
-This project contains 6 time series elements from 3 BOM stations:
+![Properties for ABOM - 410730 - Daily Precipitation. Check the source and settings before changing a working copy.](screenshots/abom-properties-panel-current.png)
 
-| Element | Station | Series Type | Units |
-|---------|---------|-------------|-------|
-| ABOM - 410730 - Daily Precipitation | Cotter River at Gingera, ACT | DailyPrecipitation | mm |
-| ABOM - 410730 - Daily Discharge | Cotter River at Gingera, ACT | DailyDischarge | cms |
-| ABOM - 410761 - Daily Discharge | Murrumbidgee R. below Lobbs Hole Ck, ACT/NSW | DailyDischarge | cms |
-| ABOM - 409202 - Daily Stage | Murray River at Tocumwal, NSW | DailyStage | m |
-| ABOM - 410730 - Instantaneous Discharge | Cotter River at Gingera, ACT | InstantaneousDischarge | cms |
-| ABOM - 409202 - Instantaneous Stage | Murray River at Tocumwal, NSW | InstantaneousStage | m |
+*Properties for ABOM - 410730 - Daily Precipitation. Check the source and settings before changing a working copy.* [Capture data](screenshots/abom-properties-panel-current.json.gz)
 
-### Station Details
+## Source and saved records
 
-**Cotter River at Gingera, ACT (410730)** -- Headwater catchment in the Australian Capital Territory. Feeds the Cotter Reservoir, part of Canberra's water supply system. This station demonstrates both discharge and precipitation data from the same location.
+BestFit’s **ABOM** entry method accesses the Bureau of Meteorology’s [Water Data Online](https://www.bom.gov.au/waterdata/) service. The saved station descriptions identify Cotter River at Gingera (410730), Murrumbidgee River below Lobbs Hole Creek (410761), and Murray River at Tocumwal (409202). Use provider station metadata to confirm the variable, datum, qualifiers and upstream regulation for a new study.
 
-**Murrumbidgee River below Lobbs Hole Creek, ACT/NSW (410761)** -- Larger catchment on the Murrumbidgee River, downstream of the ACT/NSW border region.
+| Saved element | Units | First–last saved date | Ordinates | Missing |
+|---|---|---|---:|---:|
+| ABOM - 410730 - Daily Precipitation | Precipitation (mm) | 2003-01-31–2026-07-15 | 8,567 | 56 |
+| ABOM - 410730 - Daily Discharge | Flow (cms) | 1963-07-03–2026-07-15 | 23,024 | 0 |
+| ABOM - 410761 - Daily Discharge | Flow (cms) | 1974-11-13–2026-07-15 | 18,873 | 98 |
+| ABOM - 409202 - Daily Stage | Stage (m) | 1974-12-10–2026-07-15 | 18,846 | 39 |
+| ABOM - 410730 - Instantaneous Discharge | Flow (cms) | 1963-07-03–2026-07-15 | 222,246 | 1 |
+| ABOM - 409202 - Instantaneous Stage | Stage (m) | 1974-12-10–2026-07-15 | 669,279 | 46 |
 
-**Murray River at Tocumwal, NSW (409202)** -- Major station on the Murray River in southern NSW, near the Victorian border. A key regulatory station for Murray-Darling Basin water management. Demonstrates stage (water level) data for a large regulated river.
+“Missing” counts stored nonfinite values. A date range and a zero missing-value count do not prove complete time coverage, particularly for irregular or annual-peak records.
 
-### Note on Missing Data
+## Work through the example
 
-Some daily series from BOM may contain missing data (NaN values). This is common in Australian records where equipment failures, station closures, or data quality flags result in gaps. RMC-BestFit handles NaN values by excluding them from statistical calculations and displaying gaps in the time series plot.
+1. Select **ABOM - 410730 - Daily Precipitation**. The saved values are precipitation depths in millimetres. Check its date range and missing values independently of the discharge record at the same site.
+2. Select **ABOM - 410730 - Daily Discharge**. “Flow (cms)” denotes m³/s. Inspect the daily hydrograph, then open **Seasonality Plot** to compare months.
+3. Select **ABOM - 410761 - Daily Discharge**. Compare its coverage and missing-data count with Cotter River; a different station is not a replicate of the same physical record.
+4. Select **ABOM - 409202 - Daily Stage**. Stage is in metres relative to the station datum. Compare it with the instantaneous stage record without interpreting either series as discharge.
+5. Inspect the instantaneous records using actual timestamps. Their irregular sampling and large observation counts do not imply a complete regular time grid.
+6. To collect another record, create a separate element, select **Data Entry Method = ABOM**, enter the station identifier, choose the variable and select **Download**. Retain source metadata and the retrieval date.
 
-## Step-by-Step Guide
+## Read the plots
 
-### Opening the Project
+![Saved daily precipitation at Cotter River at Gingera.](screenshots/abom-precipitation-ts-plot-native.png)
 
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to `examples/1-time-series-data/4-abom-download/`
-3. Open `abom-download-example.bestfit`
-4. The Project Explorer will show 6 elements under **Time Series Data**
+*Figure 1. Saved daily precipitation at Cotter River at Gingera.* [Python SVG](figures/abom-download-example-precipitation.svg) · [Python plot data](figures/abom-download-example-precipitation.plotspec.json.gz) [Native SVG](screenshots/abom-precipitation-ts-plot-native.svg) [Capture data](screenshots/abom-precipitation-ts-plot-native.json.gz)
 
-![RMC-BestFit Project Explorer showing all 6 ABOM time series elements](../images/abom-project-explorer.png)
-*Figure 1: Project Explorer with all ABOM time series elements*
+![Saved daily mean discharge at Cotter River at Gingera.](screenshots/abom-daily-discharge-ts-plot-native.png)
 
-### Exploring Daily Precipitation (Cotter River)
+*Figure 2. Saved daily mean discharge at Cotter River at Gingera.* [Python SVG](figures/abom-download-example-cotter-daily-flow.svg) · [Python plot data](figures/abom-download-example-cotter-daily-flow.plotspec.json.gz) [Native SVG](screenshots/abom-daily-discharge-ts-plot-native.svg) [Capture data](screenshots/abom-daily-discharge-ts-plot-native.json.gz)
 
-1. Click **ABOM - 410730 - Daily Precipitation** in the Project Explorer
-2. The **Time Series** tab displays the daily rainfall record
-3. Notice the episodic rainfall pattern with occasional high-intensity events
-4. Click the **Seasonality** tab to observe the seasonal rainfall distribution
+![Seasonal distribution of Cotter daily discharge.](figures/abom-download-example-cotter-seasonality.png)
 
-![Time series plot showing daily precipitation for Cotter River at Gingera](../images/abom-precipitation-ts-plot.png)
-*Figure 2: Daily precipitation for Cotter River at Gingera, ACT (BOM 410730)*
+*Figure 3. Seasonal distribution of Cotter daily discharge.* [Python SVG](figures/abom-download-example-cotter-seasonality.svg) · [Python plot data](figures/abom-download-example-cotter-seasonality.plotspec.json.gz)
 
-### Exploring Daily Discharge (Cotter River)
+![Saved daily stage at Murray River at Tocumwal; the axis represents stage, not discharge.](figures/abom-download-example-murray-stage.png)
 
-1. Click **ABOM - 410730 - Daily Discharge** in the Project Explorer
-2. The time series plot will show gaps where missing (NaN) values occur
-3. Click the **Seasonality** tab to see the seasonal flow pattern
+*Figure 4. Saved daily stage at Murray River at Tocumwal; the axis represents stage, not discharge.* [Python SVG](figures/abom-download-example-murray-stage.svg) · [Python plot data](figures/abom-download-example-murray-stage.plotspec.json.gz)
 
-![Time series plot showing daily discharge for Cotter River with visible data gaps](../images/abom-daily-discharge-ts-plot.png)
-*Figure 3: Daily discharge for Cotter River at Gingera, ACT (BOM 410730)*
+![Murray River instantaneous stage, selected as ABOM - 409202 - Instantaneous Stage. The vertical axis is Stage (m), relative to the station datum, and is distinct from the daily-stage view above.](screenshots/abom-instantaneous-stage-ts-plot-native.png)
 
-### Exploring Instantaneous Stage (Murray River)
+*Murray River instantaneous stage, selected as ABOM - 409202 - Instantaneous Stage. The vertical axis is Stage (m), relative to the station datum, and is distinct from the daily-stage view above.* [Native SVG](screenshots/abom-instantaneous-stage-ts-plot-native.svg) [Capture data](screenshots/abom-instantaneous-stage-ts-plot-native.json.gz)
 
-1. Click **ABOM - 409202 - Instantaneous Stage** in the Project Explorer
-2. This element contains observations at irregular intervals spanning decades
-3. The Murray River at Tocumwal shows the regulated flow pattern of a major river system
+## Interpretation and limits
 
-![Time series plot showing instantaneous stage for Murray River at Tocumwal](../images/abom-instantaneous-stage-ts-plot.png)
-*Figure 4: Instantaneous water level for Murray River at Tocumwal, NSW (BOM 409202)*
+The seasonality bands show the 5th–95th percentiles (90% observed range) and 25th–75th percentiles (50% observed range) within each month. They describe variation among observations, not confidence in the monthly mean. The native seasonality screenshot retains the desktop’s legacy “Confidence Interval” legend; read those bands as observed percentile ranges. The companion Python figure corrects the legend while preserving the plotted values.
 
-### Viewing the Properties Panel
+The records have different starting dates and missing-data counts. The daily Cotter discharge has no missing stored ordinates; the daily Murrumbidgee series has 98 and daily Murray stage has 39. Check whether an apparent quiet period is a physical condition or missing support before extracting extremes.
 
-1. With any element selected, open the **Properties** panel
-2. The panel shows ABOM-specific configuration:
-   - **Entry Method:** ABOM
-   - **ABOM Site Number:** The 6-digit station ID
-   - **Data Type:** The selected series type
-   - **Depth Unit:** Shown only for Daily Precipitation (Millimeters in this example)
-   - **Download** button to refresh the data
+The unrelated three-value manual test element has been removed from the teaching collection. No fitted analysis is included here. Reservoir operations, rating changes or catchment changes require study-specific review before assuming stationarity.
 
-![Properties panel showing ABOM site number, data type dropdown, and Download button](../images/abom-properties-panel.png)
-*Figure 5: Properties panel for an ABOM time series element*
+## Check your understanding
 
-### Downloading Your Own ABOM Data
+Identify the two variables available at station 410730 and explain why precipitation in mm cannot be compared directly with discharge in m³/s. Select a candidate source for annual flood peaks and state what extraction or additional source record would still be needed.
 
-To create a new ABOM time series element:
+## Figure reproducibility
 
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **ABOM**
-3. Enter a valid **ABOM Station ID** (6 digits, e.g., `410730`)
-4. Select the desired **Data Type** from the dropdown
-5. For Daily Precipitation, also select the **Depth Unit** (Millimeters, Centimeters, or Inches)
-6. Click **Download**
-
-You can search for BOM water monitoring stations at http://www.bom.gov.au/waterdata/
-
-## Key Settings
-
-| Setting | Value in This Example | Notes |
-|---------|----------------------|-------|
-| Entry Method | ABOM | Connects to BOM Water Data Online API |
-| Station ID | 6 digits (e.g., `410730`) | Must be a valid BOM hydrological station |
-| Data Type | Varies by element | 5 series types available for ABOM |
-| Depth Unit | Millimeters | Only shown for DailyPrecipitation; also supports Inches and Centimeters |
-| Time Interval | OneDay (daily) or Irregular (instantaneous) | Automatically detected from downloaded data |
-
-## Next Steps
-
-- **Create Input Data:** Reference a daily discharge time series in an Input Data element and apply an annual maximum block function to extract the annual flood series
-- **Precipitation Frequency Analysis:** Use the daily precipitation record for rainfall frequency estimation
-- **Compare Catchments:** With discharge records from two catchments (410730 and 410761), compare flood frequency characteristics between a small headwater and a larger downstream basin
+Native screenshots show the current desktop plots for the selected saved elements. The linked Python SVG and plot-data files remain companion exports from BestFit.UI/App coordinates; views without a native replacement retain their Python figure. Use the repository [figure-generation instructions](../../README.md#reproducing-the-figures) with project filter `abom-download-example`. The accompanying plot data records the source hash; a successful plot export is not validation of a statistical model.

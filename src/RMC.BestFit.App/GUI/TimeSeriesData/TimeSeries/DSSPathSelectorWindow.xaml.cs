@@ -134,7 +134,7 @@ namespace RMC_BestFit
                     {
                         _pathCollection = dssReader.GetCatalog();
                     }
-                    _rangeResolver = new DssPathRangeResolver(ReadTimeSeriesForDisplayRange);
+                    _rangeResolver = new DssPathRangeResolver(FullFileName);
                 }
                 catch (Exception ex)
                 {
@@ -228,19 +228,6 @@ namespace RMC_BestFit
             MyDataGrid.ItemsSource = null;
             MyDataGrid.ItemsSource = _filteredPathRows;
             MyDataGrid.Items.Refresh();
-        }
-
-        /// <summary>
-        /// Reads a DSS time series for selector display-range resolution.
-        /// </summary>
-        /// <param name="displayReadPath">The concrete DSS pathname used to read the record.</param>
-        /// <returns>The DSS time series returned by the reader.</returns>
-        private Hec.Dss.TimeSeries ReadTimeSeriesForDisplayRange(DssPath displayReadPath)
-        {
-            using (DssReader dssReader = new DssReader(FullFileName))
-            {
-                return dssReader.GetTimeSeries(displayReadPath);
-            }
         }
 
         /// <summary>

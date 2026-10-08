@@ -1,0 +1,28 @@
+{
+  "finding": "TR-035",
+  "oracle": "log(1 / sigma) = -log(sigma)",
+  "generator": "Independent analytical evaluation",
+  "absolute_tolerance": 1e-12,
+  "cases": [
+    {
+      "model": "AutoRegressive",
+      "sigma": 0.125,
+      "expected_log_density": 2.0794415416798357
+    },
+    {
+      "model": "MovingAverage",
+      "sigma": 0.5,
+      "expected_log_density": 0.6931471805599453
+    },
+    {
+      "model": "ARIMA",
+      "sigma": 2.0,
+      "expected_log_density": -0.6931471805599453
+    },
+    {
+      "model": "ARIMAX",
+      "sigma": 8.0,
+      "expected_log_density": -2.0794415416798357
+    }
+  ]
+}

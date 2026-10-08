@@ -11,7 +11,7 @@ using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
-/// Phase 5 unit tests for the <c>BivariateAnalysis.XYOrdinates</c> setter.
+/// Unit tests for the <c>BivariateAnalysis.XYOrdinates</c> setter.
 /// Verifies that the joint exceedance evaluation grid can be changed without wiping
 /// the MCMC fit. Programmatic event-wiring tests — no MCMC chain is run. Chain-running
 /// parity tests live in RMC.BestFit.Verification.
@@ -20,8 +20,8 @@ namespace RMC.BestFit.Tests.Bivariate;
 /// <para>
 /// The contract: changing <c>XYOrdinates</c> on an estimated analysis preserves
 /// <c>BayesianAnalysis.Results</c> (the MCMC chain output) and only reprocesses
-/// <c>AnalysisResults</c>. Before Phase 5 the setter called <c>ClearResults()</c>,
-/// forcing the user to rerun chains just to widen the grid. After Phase 5 it
+/// <c>AnalysisResults</c>. The setter does not call <c>ClearResults()</c>, which would
+/// force the user to rerun chains just to widen the grid; instead it
 /// fires-and-forgets <c>CreateFrequencyAnalysisResultsAsync</c> at the new grid.
 /// </para>
 /// </remarks>

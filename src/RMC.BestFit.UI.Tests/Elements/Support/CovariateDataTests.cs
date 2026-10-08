@@ -32,22 +32,42 @@ public class CovariateDataTests
     }
 
     /// <summary>
-    /// Verifies that setting <see cref="CovariateData.TimeSeriesElement"/> to null on an already-null
-    /// instance does not raise <see cref="CovariateData.PropertyChanged"/> (no-change scenario would
-    /// still raise because the setter fires unconditionally for any assignment).
+    /// Verifies that assigning the value <see cref="CovariateData.TimeSeriesElement"/> already
+    /// holds raises no <see cref="CovariateData.PropertyChanged"/>, so a data-binding write-back
+    /// of an unchanged selection cannot make the owning analysis rebuild its model.
     /// </summary>
     [TestMethod]
-    public void SetTimeSeriesElement_ToNull_RaisesPropertyChanged()
+    public void SetTimeSeriesElement_ToSameValue_DoesNotRaisePropertyChanged()
     {
         var covariate = new CovariateData();
         var raised = new List<string>();
         covariate.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
 
-        // Assign null to a null — setter still fires RaisePropertyChange
         covariate.TimeSeriesElement = null;
 
-        Assert.IsTrue(raised.Contains(nameof(CovariateData.TimeSeriesElement)),
-            "PropertyChanged must be raised for TimeSeriesElement even when assigned null.");
+        Assert.AreEqual(0, raised.Count, "An unchanged assignment must not raise PropertyChanged.");
+    }
+
+    /// <summary>
+    /// Verifies that assigning a different element, and then clearing it as a deletion does,
+    /// raises <see cref="CovariateData.PropertyChanged"/> for each change.
+    /// </summary>
+    /// <remarks>
+    /// The owning analysis relies on the notification for a cleared element to remove the
+    /// orphaned covariate row.
+    /// </remarks>
+    [STATestMethod]
+    public void SetTimeSeriesElement_ToDifferentValue_RaisesPropertyChanged()
+    {
+        var covariate = new CovariateData();
+        var raised = new List<string>();
+        covariate.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
+
+        covariate.TimeSeriesElement = new TimeSeriesElement("CovariateDataChangeTest");
+        covariate.TimeSeriesElement = null;
+
+        Assert.AreEqual(2, raised.Count(name => name == nameof(CovariateData.TimeSeriesElement)),
+            "Each change of the wrapped element must raise PropertyChanged.");
     }
 
     /// <summary>

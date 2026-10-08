@@ -510,7 +510,7 @@ namespace RMC.BestFit.UI
         /// resurrect the now-deleted element. Pre-existing undo history on this analysis
         /// (renames, ordinate edits, etc.) is preserved.
         /// </summary>
-        /// <param name="element">The deleted element â€” ignored; we already hold the reference.</param>
+        /// <param name="element">The deleted element — ignored; we already hold the reference.</param>
         private void OnInputDataDeleted(IElement element)
         {
             var wasUndoEnabled = IsUndoEnabled;
@@ -527,7 +527,7 @@ namespace RMC.BestFit.UI
         /// <param name="e">The collection change event arguments.</param>
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // Check probability ordinates (flag only â€” messages come from model via adapter in SetIsValid)
+            // Check probability ordinates (flag only — messages come from model via adapter in SetIsValid)
             _ordinatesValid = true;
             if (ProbabilityOrdinates.Count == 0)
             {
@@ -706,7 +706,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -726,137 +727,142 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
+            try
+            {
+                if (wasOpen == false) sqlite.Open();
 
-            // First check if we need to open from version 1.0.
-            var dtView = sqlite.GetTableManager("Project");
-            string version = "";
-            if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
-            if (version == "1.0")
-            {
-                openedFromV1 = true;
-                OpenFromVersion1(sqlite);
-            }
-            else
-            {
-                // open element
-                dtView = sqlite.GetTableManager(CollectionName);
-                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                if (rowIndex != -1)
+                // First check if we need to open from version 1.0.
+                var dtView = sqlite.GetTableManager("Project");
+                string version = "";
+                if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
+                if (version == "1.0")
                 {
-                    // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
-                    // The InputData setter triggers SetIsValid(), ClearResults(), and updates inner analysis DataFrame.
-                    // ProbabilityOrdinates.FromDelimitedString() triggers CollectionChanged â†’ SetIsValid() + ClearResults().
-                    // A single SetIsValid() call at the end of Open() is sufficient.
-                    if (dtView.ColumnNames.Contains(nameof(Name)))
+                    openedFromV1 = true;
+                    OpenFromVersion1(sqlite);
+                }
+                else
+                {
+                    // open element
+                    dtView = sqlite.GetTableManager(CollectionName);
+                    int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    if (rowIndex != -1)
                     {
-                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                        foreach (var item in _messages) item.SourceName = _name;
-                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "UDA");
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Description)))
-                    {
-                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                        if (string.IsNullOrEmpty(_description))
-                            _messenger.Add(_descriptionMsg);
-                        else
-                            _messenger.Remove(_descriptionMsg);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                    // Plot Properties â€” deserialize into Plot objects
-                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ChronologyPlotSettings", _chronologyPlot);
-                    _bayesianController.Deserialize(dtView, rowIndex);
-
-
-                    // Get input data - use backing field to avoid SetIsValid() and ClearResults()
-                    if (dtView.ColumnNames.Contains(nameof(InputData)))
-                    {
-                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
+                        // The InputData setter triggers SetIsValid(), ClearResults(), and updates inner analysis DataFrame.
+                        // ProbabilityOrdinates.FromDelimitedString() triggers CollectionChanged â†’ SetIsValid() + ClearResults().
+                        // A single SetIsValid() call at the end of Open() is sufficient.
+                        if (dtView.ColumnNames.Contains(nameof(Name)))
                         {
-                            if (collection.GetType() == typeof(InputDataCollection))
+                            _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                            foreach (var item in _messages) item.SourceName = _name;
+                            _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "UDA");
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(Description)))
+                        {
+                            _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                            if (string.IsNullOrEmpty(_description))
+                                _messenger.Add(_descriptionMsg);
+                            else
+                                _messenger.Remove(_descriptionMsg);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                        if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                        // Plot Properties — deserialize into Plot objects
+                        DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ChronologyPlotSettings", _chronologyPlot);
+                        _bayesianController.Deserialize(dtView, rowIndex);
+
+
+                        // Get input data - use backing field to avoid SetIsValid() and ClearResults()
+                        if (dtView.ColumnNames.Contains(nameof(InputData)))
+                        {
+                            var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                             {
-                                foreach (IElement element in collection)
+                                if (collection.GetType() == typeof(InputDataCollection))
                                 {
-                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                    foreach (IElement element in collection)
                                     {
-                                        _inputData = (InputData)element;
-                                        _inputData.PropertyChanged += InputDataChanged;
-                                        _inputDataValid = _inputData.IsValid;
-                                        if (!_inputDataValid)
+                                        if (element.Name == inputDataName && element.GetType() == typeof(InputData))
                                         {
-                                            _messenger.Remove(_inputDataNullMsg);
-                                            _messenger.Add(_inputDataInValidMsg);
+                                            _inputData = (InputData)element;
+                                            _inputData.PropertyChanged += InputDataChanged;
+                                            _inputDataValid = _inputData.IsValid;
+                                            if (!_inputDataValid)
+                                            {
+                                                _messenger.Remove(_inputDataNullMsg);
+                                                _messenger.Add(_inputDataInValidMsg);
+                                            }
+                                            else
+                                            {
+                                                _messenger.Remove(_inputDataNullMsg);
+                                                _messenger.Remove(_inputDataInValidMsg);
+                                            }
+                                            break;
                                         }
-                                        else
-                                        {
-                                            _messenger.Remove(_inputDataNullMsg);
-                                            _messenger.Remove(_inputDataInValidMsg);
-                                        }
-                                        break;
                                     }
                                 }
                             }
                         }
-                    }
-                    // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
-                    if (_inputData == null)
-                        _messenger.Add(_inputDataNullMsg);
+                        // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
+                        if (_inputData == null)
+                            _messenger.Add(_inputDataNullMsg);
 
-                    // Get model and reconstruct the inner analysis
-                    if (dtView.ColumnNames.Contains(nameof(UnivariateDistribution)) && InputData != null && InputData.DataFrame != null)
-                    {
-                        var modelXElement = XElement.Parse(dtView.GetCell(nameof(UnivariateDistribution), rowIndex).ToString());
-                        var dist = new UnivariateDistribution(InputData.DataFrame, modelXElement);
-
-                        // Build the analysis XElement â€” try AnalysisXml first (atomic), fall back to legacy columns
-                        XElement analysisXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
-                        if (analysisXElement == null)
+                        // Get model and reconstruct the inner analysis
+                        if (dtView.ColumnNames.Contains(nameof(UnivariateDistribution)) && InputData != null && InputData.DataFrame != null)
                         {
-                            // Legacy fallback: build XElement from individual columns
-                            analysisXElement = new XElement("UnivariateAnalysis");
-                            if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                            var modelXElement = XElement.Parse(dtView.GetCell(nameof(UnivariateDistribution), rowIndex).ToString());
+                            var dist = new UnivariateDistribution(InputData.DataFrame, modelXElement);
+
+                            // Build the analysis XElement — try AnalysisXml first (atomic), fall back to legacy columns
+                            XElement analysisXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+                            if (analysisXElement == null)
                             {
-                                var probStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
-                                analysisXElement.Add(new XElement("ProbabilityOrdinates", probStr));
+                                // Legacy fallback: build XElement from individual columns
+                                analysisXElement = new XElement("UnivariateAnalysis");
+                                if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                                {
+                                    var probStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
+                                    analysisXElement.Add(new XElement("ProbabilityOrdinates", probStr));
+                                }
+                                if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                                {
+                                    var bayesStr = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                                    if (!string.IsNullOrEmpty(bayesStr))
+                                        analysisXElement.Add(XElement.Parse(bayesStr));
+                                }
                             }
-                            if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                            {
-                                var bayesStr = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                                if (!string.IsNullOrEmpty(bayesStr))
-                                    analysisXElement.Add(XElement.Parse(bayesStr));
-                            }
+
+                            // Load MCMCResults from byte[] column
+                            MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+
+                            // Set IsEstimated attribute based on whether MCMC results exist (for legacy fallback XElement)
+                            if (analysisXElement.Attribute("IsEstimated") == null)
+                                analysisXElement.Add(new XAttribute("IsEstimated", mcmcResults != null));
+
+                            // Load AnalysisResults from XML column
+                            UncertaintyAnalysisResults analysisResults =
+                                AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                            // Load ChronologyAnalysisResults from XML column
+                            UncertaintyAnalysisResults chronResults =
+                                AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(ChronologyAnalysisResults), rowIndex, Name);
+
+                            // Reconstruct inner analysis — model handles XElement parsing + results restoration
+                            UnsubscribeInnerAnalysis();
+                            _innerAnalysis = new ModelAnalyses.UnivariateAnalysis(
+                                dist, analysisXElement, mcmcResults, analysisResults, chronResults);
+                            SubscribeInnerAnalysis();
                         }
 
-                        // Load MCMCResults from byte[] column
-                        MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-
-                        // Set IsEstimated attribute based on whether MCMC results exist (for legacy fallback XElement)
-                        if (analysisXElement.Attribute("IsEstimated") == null)
-                            analysisXElement.Add(new XAttribute("IsEstimated", mcmcResults != null));
-
-                        // Load AnalysisResults from XML column
-                        UncertaintyAnalysisResults analysisResults =
-                            AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                        // Load ChronologyAnalysisResults from XML column
-                        UncertaintyAnalysisResults chronResults =
-                            AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(ChronologyAnalysisResults), rowIndex, Name);
-
-                        // Reconstruct inner analysis â€” model handles XElement parsing + results restoration
-                        UnsubscribeInnerAnalysis();
-                        _innerAnalysis = new ModelAnalyses.UnivariateAnalysis(
-                            dist, analysisXElement, mcmcResults, analysisResults, chronResults);
-                        SubscribeInnerAnalysis();
                     }
 
                 }
-
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
 
             // Reconnect undo bridges to the (possibly new) inner analysis collections.
             // Critical when Open() is called outside the constructor (e.g., CopyFromExternal),
@@ -926,7 +932,7 @@ namespace RMC.BestFit.UI
                         }
                     }
                 }
-                // Plot Properties â€” deserialize into Plot objects (v1 format used OxyPlotSettingsSerializer)
+                // Plot Properties — deserialize into Plot objects (v1 format used OxyPlotSettingsSerializer)
                 DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
                 DeserializePlotSettings(dtView, rowIndex, "KernelDensityPlotSettings", _bayesianController.KernelDensityPlot);
                 DeserializePlotSettings(dtView, rowIndex, "HistogramPlotSettings", _bayesianController.HistogramPlot);
@@ -1176,7 +1182,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1296,7 +1302,7 @@ namespace RMC.BestFit.UI
                         ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter),
                         ProbabilityOrdinates.DefaultDelimiter);
 
-                // Copy plot settings via PlotSerializer round-trip (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings via PlotSerializer round-trip (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null) PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
                 if (_chronologyPlot != null) PlotSerializer.FromXElement(element._chronologyPlot, PlotSerializer.ToXElement(_chronologyPlot));
                 _bayesianController.CopyTo(element._bayesianController);
@@ -1323,7 +1329,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new UnivariateAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1337,7 +1343,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
             // Unhook upstream Deleted subscription so the upstream's event-handler list
             // does not keep this instance alive. We do NOT go through the InputData setter
-            // here â€” that setter would re-add _inputDataNullMsg and re-flip IsDirty=true,
+            // here — that setter would re-add _inputDataNullMsg and re-flip IsDirty=true,
             // which would break messenger cleanup and trigger a spurious save prompt when
             // an open tab for this element is closed afterwards.
             if (_inputData != null) _inputData.Deleted -= OnInputDataDeleted;
@@ -1346,7 +1352,7 @@ namespace RMC.BestFit.UI
             UnsubscribeInnerAnalysis();
             SetIsDirty(false);
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {
@@ -1390,7 +1396,7 @@ namespace RMC.BestFit.UI
             if (_ordinatesValid == false) valid = false;
 
             // Delegate model validation to inner analysis.
-            // Skip model validation when InputData is invalid â€” the UI layer already reports that
+            // Skip model validation when InputData is invalid — the UI layer already reports that
             // via _inputDataNullMsg / _inputDataInValidMsg, and the model's "DataFrame is null"
             // message would be a confusing developer-facing duplicate.
             bool modelValid = _inputDataValid
@@ -1422,7 +1428,7 @@ namespace RMC.BestFit.UI
         /// <inheritdoc/>
         public async Task RunAsync(SafeProgressReporter progressReporter)
         {
-            // Snapshot validity locally â€” guards against a hypothetical scenario where a
+            // Snapshot validity locally — guards against a hypothetical scenario where a
             // dispatcher re-entrancy (a binding firing during SetIsValid) flips IsValid back
             // to true between the SetIsValid() call and the gate. Defensive; in current code
             // SetIsValid is fully synchronous on the dispatcher.
@@ -1440,7 +1446,7 @@ namespace RMC.BestFit.UI
             }
             catch (OperationCanceledException)
             {
-                // User cancelled â€” clear results silently
+                // User cancelled — clear results silently
                 ClearResults();
             }
             catch (Exception ex)
@@ -1618,13 +1624,13 @@ namespace RMC.BestFit.UI
         /// <remarks>
         /// <para>
         /// Uses <see cref="XNode.DeepEquals"/> to deduplicate cascaded PropertyChanged events from a single user action.
-        /// For example, changing DistributionType fires "DistributionType" then "SetDefaultParameters" etc. â€”
+        /// For example, changing DistributionType fires "DistributionType" then "SetDefaultParameters" etc. —
         /// only the first event that detects a diff records the action; subsequent events find no diff and are no-ops.
         /// </para>
         /// <para>
         /// Individual sub-item changes (e.g., <c>ModelParameter.PriorDistribution</c>) bubble up as
         /// PropertyChanged("Parameters") on the model. Since the list reference is unchanged,
-        /// <see cref="UndoableStateBridge"/> cannot capture these â€” but the XElement snapshot does,
+        /// <see cref="UndoableStateBridge"/> cannot capture these — but the XElement snapshot does,
         /// because <see cref="UnivariateDistribution.ToXElement"/> serializes all parameter values and priors.
         /// </para>
         /// </remarks>
@@ -1659,7 +1665,7 @@ namespace RMC.BestFit.UI
         /// <para>
         /// The <see cref="UnivariateDistribution"/> deserialization constructor uses
         /// <c>_isDeserializing = true</c>, which suppresses <c>SetDefaultParameters()</c> and
-        /// <c>SetDefaultQuantilePriors()</c>. The restored state is exactly what was captured â€”
+        /// <c>SetDefaultQuantilePriors()</c>. The restored state is exactly what was captured —
         /// no destructive side effects.
         /// </para>
         /// <para>
@@ -1740,7 +1746,7 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // Distribution undo â€” capture baseline snapshot for XElement comparison.
+            // Distribution undo — capture baseline snapshot for XElement comparison.
             // Recording is done in InnerAnalysis_PropertyChanged (not a separate subscription).
             _distributionSnapshot = _innerAnalysis?.UnivariateDistribution?.ToXElement();
 

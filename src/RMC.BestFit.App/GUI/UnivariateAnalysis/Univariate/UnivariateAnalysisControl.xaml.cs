@@ -37,7 +37,7 @@ namespace RMC_BestFit
             InitializeComponent();
             DataContext = this;
             _colorHexCodes = GenericControls.GeneralMethods.RandomColorsLongList;
-            // DataGrid Binding.StringFormat must be set before first render — see
+            // DataGrid Binding.StringFormat must be set before first render â€” see
             // RatingCurveAnalysisControl constructor for the rationale.
             SetColumnStringFormats();
         }
@@ -101,7 +101,7 @@ namespace RMC_BestFit
             // (theme-deferred Background / PlotAreaBackground PropertyChanged on Bayesian
             // plots that live in non-selected TabItems). PropertiesCalled /
             // PlotPropertiesCalled are wired in XAML on every toolbar and every Bayesian
-            // sub-control — no programmatic += needed.
+            // sub-control â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.FrequencyPlotHost.Content = newElement.FrequencyPlot;
@@ -192,7 +192,7 @@ namespace RMC_BestFit
                 BindFrequencyCurveDataGrid();
 
                 // One-time setup: column headers and summary grid layout do not need to
-                // re-run on every transient visual-tree cycle — only on the first load
+                // re-run on every transient visual-tree cycle â€” only on the first load
                 // after a new Element is assigned (U1).
                 if (!_isLoaded)
                 {
@@ -219,7 +219,7 @@ namespace RMC_BestFit
         {
             // Reset _isLoaded so the next Loaded event re-runs one-time setup steps.
             // Element-scoped lifecycle (PropertyChanged, plot hosts, toolbars) is owned by
-            // ElementCallback and survives unload/reload cycles — no additional teardown needed.
+            // ElementCallback and survives unload/reload cycles â€” no additional teardown needed.
             _isLoaded = false;
         }
 
@@ -242,7 +242,7 @@ namespace RMC_BestFit
         {
             // Marshal to UI thread if called from a background thread. The model layer's
             // ReprocessIfEstimated path uses TaskScheduler.Default and AnalysisBase.RaisePropertyChange
-            // does NOT marshal — so AnalysisResults / ChronologyAnalysisResults notifications can
+            // does NOT marshal â€” so AnalysisResults / ChronologyAnalysisResults notifications can
             // arrive here on a worker thread. WPF DataGrid and OxyPlot mutations from a worker
             // thread throw InvalidOperationException ("calling thread cannot access this object").
             if (!Dispatcher.CheckAccess())
@@ -308,7 +308,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
@@ -836,6 +836,28 @@ namespace RMC_BestFit
         }
 
         /// <summary>
+        /// Determines whether chronology results are complete enough to draw.
+        /// </summary>
+        /// <param name="results">The chronology results, read once for the redraw.</param>
+        /// <returns>
+        /// <see langword="true"/> when the point-estimate, mean, and interval arrays exist and align, and the
+        /// intervals hold a lower and an upper bound for every step; otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// The chronology redraws from change notifications raised by background reprocesses, so it must never
+        /// index into results that are absent or still being rebuilt.
+        /// </remarks>
+        internal static bool IsChronologyDrawable(Numerics.Distributions.UncertaintyAnalysisResults results)
+        {
+            if (results?.ModeCurve == null || results.MeanCurve == null || results.ConfidenceIntervals == null)
+                return false;
+            int length = results.ModeCurve.Length;
+            return results.MeanCurve.Length == length
+                && results.ConfidenceIntervals.GetLength(0) == length
+                && results.ConfidenceIntervals.GetLength(1) >= 2;
+        }
+
+        /// <summary>
         /// Updates the chronology plot with time series data, threshold information, and nonstationary analysis results.
         /// Displays data points, credible intervals, and mean trends over time for nonstationary distributions.
         /// </summary>
@@ -946,13 +968,14 @@ namespace RMC_BestFit
                     chronologyIntervalData.TrackerFormatString = "{0}" + Environment.NewLine + "{1}: {2:0}" + Environment.NewLine + "{3}: {4:" + UserSettings.ValueStringFormat + "}";
                     if (Element.InputData.DataFrame.IntervalSeries.Count > 0) plot.Series.Add(chronologyIntervalData);
 
-                    // threshold data (dynamic count — created inline)
+                    // threshold data (dynamic count â€” created inline)
                     UpdateThresholdPlotSeries();
 
                     // frequency results
+                    var chronology = Element.ChronologyAnalysisResults;
                     if (Element.BayesianAnalysis != null &&
                         Element.BayesianAnalysis.IsEstimated == true &&
-                        Element.ChronologyAnalysisResults != null &&
+                        IsChronologyDrawable(chronology) &&
                         Element.UnivariateDistribution != null &&
                         Element.UnivariateDistribution.IsNonstationary == true &&
                         Element.InputData.DataFrame.FullTimeSeries.Count > 0)
@@ -961,12 +984,12 @@ namespace RMC_BestFit
                         var prdPoints = new List<OxyPlot.DataPoint>();
                         var mdPoints = new List<OxyPlot.DataPoint>();
                         int t = Element.InputData.DataFrame.FullTimeSeries.First().Index;
-                        for (int i = 0; i < Element.ChronologyAnalysisResults.ModeCurve.Length; i++)
+                        for (int i = 0; i < chronology.ModeCurve.Length; i++)
                         {
-                            var up = Element.ChronologyAnalysisResults.ConfidenceIntervals[i, 1];
-                            var lo = Element.ChronologyAnalysisResults.ConfidenceIntervals[i, 0];
-                            var prd = Element.ChronologyAnalysisResults.MeanCurve[i];
-                            var md = Element.ChronologyAnalysisResults.ModeCurve[i];
+                            var up = chronology.ConfidenceIntervals[i, 1];
+                            var lo = chronology.ConfidenceIntervals[i, 0];
+                            var prd = chronology.MeanCurve[i];
+                            var md = chronology.ModeCurve[i];
                             ciPoints.Add(new Point3D(t, lo, up));
                             prdPoints.Add(new OxyPlot.DataPoint(t, prd));
                             mdPoints.Add(new OxyPlot.DataPoint(t, md));

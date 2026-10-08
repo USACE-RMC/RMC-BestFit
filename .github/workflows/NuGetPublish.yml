@@ -28,9 +28,10 @@ jobs:
         shell: pwsh
         run: |
           $version = $env:GITHUB_REF_NAME -replace '^v', ''
-          if ($version -ne '2.0.0') {
-            throw "The first public NuGet publish is restricted to v2.0.0; got '$env:GITHUB_REF_NAME'."
-          }
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Tag '$env:GITHUB_REF_NAME' is not vX.Y.Z." }
+          [xml]$props = Get-Content Directory.Build.props
+          $projectVersion = @($props.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          if ($version -ne $projectVersion) { throw "Tag $version does not match Directory.Build.props Version $projectVersion." }
           "VERSION=$version" >> $env:GITHUB_ENV
 
       - name: Restore

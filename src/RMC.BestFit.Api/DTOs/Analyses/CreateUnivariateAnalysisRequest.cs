@@ -64,6 +64,10 @@ namespace RMC.BestFit.Api.DTOs
         [JsonPropertyName("useSingleQuantile")]
         public bool? UseSingleQuantile { get; set; }
 
+        /// <summary>Optional override of the existing Jeffreys scale rule; null preserves the model default.</summary>
+        [JsonPropertyName("useJeffreysRuleForScale")]
+        public bool? UseJeffreysRuleForScale { get; set; }
+
         /// <summary>
         /// Optional display name for the analysis. Defaults to "{distribution} analysis of {input data name}".
         /// </summary>

@@ -99,5 +99,21 @@ namespace RMC.BestFit.Api.Tests.Mcp
             Assert.AreEqual(2, exactData.GetArrayLength());
             Assert.IsTrue(exactData[0].GetProperty("plottingPosition").GetDouble() > 0d);
         }
+
+        /// <summary>
+        /// Mirrors the service-level rejection through the MCP tool wrapper: a preflagged
+        /// observation with no threshold and no MGBT is rejected (Haden Smith's 26 September 2026
+        /// decision, Task 3.20 / finding L29), the same as the REST endpoint.
+        /// </summary>
+        [TestMethod]
+        public void CreateInputDataManual_PreflagWithoutThreshold_Throws()
+        {
+            var ex = Assert.ThrowsException<ArgumentException>(() => _tools.CreateInputDataManual(new List<ExactObservationDto>
+            {
+                new() { Index = 2000, Value = 100d, IsLowOutlier = true },
+                new() { Index = 2001, Value = 200d }
+            }));
+            StringAssert.Contains(ex.Message, "require lowOutlierThreshold");
+        }
     }
 }

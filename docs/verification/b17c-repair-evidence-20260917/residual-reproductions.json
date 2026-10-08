@@ -1,0 +1,4098 @@
+{
+  "replicate-8": {
+    "fixture": {
+      "kind": "fixture",
+      "context": "replicate-8",
+      "values": [
+        3.380750250638563,
+        3.176893990958648,
+        3.2585215898940634,
+        3.467273790964562,
+        3.0315894011413542,
+        3.299102136483938,
+        3.1963400115139766,
+        3.456355049809011,
+        3.369009181851475,
+        3.2468361174600813,
+        3.2201747312979747,
+        3.273248793046765,
+        3.3167206897378705,
+        3.4767023117328657,
+        3.265516139995154,
+        3.2409836371722704,
+        3.2614744232339254,
+        3.177654485679421,
+        3.0612538492636947,
+        3.122930409796311,
+        3.553368922273946,
+        3.0265242213874237,
+        3.3143168797057387,
+        3.2817093598467375,
+        3.1694241985054328,
+        3.1211640055632683,
+        3.513656636853309,
+        3.1407896338425525,
+        3.184561447860832,
+        3.241112617050736,
+        3.659205867992092,
+        3.159553765114427,
+        3.099720728185225,
+        3.170575543085088,
+        3.370532190499365,
+        3.2107185014814883,
+        3.4756158732450846,
+        3.238121267651586,
+        3.4410632315528256,
+        3.1233264303958332,
+        3.7607464190627975,
+        3.314200165155462,
+        3.1062120748036595,
+        3.3948451312497325,
+        3.290737992706486,
+        3.4349555583791034,
+        3.1423714355796597,
+        3.3068427489150496,
+        3.2660690287012697,
+        3.408254403059295,
+        3.3894768471870593,
+        3.341029778926955,
+        3.2956559889552124,
+        3.205324912231897,
+        3.28419882054617,
+        3.4803883546441896,
+        3.3204255684499766,
+        3.26605612736998,
+        3.248888921725927,
+        3.226315405986251,
+        3.7286779551984193,
+        3.3304650045335253,
+        3.225212297773635,
+        3.366538724072063,
+        3.2673671925912444,
+        3.772472175592491,
+        3.2536251723989156,
+        3.343034081556053
+      ],
+      "center": -0.2967029622478128,
+      "mse": 0.078,
+      "initial": [
+        3.328586975163675,
+        0.14059047532656307,
+        0.42233732191184603
+      ]
+    },
+    "fit": {
+      "kind": "fit-end",
+      "fit": 10,
+      "context": "replicate-8",
+      "passes": 100,
+      "converged": false,
+      "status": "Success",
+      "fallbacks": 1,
+      "evaluations": 14781,
+      "values": [
+        3.3181854993757844,
+        0.1732220284206678,
+        0.5576639277176609
+      ]
+    },
+    "passes": [
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 1,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 12,
+        "iterations": 11,
+        "values": [
+          3.3028312281407426,
+          0.1578388055583333,
+          -0.2965939815685501
+        ],
+        "q": 1.3803092371448401e-05
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 2,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.3001943336063073,
+          0.17712431096178552,
+          0.31768022136107615
+        ],
+        "q": 0.06518487280333105
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 3,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.2920590365479723,
+          0.13653856993043267,
+          -0.082601306031234
+        ],
+        "q": 0.03928176133922793
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 4,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 20,
+        "iterations": 14,
+        "values": [
+          3.318421684308542,
+          0.17285823923044336,
+          0.5525808521494893
+        ],
+        "q": 0.09809038283352756
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 5,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.2929700249311877,
+          0.1322986892742171,
+          -0.15736007952255143
+        ],
+        "q": 0.0284545920388828
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 6,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 26,
+        "iterations": 17,
+        "values": [
+          3.318274413926752,
+          0.1731842928932965,
+          0.558442293298571
+        ],
+        "q": 0.09872030638247306
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 7,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.292925989682624,
+          0.132316956783568,
+          -0.16074732628329158
+        ],
+        "q": 0.027780606323870596
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 8,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 27,
+        "iterations": 20,
+        "values": [
+          3.318181967748423,
+          0.17322199769887028,
+          0.5576821362953697
+        ],
+        "q": 0.09859140911552845
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 9,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.2929195195308423,
+          0.13232071615897403,
+          -0.1606996703791426
+        ],
+        "q": 0.027787718347500937
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 10,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 27,
+        "iterations": 20,
+        "values": [
+          3.3181823748105814,
+          0.17322207491359015,
+          0.5576725214417263
+        ],
+        "q": 0.09859011113047132
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 11,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.292919485633096,
+          0.1323207338664618,
+          -0.16069713477275246
+        ],
+        "q": 0.0277882045295033
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 12,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 44,
+        "iterations": 22,
+        "values": [
+          3.3181824385226903,
+          0.173222051441167,
+          0.55767293147011
+        ],
+        "q": 0.09859018337928996
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 13,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.2929194894856546,
+          0.13232073159411126,
+          -0.16069714536215618
+        ],
+        "q": 0.02778820379894889
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 14,
+        "optimizer": "BFGS",
+        "status": "LineSearchFailed",
+        "evals": 48,
+        "iterations": 19,
+        "values": [
+          3.3181824387927388,
+          0.17322205120079048,
+          0.557672940801158
+        ],
+        "q": 0.09859018478072872
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 14,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 109,
+        "iterations": 63,
+        "values": [
+          3.3181824387927388,
+          0.17322205120079048,
+          0.557672940801158
+        ],
+        "q": 0.09859018478072872
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 15,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.292917298881483,
+          0.1323189254228871,
+          -0.16071006518824194
+        ],
+        "q": 0.027788203650003784
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 16,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 206,
+        "iterations": 114,
+        "values": [
+          3.318187753504889,
+          0.1732221932009429,
+          0.5576515441785841
+        ],
+        "q": 0.09859101558830806
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 17,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 144,
+        "iterations": 76,
+        "values": [
+          3.2929200973900556,
+          0.132320578125649,
+          -0.16069002831353552
+        ],
+        "q": 0.027789315675504602
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 18,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 188,
+        "iterations": 102,
+        "values": [
+          3.31818042539647,
+          0.17322271215691193,
+          0.5576691499301425
+        ],
+        "q": 0.0985905541973818
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 19,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 135,
+        "iterations": 71,
+        "values": [
+          3.2929218769086033,
+          0.13232159932983878,
+          -0.16070823792014477
+        ],
+        "q": 0.027787770388997116
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 20,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 188,
+        "iterations": 101,
+        "values": [
+          3.318185002545696,
+          0.17322147949251798,
+          0.5576672020490794
+        ],
+        "q": 0.09858923237166042
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 21,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 145,
+        "iterations": 76,
+        "values": [
+          3.292920453607144,
+          0.1323213747626958,
+          -0.16067446000528757
+        ],
+        "q": 0.02778910610074729
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 22,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 189,
+        "iterations": 102,
+        "values": [
+          3.318181640322341,
+          0.17322346473056488,
+          0.5576438589432718
+        ],
+        "q": 0.09859050835344679
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 23,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 142,
+        "iterations": 76,
+        "values": [
+          3.292919796183649,
+          0.1323208435090959,
+          -0.16072873494913126
+        ],
+        "q": 0.02778850492645053
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 24,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 207,
+        "iterations": 115,
+        "values": [
+          3.3181785989726773,
+          0.17322274510410496,
+          0.5576780105800889
+        ],
+        "q": 0.09858903839099352
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 25,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 143,
+        "iterations": 77,
+        "values": [
+          3.2929199970524525,
+          0.13232178235566505,
+          -0.16066651539822396
+        ],
+        "q": 0.02778721897807256
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 26,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 104,
+        "values": [
+          3.318179553026483,
+          0.17322155467164624,
+          0.5576998924212928
+        ],
+        "q": 0.09859046760310525
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 27,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 149,
+        "iterations": 82,
+        "values": [
+          3.292919053783962,
+          0.13232204768913103,
+          -0.16068752977251738
+        ],
+        "q": 0.02778711796161359
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 28,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 103,
+        "values": [
+          3.318179575168362,
+          0.17322303398468475,
+          0.557668074952959
+        ],
+        "q": 0.09858953632824519
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 29,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 73,
+        "values": [
+          3.292919069348259,
+          0.13232239975014126,
+          -0.16068480749126363
+        ],
+        "q": 0.027787514292035694
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 30,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 103,
+        "values": [
+          3.318185337770961,
+          0.17322161643936895,
+          0.5576676426867067
+        ],
+        "q": 0.09858937142541603
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 31,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 145,
+        "iterations": 76,
+        "values": [
+          3.292920788832477,
+          0.13232151170954676,
+          -0.1606740193676603
+        ],
+        "q": 0.027788944711889516
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 32,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 188,
+        "iterations": 101,
+        "values": [
+          3.3181851238164737,
+          0.17322073847536112,
+          0.5576755217299311
+        ],
+        "q": 0.0985904312404304
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 33,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 144,
+        "iterations": 77,
+        "values": [
+          3.292919451444962,
+          0.13232190506460995,
+          -0.1607019149191097
+        ],
+        "q": 0.027789353446270322
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 34,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 102,
+        "values": [
+          3.3181835534640216,
+          0.1732214725147039,
+          0.5576776030950961
+        ],
+        "q": 0.09858916247664097
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 35,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 142,
+        "iterations": 76,
+        "values": [
+          3.292918484729923,
+          0.13232207179099453,
+          -0.16069885400303302
+        ],
+        "q": 0.027788504235738427
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 36,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 102,
+        "values": [
+          3.318182586748983,
+          0.17322163924110434,
+          0.5576806640111713
+        ],
+        "q": 0.09858912011782424
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 37,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 136,
+        "iterations": 72,
+        "values": [
+          3.2929224274008657,
+          0.13232177415833213,
+          -0.16070315414658654
+        ],
+        "q": 0.02778815988207002
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 38,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 193,
+        "iterations": 104,
+        "values": [
+          3.318180686723979,
+          0.17322329973216885,
+          0.5576535736013117
+        ],
+        "q": 0.0985892903507837
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 39,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.2929213492724667,
+          0.13232212712316443,
+          -0.16069991789544405
+        ],
+        "q": 0.027788099780426363
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 40,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 103,
+        "values": [
+          3.31817770226401,
+          0.17322234562379363,
+          0.5576789829297717
+        ],
+        "q": 0.09858911512946388
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 41,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 142,
+        "iterations": 75,
+        "values": [
+          3.292920542088412,
+          0.13232012461584852,
+          -0.16069625426863038
+        ],
+        "q": 0.02778755761306665
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 42,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 103,
+        "values": [
+          3.3181869538838686,
+          0.17322076400025987,
+          0.5576776650237582
+        ],
+        "q": 0.09859068658843549
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 43,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 144,
+        "iterations": 76,
+        "values": [
+          3.292918438344686,
+          0.13232132652930306,
+          -0.16066885973104494
+        ],
+        "q": 0.027789202999840213
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 44,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 193,
+        "iterations": 104,
+        "values": [
+          3.3181845227365274,
+          0.17322068273462204,
+          0.5576887886746116
+        ],
+        "q": 0.09859068305657387
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 45,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 143,
+        "iterations": 76,
+        "values": [
+          3.29291944075546,
+          0.13231913790006064,
+          -0.16071901130638824
+        ],
+        "q": 0.027788632219260635
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 46,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 205,
+        "iterations": 113,
+        "values": [
+          3.318182840076453,
+          0.17322097275950177,
+          0.5576937980942953
+        ],
+        "q": 0.09859060922234474
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 47,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 145,
+        "iterations": 79,
+        "values": [
+          3.2929213490037528,
+          0.1323203559179431,
+          -0.1607130983854638
+        ],
+        "q": 0.027788051515699415
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 48,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 104,
+        "values": [
+          3.318179805165019,
+          0.17322292334031575,
+          0.5576624291717696
+        ],
+        "q": 0.09858996530122069
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 49,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 73,
+        "values": [
+          3.2929185685318805,
+          0.1323224029665913,
+          -0.16068435315038382
+        ],
+        "q": 0.02778795431196878
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 50,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 185,
+        "iterations": 101,
+        "values": [
+          3.3181847048471145,
+          0.1732229642659971,
+          0.5576513586948497
+        ],
+        "q": 0.09858937265261786
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 51,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.2929192979607764,
+          0.13232263748019307,
+          -0.16070310626111367
+        ],
+        "q": 0.027788562338432472
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 52,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 183,
+        "iterations": 100,
+        "values": [
+          3.3181906216829553,
+          0.1732206446375646,
+          0.5576648664002104
+        ],
+        "q": 0.0985885852206399
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 53,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 144,
+        "iterations": 76,
+        "values": [
+          3.2929197252667946,
+          0.13232243838662158,
+          -0.16066090320860224
+        ],
+        "q": 0.027790070785585944
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 54,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 103,
+        "values": [
+          3.3181875180735485,
+          0.17322359027398035,
+          0.5575968423903304
+        ],
+        "q": 0.09859017397676897
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 55,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.292920426900625,
+          0.13232097334593373,
+          -0.16069524625096526
+        ],
+        "q": 0.027791132703930316
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 56,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 104,
+        "values": [
+          3.3181793832009783,
+          0.17322315027052848,
+          0.5576654980123912
+        ],
+        "q": 0.09859009584170038
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 57,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 73,
+        "values": [
+          3.2929188773808926,
+          0.132322516035985,
+          -0.16068738443183223
+        ],
+        "q": 0.027787549869570355
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 58,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 185,
+        "iterations": 101,
+        "values": [
+          3.3181770824321557,
+          0.17322125482257586,
+          0.5577040455028688
+        ],
+        "q": 0.09858919455267848
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 59,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 146,
+        "iterations": 79,
+        "values": [
+          3.2929196777652203,
+          0.13232037191294993,
+          -0.1607033285733389
+        ],
+        "q": 0.027787171545311507
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 60,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 192,
+        "iterations": 105,
+        "values": [
+          3.3181806164919583,
+          0.17322226003966615,
+          0.5576689158738468
+        ],
+        "q": 0.09859024382448549
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 61,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 74,
+        "values": [
+          3.292922683946218,
+          0.13232168647921264,
+          -0.1607058406779211
+        ],
+        "q": 0.027788232082344766
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 62,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 103,
+        "values": [
+          3.318180943269331,
+          0.17322321205305075,
+          0.5576508870699628
+        ],
+        "q": 0.0985892697705242
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 63,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.2929213503989683,
+          0.1323224866205957,
+          -0.1606987533332631
+        ],
+        "q": 0.027788343916332302
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 64,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 193,
+        "iterations": 106,
+        "values": [
+          3.3181784954361633,
+          0.1732228575476244,
+          0.5576669702744823
+        ],
+        "q": 0.09858889097387268
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 65,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 135,
+        "iterations": 71,
+        "values": [
+          3.2929169755953125,
+          0.132318697216259,
+          -0.16071594780664156
+        ],
+        "q": 0.027787753674376386
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 66,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 208,
+        "iterations": 115,
+        "values": [
+          3.318183035270466,
+          0.173221903347624,
+          0.5576736202153019
+        ],
+        "q": 0.09859097462382486
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 67,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 74,
+        "values": [
+          3.2929198806350994,
+          0.13231944192777667,
+          -0.16068676933479284
+        ],
+        "q": 0.02778831039311243
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 68,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 192,
+        "iterations": 106,
+        "values": [
+          3.318180003647675,
+          0.17322151493250043,
+          0.5576945170927825
+        ],
+        "q": 0.09859149223362675
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 69,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 140,
+        "iterations": 77,
+        "values": [
+          3.292921445557344,
+          0.13231816553670478,
+          -0.16076028762113403
+        ],
+        "q": 0.027787472327508327
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 70,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 207,
+        "iterations": 114,
+        "values": [
+          3.3181808877190906,
+          0.17322322715330313,
+          0.5576527861776105
+        ],
+        "q": 0.09858997076781761
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 71,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.292921294848659,
+          0.13232250172084808,
+          -0.1606968542256184
+        ],
+        "q": 0.027788217811705124
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 72,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 190,
+        "iterations": 104,
+        "values": [
+          3.3181818262089102,
+          0.1732238577615373,
+          0.5576312440895776
+        ],
+        "q": 0.09858894325160245
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 73,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 141,
+        "iterations": 75,
+        "values": [
+          3.292918439059768,
+          0.13231944094498116,
+          -0.16072737860222291
+        ],
+        "q": 0.027788853767685334
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 74,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 205,
+        "iterations": 114,
+        "values": [
+          3.3181788520090176,
+          0.17322199041444059,
+          0.5576968047269868
+        ],
+        "q": 0.09859007837755461
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 75,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 142,
+        "iterations": 75,
+        "values": [
+          3.292920742832536,
+          0.1323221566112531,
+          -0.16070452508830524
+        ],
+        "q": 0.02778686689001937
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 76,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 192,
+        "iterations": 104,
+        "values": [
+          3.3181841162523913,
+          0.17322165274608314,
+          0.5576603415096002
+        ],
+        "q": 0.09858892171944311
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 77,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 140,
+        "iterations": 75,
+        "values": [
+          3.2929192037774113,
+          0.13232263532800698,
+          -0.16069927828619407
+        ],
+        "q": 0.027789335924314863
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 78,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 193,
+        "iterations": 104,
+        "values": [
+          3.318179794680651,
+          0.1732232115390423,
+          0.5576561817629253
+        ],
+        "q": 0.09858871059769267
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 79,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.292920222950374,
+          0.13232015781575773,
+          -0.16073262099373095
+        ],
+        "q": 0.027788034406893872
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 80,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 200,
+        "iterations": 110,
+        "values": [
+          3.3181754827100542,
+          0.17322079888218733,
+          0.5577239451585172
+        ],
+        "q": 0.09858942110272828
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 81,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 75,
+        "values": [
+          3.29292350867383,
+          0.13232316533179342,
+          -0.16065259807744975
+        ],
+        "q": 0.027786459086521838
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 82,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 204,
+        "iterations": 110,
+        "values": [
+          3.3181833294574083,
+          0.17322374582334754,
+          0.5576348437351106
+        ],
+        "q": 0.09859001465731872
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 83,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 140,
+        "iterations": 75,
+        "values": [
+          3.292917533578393,
+          0.1323211439982771,
+          -0.16066675046175438
+        ],
+        "q": 0.02778875424288622
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 84,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 193,
+        "iterations": 105,
+        "values": [
+          3.3181816138440294,
+          0.17322217935033185,
+          0.557673179780355
+        ],
+        "q": 0.09859086580452196
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 85,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.292921454495895,
+          0.13232231426756064,
+          -0.16071063837740296
+        ],
+        "q": 0.02778806262506429
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 86,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 188,
+        "iterations": 101,
+        "values": [
+          3.3181789330851266,
+          0.17322092408297382,
+          0.5577125232978151
+        ],
+        "q": 0.09858861733515772
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 87,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 145,
+        "iterations": 78,
+        "values": [
+          3.292918205741441,
+          0.1323198500986924,
+          -0.1606977532640941
+        ],
+        "q": 0.02778700345889921
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 88,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 197,
+        "iterations": 109,
+        "values": [
+          3.3181828742382207,
+          0.17322246708381536,
+          0.5576616163667034
+        ],
+        "q": 0.09859077822460625
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 89,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 143,
+        "iterations": 75,
+        "values": [
+          3.2929195217049,
+          0.13232110658225837,
+          -0.16070691096987194
+        ],
+        "q": 0.02778845423966421
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 90,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 103,
+        "values": [
+          3.3181790707894354,
+          0.1732228304135492,
+          0.5576676505871865
+        ],
+        "q": 0.09858957976991525
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 91,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 136,
+        "iterations": 71,
+        "values": [
+          3.2929173226186346,
+          0.13232110142068657,
+          -0.1606737133396982
+        ],
+        "q": 0.027787740777596326
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 92,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 192,
+        "iterations": 104,
+        "values": [
+          3.318181729986894,
+          0.17322200946886573,
+          0.5576759051647315
+        ],
+        "q": 0.09859065532668919
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 93,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 138,
+        "iterations": 73,
+        "values": [
+          3.292921570638777,
+          0.1323221443860959,
+          -0.1607079129930271
+        ],
+        "q": 0.02778807143321275
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 94,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 192,
+        "iterations": 104,
+        "values": [
+          3.318180829326481,
+          0.17322194113679268,
+          0.5576815495958021
+        ],
+        "q": 0.0985888362867233
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 95,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 139,
+        "iterations": 73,
+        "values": [
+          3.2929184032665986,
+          0.1323203860536756,
+          -0.1606946702308128
+        ],
+        "q": 0.027787808572563973
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 96,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 195,
+        "iterations": 106,
+        "values": [
+          3.318180267141474,
+          0.1732226753565156,
+          0.557676496541655
+        ],
+        "q": 0.09859049510905676
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 97,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 140,
+        "iterations": 74,
+        "values": [
+          3.29291941328262,
+          0.13232258547360437,
+          -0.16068891546124892
+        ],
+        "q": 0.027787376896520104
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 98,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 191,
+        "iterations": 105,
+        "values": [
+          3.318180621945767,
+          0.1732211111070212,
+          0.5576879587173478
+        ],
+        "q": 0.09858910443627547
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 99,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 142,
+        "iterations": 77,
+        "values": [
+          3.292921657078107,
+          0.13231943600586682,
+          -0.16070212826098887
+        ],
+        "q": 0.027788255890898658
+      },
+      {
+        "kind": "pass-end",
+        "fit": 10,
+        "context": "replicate-8",
+        "pass": 100,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 195,
+        "iterations": 108,
+        "values": [
+          3.3181854993757844,
+          0.1732220284206678,
+          0.5576639277176609
+        ],
+        "q": 0.09859101915132111
+      }
+    ],
+    "regularization": [],
+    "seed": 1219180210
+  },
+  "replicate-213": {
+    "fixture": {
+      "kind": "fixture",
+      "context": "replicate-213",
+      "values": [
+        3.209489998597022,
+        3.1160788657714225,
+        3.469090455557034,
+        3.221685818300033,
+        3.3210971234543285,
+        3.381206867274168,
+        3.2195166811335962,
+        3.2259053934143855,
+        3.2180675400735175,
+        3.1803354957982073,
+        3.3155954956033975,
+        3.3276371936755185,
+        3.184907194223476,
+        3.688016892141059,
+        3.307997592347329,
+        3.3005599412335203,
+        3.146926344635872,
+        3.232187067788656,
+        3.433714993364935,
+        3.4968177886058087,
+        3.4271829087226653,
+        3.3005799479322206,
+        3.6208291262929677,
+        3.3079497972931797,
+        3.2374839264947934,
+        3.029308289526769,
+        3.3592237252246284,
+        3.1891726433935275,
+        3.3411387629014775,
+        3.1299913962796055,
+        3.2690657982223668,
+        3.3224080800653595,
+        3.288265136520059,
+        3.2443353296425066,
+        3.2456097319732367,
+        3.2899529283699205,
+        3.3591502747899757,
+        3.3516103362916834,
+        3.092552396108933,
+        3.362577663771374,
+        3.154718581478248,
+        3.644684662729934,
+        3.2873082569363263,
+        3.745460505645778,
+        3.0136331311365794,
+        3.279300791908442,
+        3.293058263547494,
+        3.279599735413529,
+        3.7864993651310264,
+        3.2891139909733087,
+        3.3528514487106778,
+        3.316481541356204,
+        3.402258754745115,
+        3.2832847915310897,
+        3.1335746527179866,
+        3.236877165784757,
+        3.148206589540881,
+        3.376911534349766,
+        3.3298921243995885,
+        3.54446986875286,
+        3.0769065598754852,
+        3.075616296432032,
+        3.294164648240913,
+        3.1833914139828954,
+        3.1303246828611013,
+        3.3258536226575015,
+        3.1339611150277022,
+        3.159835522862764
+      ],
+      "center": -0.33635828149343044,
+      "mse": 0.078,
+      "initial": [
+        3.328586975163675,
+        0.14059047532656307,
+        0.42233732191184603
+      ]
+    },
+    "fit": {
+      "kind": "fit-end",
+      "fit": 215,
+      "context": "replicate-213",
+      "passes": 7,
+      "converged": true,
+      "status": "Success",
+      "fallbacks": 0,
+      "evaluations": 96,
+      "values": [
+        1.11022302462516e-16,
+        1.110223025737718e-16,
+        -0.3363582814934326
+      ]
+    },
+    "passes": [
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 1,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 10,
+        "iterations": 9,
+        "values": [
+          3.2951714544661668,
+          0.15564690193418787,
+          -0.33624934834116055
+        ],
+        "q": 1.5009220555119988e-05
+      },
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 2,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 18,
+        "iterations": 12,
+        "values": [
+          3.2917129219945958,
+          0.17716424402230221,
+          0.3208518995249611
+        ],
+        "q": 0.07414900503677327
+      },
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 3,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 16,
+        "iterations": 12,
+        "values": [
+          3.2830237767989026,
+          0.13186695769005655,
+          -0.1392714607664013
+        ],
+        "q": 0.04192292623421374
+      },
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 4,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 30,
+        "iterations": 21,
+        "values": [
+          3.312007545374723,
+          0.17254713757013057,
+          0.587984392204608
+        ],
+        "q": 0.11489385067099152
+      },
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 5,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 16,
+        "iterations": 11,
+        "values": [
+          3.284382241455437,
+          0.1282733852555582,
+          -0.21493203293183347
+        ],
+        "q": 0.028484040440059512
+      },
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 6,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 5,
+        "iterations": 4,
+        "values": [
+          1.11022302462516e-16,
+          1.110223025737718e-16,
+          -0.3363582814934326
+        ],
+        "q": -88496710.90597303
+      },
+      {
+        "kind": "pass-end",
+        "fit": 215,
+        "context": "replicate-213",
+        "pass": 7,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 1,
+        "iterations": 0,
+        "values": [
+          1.11022302462516e-16,
+          1.110223025737718e-16,
+          -0.3363582814934326
+        ],
+        "q": -0.5000000321433655
+      }
+    ],
+    "regularization": [
+      {
+        "matrix": [
+          [
+            0.01634642985063478,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912013373976332,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.361399178720463e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.092331071132015e-06,
+          0.0004885661438861361,
+          0.016401771367004613
+        ],
+        "finalFallbackRidge": 5.627081726606541e-07,
+        "finalFallbackEigenvalues": [
+          -8.529622898471417e-06,
+          0.0004891288520587972,
+          0.01640233407517728
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.01634642985119749,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912013379603414,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.3613992349912805e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.09233050842389e-06,
+          0.0004885661444488444,
+          0.016401771367567326
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.016346429856261863,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912013430247149,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.361399741428636e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.092325444050354e-06,
+          0.0004885661495132181,
+          0.016401771372631692
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.0163464299069056,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912013936684504,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.36140480580219e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.092274800314794e-06,
+          0.0004885662001569537,
+          0.016401771423275428
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.016346430413342952,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912019001058059,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.3614554495377294e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.091768362959445e-06,
+          0.0004885667065943092,
+          0.016401771929712785
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.016346435477716508,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912069644793598,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.361961886893124e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.086703989405505e-06,
+          0.0004885717709678628,
+          0.01640177699408634
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.016346486121452047,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004912576082148993,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.36702626044707e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.036060253866051e-06,
+          0.0004886224147034024,
+          0.01640182763782188
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.016346992558807442,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004917640455702939,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.417669995986529e-05
+          ]
+        ],
+        "eigenvalues": [
+          -8.529622898471417e-06,
+          0.0004891288520587972,
+          0.01640233407517728
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.016352056932361386,
+            -0.0005398365277961114,
+            0.0007743723735985425
+          ],
+          [
+            -0.0005398365277961114,
+            0.0004968284191242397,
+            -0.00011353771970719928
+          ],
+          [
+            0.0007743723735985425,
+            -0.00011353771970719928,
+            4.924107351381117e-05
+          ]
+        ],
+        "eigenvalues": [
+          -3.465249344525512e-06,
+          0.000494193225612743,
+          0.01640739844873122
+        ]
+      }
+    ],
+    "seed": 178747504
+  },
+  "replicate-402": {
+    "fixture": {
+      "kind": "fixture",
+      "context": "replicate-402",
+      "values": [
+        3.452599961902766,
+        3.5302165114554565,
+        3.2038118022544624,
+        3.2461973323200426,
+        3.261174764291755,
+        3.331685129789507,
+        3.252367144133181,
+        3.3554337805775343,
+        3.255335952931921,
+        3.8674153420076567,
+        3.26142715667955,
+        3.4677925619657377,
+        3.236976857990238,
+        3.1442521348452606,
+        3.1214525919535614,
+        3.4365662527265237,
+        3.356671753860953,
+        3.3052019995367075,
+        3.3536884611452207,
+        3.2123153378537608,
+        3.3113011890675734,
+        3.0758148039557365,
+        3.2780328549666486,
+        3.4456333551771356,
+        3.3106880041976097,
+        3.3386854024601185,
+        3.09585184005871,
+        3.477450387358827,
+        3.230414282114768,
+        3.1670694137137314,
+        3.2082318534626135,
+        3.2959806750826353,
+        3.423933618976702,
+        3.1378054801659845,
+        3.2532452281220374,
+        3.194073139185249,
+        3.361072572992638,
+        3.2033867649823833,
+        3.336917352913812,
+        3.2826573734532096,
+        3.4187234711399888,
+        3.332068275840547,
+        3.3143148348355527,
+        3.309249617849899,
+        3.314355210236333,
+        3.249853094098255,
+        3.2493483801622545,
+        3.3929101166532374,
+        3.3672605809138814,
+        3.2008237741834167,
+        3.3288570127072057,
+        3.3586318231497674,
+        3.261104462690692,
+        3.6087079814160368,
+        3.4545104525807875,
+        3.115614782138667,
+        3.304591360496106,
+        3.2393168459189186,
+        3.190743058381248,
+        3.1143366367431624,
+        3.439995039368386,
+        3.3016498340889804,
+        3.4740301533071474,
+        3.4033760641481834,
+        3.383615880187848,
+        3.3015351286569703,
+        3.3867693034533777,
+        3.536631676582139
+      ],
+      "center": -0.2444599028998499,
+      "mse": 0.078,
+      "initial": [
+        3.328586975163675,
+        0.14059047532656307,
+        0.42233732191184603
+      ]
+    },
+    "fit": {
+      "kind": "fit-end",
+      "fit": 404,
+      "context": "replicate-402",
+      "passes": 100,
+      "converged": false,
+      "status": "Success",
+      "fallbacks": 1,
+      "evaluations": 13049,
+      "values": [
+        3.3294844884884554,
+        0.143031896400502,
+        0.6048491021911924
+      ]
+    },
+    "passes": [
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 1,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 12,
+        "iterations": 11,
+        "values": [
+          3.3153681770433865,
+          0.13090991920891568,
+          -0.24442293961682843
+        ],
+        "q": 4.849639346893399e-06
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 2,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 18,
+        "iterations": 12,
+        "values": [
+          3.3133656610923325,
+          0.14719802583976854,
+          0.40995686374897705
+        ],
+        "q": 0.07240610388562405
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 3,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 11,
+        "values": [
+          3.3060320680471214,
+          0.10968712904998598,
+          -0.07182745520521541
+        ],
+        "q": 0.03636524153253116
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 4,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 27,
+        "iterations": 20,
+        "values": [
+          3.330727507635234,
+          0.14380274062657225,
+          0.6506187908494518
+        ],
+        "q": 0.10816588977300144
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 5,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 15,
+        "iterations": 10,
+        "values": [
+          3.3069400721052236,
+          0.10829813276277203,
+          -0.13029136113009693
+        ],
+        "q": 0.025354821680585827
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 6,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 20,
+        "iterations": 15,
+        "values": [
+          3.329074501600376,
+          0.14318931655949033,
+          0.6014371689894724
+        ],
+        "q": 0.10133588316440362
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 7,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 16,
+        "iterations": 11,
+        "values": [
+          3.3069234254173843,
+          0.10809183929838466,
+          -0.11429905544485147
+        ],
+        "q": 0.028922540190226262
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 8,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 22,
+        "iterations": 16,
+        "values": [
+          3.329486669795419,
+          0.14303296935376641,
+          0.6047945541311487
+        ],
+        "q": 0.1019588774693832
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 9,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 20,
+        "iterations": 12,
+        "values": [
+          3.306948255785629,
+          0.10808214395465542,
+          -0.11437764585618808
+        ],
+        "q": 0.028913201150512484
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 10,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 21,
+        "iterations": 15,
+        "values": [
+          3.3294856923488187,
+          0.14303227785831202,
+          0.6048416110049397
+        ],
+        "q": 0.10196576020159048
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 11,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 16,
+        "iterations": 11,
+        "values": [
+          3.306948470538993,
+          0.10808214152018003,
+          -0.11438716457028109
+        ],
+        "q": 0.028911171747805907
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 12,
+        "optimizer": "BFGS",
+        "status": "Success",
+        "evals": 21,
+        "iterations": 15,
+        "values": [
+          3.329485472140277,
+          0.14303235361083044,
+          0.6048403928567788
+        ],
+        "q": 0.10196551179341468
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 13,
+        "optimizer": "BFGS",
+        "status": "LineSearchFailed",
+        "evals": 35,
+        "iterations": 10,
+        "values": [
+          3.3069484594256804,
+          0.10808214651323811,
+          -0.11438725198149904
+        ],
+        "q": 0.02891115101254063
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 13,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 107,
+        "iterations": 62,
+        "values": [
+          3.3069484594256804,
+          0.10808214651323811,
+          -0.11438725198149904
+        ],
+        "q": 0.02891115101254063
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 14,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 165,
+        "iterations": 92,
+        "values": [
+          3.3294851319771874,
+          0.14303386006107358,
+          0.6048177697450177
+        ],
+        "q": 0.101965505550333
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 15,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.3069492997786263,
+          0.10808121611658064,
+          -0.11439039772353257
+        ],
+        "q": 0.028910640405801116
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 16,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 166,
+        "iterations": 94,
+        "values": [
+          3.3294884277073145,
+          0.1430317360912447,
+          0.6048349796367735
+        ],
+        "q": 0.10196624052570759
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 17,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.30694700766244,
+          0.10808125052072468,
+          -0.11438796799225723
+        ],
+        "q": 0.02891226735802553
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 18,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 93,
+        "values": [
+          3.3294857490133203,
+          0.14303302686741903,
+          0.6048111307622124
+        ],
+        "q": 0.1019662121330985
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 19,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 67,
+        "values": [
+          3.3069481462542276,
+          0.10808340118784568,
+          -0.11436154621662045
+        ],
+        "q": 0.028912105052809143
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 20,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 165,
+        "iterations": 92,
+        "values": [
+          3.329487017070982,
+          0.14303313849859484,
+          0.6048016948452322
+        ],
+        "q": 0.10196511537072292
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 21,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 66,
+        "values": [
+          3.306948963996587,
+          0.10808455297041993,
+          -0.11440020879521412
+        ],
+        "q": 0.028912546684507077
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 22,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 91,
+        "values": [
+          3.329479848082149,
+          0.1430330115874861,
+          0.6048534298705552
+        ],
+        "q": 0.10196311067344563
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 23,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 132,
+        "iterations": 72,
+        "values": [
+          3.3069493807725268,
+          0.10808139266914024,
+          -0.11439521273204828
+        ],
+        "q": 0.02890951276630119
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 24,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 167,
+        "iterations": 92,
+        "values": [
+          3.3294861966387925,
+          0.14303179363411134,
+          0.6048341397112784
+        ],
+        "q": 0.10196596206867178
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 25,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 66,
+        "values": [
+          3.3069471313679957,
+          0.10808184321699296,
+          -0.11436554384788791
+        ],
+        "q": 0.028912246103756287
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 26,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 96,
+        "values": [
+          3.3294879777870094,
+          0.14303114240301285,
+          0.6048436953449514
+        ],
+        "q": 0.10196631252196403
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 27,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.3069475516826223,
+          0.1080815612550708,
+          -0.11437342170141673
+        ],
+        "q": 0.028912480896886358
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 28,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 94,
+        "values": [
+          3.329482160821863,
+          0.14303248994950873,
+          0.6048605156269932
+        ],
+        "q": 0.10196635347125976
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 29,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 127,
+        "iterations": 69,
+        "values": [
+          3.3069476713320283,
+          0.10808235917569795,
+          -0.1144018533798786
+        ],
+        "q": 0.028909735994569655
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 30,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 167,
+        "iterations": 95,
+        "values": [
+          3.3294831264979736,
+          0.1430331089182837,
+          0.604840575479602
+        ],
+        "q": 0.10196490719738754
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 31,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.3069462697275136,
+          0.10808227886970212,
+          -0.11438967868778467
+        ],
+        "q": 0.028910183412475973
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 32,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 165,
+        "iterations": 92,
+        "values": [
+          3.329487148568508,
+          0.14303181748143406,
+          0.6048532178203081
+        ],
+        "q": 0.10196526461224384
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 33,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 120,
+        "iterations": 64,
+        "values": [
+          3.3069502605335135,
+          0.10808363942288018,
+          -0.11437100836213146
+        ],
+        "q": 0.028911038457436092
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 34,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 165,
+        "iterations": 92,
+        "values": [
+          3.3294817533271153,
+          0.14303311776843297,
+          0.604847890508539
+        ],
+        "q": 0.10196471627333299
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 35,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 135,
+        "iterations": 72,
+        "values": [
+          3.3069497600419044,
+          0.10808157223975753,
+          -0.11440459741725381
+        ],
+        "q": 0.02890972049823112
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 36,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 167,
+        "iterations": 92,
+        "values": [
+          3.329481854576726,
+          0.14303328498921483,
+          0.6048394763225334
+        ],
+        "q": 0.10196556620217143
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 37,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 135,
+        "iterations": 72,
+        "values": [
+          3.306947648103245,
+          0.10808284654894199,
+          -0.11438003118081441
+        ],
+        "q": 0.028910028130459495
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 38,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 167,
+        "iterations": 93,
+        "values": [
+          3.329484477462556,
+          0.14303273393608174,
+          0.6048512558815273
+        ],
+        "q": 0.10196507775694497
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 39,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 66,
+        "values": [
+          3.306947051863444,
+          0.10808144147030227,
+          -0.11439637215259003
+        ],
+        "q": 0.028909998976203215
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 40,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 93,
+        "values": [
+          3.3294851281786153,
+          0.14303096610573768,
+          0.6048824883464146
+        ],
+        "q": 0.10196582337557347
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 41,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 126,
+        "iterations": 68,
+        "values": [
+          3.306949173575582,
+          0.10808326976710622,
+          -0.11437476567412878
+        ],
+        "q": 0.02891030921905436
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 42,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 167,
+        "iterations": 93,
+        "values": [
+          3.329484419362192,
+          0.143032780040677,
+          0.6048467188761026
+        ],
+        "q": 0.10196490048186184
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 43,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 66,
+        "values": [
+          3.306946993763063,
+          0.10808148757489752,
+          -0.11440090915801472
+        ],
+        "q": 0.028910220645218955
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 44,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 166,
+        "iterations": 94,
+        "values": [
+          3.329488445273101,
+          0.14303185041658584,
+          0.6048276174333491
+        ],
+        "q": 0.1019656597290392
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 45,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.306947025228207,
+          0.10808136484606587,
+          -0.11439533019569503
+        ],
+        "q": 0.028912577076084897
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 46,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 166,
+        "iterations": 94,
+        "values": [
+          3.3294884767380433,
+          0.14303172768775418,
+          0.6048331963956697
+        ],
+        "q": 0.10196591599063218
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 47,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.306947056693162,
+          0.10808124211723422,
+          -0.11438975123337447
+        ],
+        "q": 0.028912388075567143
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 48,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 93,
+        "values": [
+          3.3294857980441144,
+          0.14303301846392857,
+          0.6048093475210958
+        ],
+        "q": 0.10196617273319819
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 49,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 127,
+        "iterations": 68,
+        "values": [
+          3.306946957440023,
+          0.1080817616899655,
+          -0.1143964900221439
+        ],
+        "q": 0.028912225749819928
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 50,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 92,
+        "values": [
+          3.3294893532967644,
+          0.1430318126299549,
+          0.6048236327043781
+        ],
+        "q": 0.10196554336525313
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 51,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 67,
+        "values": [
+          3.3069470641001386,
+          0.10808097809655953,
+          -0.11438050409294023
+        ],
+        "q": 0.028912871019467806
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 52,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 96,
+        "values": [
+          3.329485422443163,
+          0.14303273122194027,
+          0.604839940773229
+        ],
+        "q": 0.10196664746281361
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 53,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 67,
+        "values": [
+          3.306947286558321,
+          0.1080811763544901,
+          -0.11438832871539022
+        ],
+        "q": 0.028910700948604956
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 54,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 93,
+        "values": [
+          3.329486027909199,
+          0.14303295270118443,
+          0.6048107700390801
+        ],
+        "q": 0.10196627377618557
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 55,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 127,
+        "iterations": 68,
+        "values": [
+          3.3069468406105553,
+          0.1080813516891741,
+          -0.11439937650672255
+        ],
+        "q": 0.028912221245881276
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 56,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 94,
+        "values": [
+          3.3294877408978785,
+          0.14303203285682814,
+          0.6048365517432057
+        ],
+        "q": 0.10196581276598914
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 57,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 126,
+        "iterations": 69,
+        "values": [
+          3.3069494532667196,
+          0.10808297109797659,
+          -0.11435768047457129
+        ],
+        "q": 0.02891179453649078
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 58,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 165,
+        "iterations": 92,
+        "values": [
+          3.3294888197580033,
+          0.14303331001626554,
+          0.6047981458282068
+        ],
+        "q": 0.10196562503833453
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 59,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.306950695978465,
+          0.1080825591947023,
+          -0.11441040590633723
+        ],
+        "q": 0.028912548691050775
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 60,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 93,
+        "values": [
+          3.3294842620046508,
+          0.14303319333364012,
+          0.604832559505357
+        ],
+        "q": 0.10196459090946026
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 61,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 67,
+        "values": [
+          3.3069466480265706,
+          0.10808203663556099,
+          -0.11441340528539763
+        ],
+        "q": 0.02891057146277732
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 62,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 162,
+        "iterations": 92,
+        "values": [
+          3.329482491879082,
+          0.1430315398375055,
+          0.6048579382079718
+        ],
+        "q": 0.10196484386180407
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 63,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 130,
+        "iterations": 70,
+        "values": [
+          3.3069492996575534,
+          0.1080820564175019,
+          -0.11442090682626652
+        ],
+        "q": 0.028911097998928017
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 64,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 95,
+        "values": [
+          3.3294821748249523,
+          0.14303230747429468,
+          0.6048475545179687
+        ],
+        "q": 0.10196469904412542
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 65,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 67,
+        "values": [
+          3.306949508298392,
+          0.1080825968341548,
+          -0.11441947334987662
+        ],
+        "q": 0.02891076712909252
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 66,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 93,
+        "values": [
+          3.3294831223118786,
+          0.14303227556120407,
+          0.6048435605974336
+        ],
+        "q": 0.10196428070960697
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 67,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.3069466945137806,
+          0.10808140373036332,
+          -0.11438011481448498
+        ],
+        "q": 0.028911054130477596
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 68,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 92,
+        "values": [
+          3.329488918264458,
+          0.14303149646094315,
+          0.6048388822976328
+        ],
+        "q": 0.1019662834780111
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 69,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.3069503815870744,
+          0.10808091685459717,
+          -0.11440378948145892
+        ],
+        "q": 0.02891233001667884
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 70,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 92,
+        "values": [
+          3.3294837540201323,
+          0.14303304738749648,
+          0.604854367104187
+        ],
+        "q": 0.10196616651480844
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 71,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.306946036336556,
+          0.10808125292940221,
+          -0.11439113572258483
+        ],
+        "q": 0.028909410179155083
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 72,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 94,
+        "values": [
+          3.3294847327464385,
+          0.1430330172766911,
+          0.6048287270266108
+        ],
+        "q": 0.10196609679350693
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 73,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 125,
+        "iterations": 66,
+        "values": [
+          3.306949656314697,
+          0.10808284033274795,
+          -0.11438541704078356
+        ],
+        "q": 0.028911030886101544
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 74,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 93,
+        "values": [
+          3.3294864856739643,
+          0.14303272771988762,
+          0.6048458700215571
+        ],
+        "q": 0.10196499527016999
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 75,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.3069474452469017,
+          0.10808156965268947,
+          -0.11440041014734559
+        ],
+        "q": 0.028910339489554737
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 76,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 166,
+        "iterations": 94,
+        "values": [
+          3.3294877663317957,
+          0.14303181490409544,
+          0.6048352782396791
+        ],
+        "q": 0.10196561553624564
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 77,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 66,
+        "values": [
+          3.306947748484789,
+          0.1080815519819652,
+          -0.11438572122373161
+        ],
+        "q": 0.028912149015659007
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 78,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 166,
+        "iterations": 93,
+        "values": [
+          3.3294851173375797,
+          0.14303268896178833,
+          0.6048479370888759
+        ],
+        "q": 0.10196603508229096
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 79,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 118,
+        "iterations": 63,
+        "values": [
+          3.306948196383341,
+          0.10808220380734213,
+          -0.1144514869317862
+        ],
+        "q": 0.028910261157565863
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 80,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 166,
+        "iterations": 93,
+        "values": [
+          3.3294852356732565,
+          0.14303240975529338,
+          0.6048486344906605
+        ],
+        "q": 0.10196371722047966
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 81,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 118,
+        "iterations": 63,
+        "values": [
+          3.3069483147190395,
+          0.10808192460084876,
+          -0.114450789530015
+        ],
+        "q": 0.028910571563466818
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 82,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 167,
+        "iterations": 94,
+        "values": [
+          3.329483650140464,
+          0.1430327139442007,
+          0.6048288520724571
+        ],
+        "q": 0.10196397816411962
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 83,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 66,
+        "values": [
+          3.306947199009636,
+          0.1080815697522671,
+          -0.11435958954958679
+        ],
+        "q": 0.02891140714565327
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 84,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 96,
+        "values": [
+          3.3294852826467887,
+          0.14303178716183657,
+          0.6048750443552464
+        ],
+        "q": 0.10196670891476418
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 85,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.3069495592990585,
+          0.10808326481119776,
+          -0.11438835401095727
+        ],
+        "q": 0.028909729312729542
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 86,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 93,
+        "values": [
+          3.3294847757820083,
+          0.14303284972213187,
+          0.6048385364769555
+        ],
+        "q": 0.10196454921680842
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 87,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 66,
+        "values": [
+          3.306946812876193,
+          0.10808127081553062,
+          -0.11439069625402501
+        ],
+        "q": 0.02891063755428871
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 88,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 96,
+        "values": [
+          3.329485171219215,
+          0.14303302394091455,
+          0.6048297486121437
+        ],
+        "q": 0.10196611518565604
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 89,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 123,
+        "iterations": 66,
+        "values": [
+          3.3069484368879247,
+          0.10808352450527392,
+          -0.11435092610102035
+        ],
+        "q": 0.02891095953606356
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 90,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 171,
+        "iterations": 93,
+        "values": [
+          3.329479995697871,
+          0.14303137206252733,
+          0.6049002537211685
+        ],
+        "q": 0.10196530554329009
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 91,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 121,
+        "iterations": 65,
+        "values": [
+          3.3069497713819658,
+          0.10808089108432564,
+          -0.11443384250813846
+        ],
+        "q": 0.028908698299417345
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 92,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 95,
+        "values": [
+          3.3294830318185182,
+          0.14303316849539838,
+          0.6048273396489161
+        ],
+        "q": 0.101965361129184
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 93,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 66,
+        "values": [
+          3.306946754682155,
+          0.10808191793982057,
+          -0.11436072108498832
+        ],
+        "q": 0.028910924992644114
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 94,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 96,
+        "values": [
+          3.3294885358127715,
+          0.14303125211435735,
+          0.6048383893626452
+        ],
+        "q": 0.10196636787904673
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 95,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 124,
+        "iterations": 66,
+        "values": [
+          3.3069476975878285,
+          0.10808152068737684,
+          -0.11437677257453063
+        ],
+        "q": 0.028912669580867547
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 96,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 168,
+        "iterations": 95,
+        "values": [
+          3.3294832939517933,
+          0.14303252120046062,
+          0.6048616875660526
+        ],
+        "q": 0.10196630178355348
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 97,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 128,
+        "iterations": 70,
+        "values": [
+          3.30694976131442,
+          0.10808251107779684,
+          -0.11437645771894671
+        ],
+        "q": 0.028909624265664843
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 98,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 169,
+        "iterations": 94,
+        "values": [
+          3.3294858776272998,
+          0.14303131818946274,
+          0.6048715725932504
+        ],
+        "q": 0.10196552111662091
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 99,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 122,
+        "iterations": 65,
+        "values": [
+          3.3069478622034367,
+          0.1080814593476391,
+          -0.11438340487811935
+        ],
+        "q": 0.028910537333977904
+      },
+      {
+        "kind": "pass-end",
+        "fit": 404,
+        "context": "replicate-402",
+        "pass": 100,
+        "optimizer": "NelderMead",
+        "status": "Success",
+        "evals": 164,
+        "iterations": 92,
+        "values": [
+          3.3294844884884554,
+          0.143031896400502,
+          0.6048491021911924
+        ],
+        "q": 0.10196618014844455
+      }
+    ],
+    "regularization": [
+      {
+        "matrix": [
+          [
+            0.011660221909618814,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.00024695133634222477,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.4989624361546073e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.3360061874965636e-06,
+          0.00024626279245903337,
+          0.01167723608405105
+        ],
+        "finalFallbackRidge": 3.974054290107529e-07,
+        "finalFallbackEigenvalues": [
+          -9.386007584858166e-07,
+          0.0002466601978880441,
+          0.01167763348948006
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.01166022191001622,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.0002469513367396302,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.4989624758951502e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.3360057900911478e-06,
+          0.0002462627928564388,
+          0.011677236084448452
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011660221913592868,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.00024695134031627904,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.4989628335600364e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.3360022134422423e-06,
+          0.0002462627964330877,
+          0.0116772360880251
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011660221949359357,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.00024695137608276766,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.4989664102088974e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.335966446953676e-06,
+          0.00024626283219957625,
+          0.01167723612379159
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011660222307024244,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.00024695173374765376,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.4990021766975084e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.3356087820675783e-06,
+          0.00024626318986446235,
+          0.011677236481456476
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011660225883673105,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.0002469553103965149,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.4993598415836181e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.3320321332064367e-06,
+          0.0002462667665133235,
+          0.01167724005810534
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011660261650161716,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.0002469910768851258,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.5029364904447148e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.2962656445955106e-06,
+          0.0002463025330019344,
+          0.01167727582459395
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011660619315047825,
+            -0.00021198608733668107,
+            0.0003899475629979607
+          ],
+          [
+            -0.00021198608733668107,
+            0.0002473487417712355,
+            -3.543071680795909e-05
+          ],
+          [
+            0.0003899475629979607,
+            -3.543071680795909e-05,
+            1.5387029790556825e-05
+          ]
+        ],
+        "eigenvalues": [
+          -9.386007584858166e-07,
+          0.0002466601978880441,
+          0.01167763348948006
+        ]
+      },
+      {
+        "matrix": [
+          [
+            0.011615306719584398,
+            -0.00019131058187715592,
+            0.00038609940471946735
+          ],
+          [
+            -0.00019131058187715592,
+            0.00024352594996680663,
+            -3.3136141663726515e-05
+          ],
+          [
+            0.00038609940471946735,
+            -3.3136141663726515e-05,
+            1.4634706447454182e-05
+          ]
+        ],
+        "eigenvalues": [
+          -1.166740668860389e-06,
+          0.0002432437722225268,
+          0.011631390344444992
+        ]
+      }
+    ],
+    "seed": 811962567
+  }
+}

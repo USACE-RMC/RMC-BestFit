@@ -1,0 +1,341 @@
+{
+  "before": {
+    "parent": {
+      "kind": "fit-end",
+      "fit": 1,
+      "context": "parent",
+      "passes": 6,
+      "converged": true,
+      "status": "Success",
+      "fallbacks": 0,
+      "evaluations": 55,
+      "values": [
+        3.328586975163675,
+        0.14059047532656307,
+        0.42233732191184603
+      ]
+    },
+    "bootstrapFits": 1000,
+    "evaluations": 696401,
+    "fallbacks": 203,
+    "converged": 949,
+    "at100": 51,
+    "medianPasses": 12.0,
+    "atMostFive": 50,
+    "passHistogram": {
+      "3": 2,
+      "4": 10,
+      "5": 38,
+      "6": 53,
+      "7": 93,
+      "8": 78,
+      "9": 89,
+      "10": 67,
+      "11": 68,
+      "12": 63,
+      "13": 65,
+      "14": 46,
+      "15": 43,
+      "16": 37,
+      "17": 20,
+      "18": 26,
+      "19": 10,
+      "20": 22,
+      "21": 17,
+      "22": 13,
+      "23": 8,
+      "24": 6,
+      "25": 10,
+      "26": 9,
+      "27": 7,
+      "28": 2,
+      "30": 6,
+      "31": 3,
+      "33": 2,
+      "34": 2,
+      "35": 4,
+      "36": 1,
+      "37": 1,
+      "38": 3,
+      "39": 1,
+      "40": 1,
+      "41": 3,
+      "42": 3,
+      "43": 2,
+      "44": 1,
+      "45": 1,
+      "48": 1,
+      "52": 1,
+      "53": 1,
+      "56": 1,
+      "57": 1,
+      "59": 1,
+      "63": 3,
+      "71": 1,
+      "81": 2,
+      "99": 1,
+      "100": 51
+    }
+  },
+  "after": {
+    "parent": {
+      "kind": "fit-end",
+      "fit": 1,
+      "context": "parent",
+      "passes": 6,
+      "converged": true,
+      "status": "Success",
+      "fallbacks": 0,
+      "evaluations": 55,
+      "values": [
+        3.328586975163675,
+        0.14059047532656307,
+        0.42233732191184603
+      ]
+    },
+    "bootstrapFits": 1000,
+    "evaluations": 326134,
+    "fallbacks": 77,
+    "converged": 947,
+    "at100": 53,
+    "medianPasses": 12.0,
+    "atMostFive": 50,
+    "passHistogram": {
+      "3": 2,
+      "4": 10,
+      "5": 38,
+      "6": 53,
+      "7": 88,
+      "8": 74,
+      "9": 83,
+      "10": 62,
+      "11": 65,
+      "12": 58,
+      "13": 69,
+      "14": 38,
+      "15": 45,
+      "16": 32,
+      "17": 22,
+      "18": 27,
+      "19": 14,
+      "20": 23,
+      "21": 21,
+      "22": 16,
+      "23": 7,
+      "24": 9,
+      "25": 12,
+      "26": 11,
+      "27": 9,
+      "28": 3,
+      "29": 4,
+      "30": 4,
+      "31": 3,
+      "32": 2,
+      "33": 2,
+      "34": 2,
+      "35": 3,
+      "36": 2,
+      "37": 1,
+      "38": 2,
+      "39": 1,
+      "40": 1,
+      "41": 1,
+      "42": 2,
+      "43": 2,
+      "44": 1,
+      "47": 1,
+      "48": 1,
+      "50": 1,
+      "51": 1,
+      "52": 1,
+      "56": 1,
+      "57": 2,
+      "59": 1,
+      "60": 2,
+      "61": 1,
+      "63": 4,
+      "65": 1,
+      "69": 1,
+      "71": 1,
+      "75": 1,
+      "81": 1,
+      "83": 1,
+      "95": 1,
+      "100": 53
+    }
+  },
+  "recoveryChecks": {
+    "count": 707,
+    "maximumIndependentGradient": 9.995209503554094e-09,
+    "maximumGradientDiscrepancy": 1.2803976174960763e-13,
+    "allWithinExistingTolerance": true
+  },
+  "additionalCappedFits": {
+    "replicate-199": {
+      "independentRoot": [
+        3.3216276828178017,
+        0.12250600058766084,
+        0.5434119123987436
+      ],
+      "spectralRadius": 0.9323390044049017,
+      "before": {
+        "fit": {
+          "kind": "fit-end",
+          "fit": 201,
+          "context": "replicate-199",
+          "passes": 99,
+          "converged": true,
+          "status": "Success",
+          "fallbacks": 1,
+          "evaluations": 10079,
+          "values": [
+            3.321627110955628,
+            0.12250627854613454,
+            0.5434087919735076
+          ]
+        },
+        "lastInnerGradientNorm": 7.333968576514325e-05,
+        "lastOuterStep": 0.0,
+        "distanceToIndependentRoot": 3.120425236091684e-06
+      },
+      "after": {
+        "fit": {
+          "kind": "fit-end",
+          "fit": 201,
+          "context": "replicate-199",
+          "passes": 100,
+          "converged": false,
+          "status": "Success",
+          "fallbacks": 0,
+          "evaluations": 1174,
+          "values": [
+            3.3216298659653654,
+            0.12250873700618178,
+            0.5434711205445881
+          ]
+        },
+        "lastInnerGradientNorm": 1.77043524285651e-11,
+        "lastOuterStep": 0.00012271813339270743,
+        "distanceToIndependentRoot": 5.920814584448042e-05
+      }
+    },
+    "replicate-534": {
+      "independentRoot": [
+        3.315236531515549,
+        0.15474855054185416,
+        0.2578018859998262
+      ],
+      "spectralRadius": 0.9152626446848603,
+      "before": {
+        "fit": {
+          "kind": "fit-end",
+          "fit": 536,
+          "context": "replicate-534",
+          "passes": 81,
+          "converged": true,
+          "status": "Success",
+          "fallbacks": 1,
+          "evaluations": 7070,
+          "values": [
+            3.3152374413443235,
+            0.15474928995666712,
+            0.25779988982427693
+          ]
+        },
+        "lastInnerGradientNorm": 5.0828120118664454e-05,
+        "lastOuterStep": 0.0,
+        "distanceToIndependentRoot": 1.9961755492459154e-06
+      },
+      "after": {
+        "fit": {
+          "kind": "fit-end",
+          "fit": 536,
+          "context": "replicate-534",
+          "passes": 100,
+          "converged": false,
+          "status": "Success",
+          "fallbacks": 0,
+          "evaluations": 1075,
+          "values": [
+            3.3152369620736217,
+            0.15474919071874713,
+            0.2578121864847781
+          ]
+        },
+        "lastInnerGradientNorm": 7.53488892281366e-10,
+        "lastOuterStep": 2.1554748450669514e-05,
+        "distanceToIndependentRoot": 1.0300484951930589e-05
+      }
+    }
+  },
+  "commonConverged": {
+    "count": 947,
+    "unchanged": 725,
+    "changed": 222,
+    "closerToIndependentRoot": 159,
+    "maximumBeforeError": 5.1977767711597345e-05,
+    "maximumAfterError": 3.0565563481799174e-05,
+    "largestChanges": [
+      {
+        "context": "replicate-629",
+        "change": 5.188060095762115e-05,
+        "beforeError": 5.1977767711597345e-05,
+        "afterError": 9.716675397619667e-08
+      },
+      {
+        "context": "replicate-576",
+        "change": 4.118224186899777e-05,
+        "beforeError": 4.125255139508788e-05,
+        "afterError": 7.030952609010654e-08
+      },
+      {
+        "context": "replicate-997",
+        "change": 3.910558203112924e-05,
+        "beforeError": 3.920552347824735e-05,
+        "afterError": 9.994144711811259e-08
+      },
+      {
+        "context": "replicate-490",
+        "change": 3.6123165528811896e-05,
+        "beforeError": 3.617017425627811e-05,
+        "afterError": 4.700872746621343e-08
+      },
+      {
+        "context": "replicate-326",
+        "change": 3.22854275844886e-05,
+        "beforeError": 3.233256536494533e-05,
+        "afterError": 4.713778045672967e-08
+      },
+      {
+        "context": "replicate-676",
+        "change": 2.8054636975360925e-05,
+        "beforeError": 2.807365505175241e-05,
+        "afterError": 1.9018076391486005e-08
+      },
+      {
+        "context": "replicate-654",
+        "change": 2.6377856731873983e-05,
+        "beforeError": 2.6446631141818777e-05,
+        "afterError": 6.8774409944794e-08
+      },
+      {
+        "context": "replicate-746",
+        "change": 2.1935192035027473e-05,
+        "beforeError": 2.195572633101328e-05,
+        "afterError": 2.0534295985807915e-08
+      },
+      {
+        "context": "replicate-255",
+        "change": 1.8884090705606482e-05,
+        "beforeError": 1.891282139010464e-05,
+        "afterError": 2.873068449815719e-08
+      },
+      {
+        "context": "replicate-3",
+        "change": 1.7032409747375077e-05,
+        "beforeError": 1.701603354720138e-05,
+        "afterError": 1.6376200173695565e-08
+      }
+    ]
+  }
+}

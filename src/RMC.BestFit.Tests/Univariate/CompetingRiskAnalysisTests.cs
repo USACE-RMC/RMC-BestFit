@@ -1,4 +1,7 @@
+using Numerics;
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 using System.Reflection;
@@ -202,6 +205,31 @@ public class CompetingRiskAnalysisTests
         var (isValid, messages) = analysis.Validate();
 
         Assert.IsTrue(isValid, $"Validation should pass. Messages: {string.Join(", ", messages)}");
+    }
+
+    /// <summary>
+    /// Verifies analysis validation enforces the three-component identifiability guard.
+    /// </summary>
+    [TestMethod]
+    public void Validate_WithFourComponents_ReturnsInvalid()
+    {
+        var model = new CompetingRisksModel
+        {
+            DataFrame = CreateTestDataFrame(),
+            CompetingRisks = new CompetingRisks(
+            [
+                new Normal(100d, 10d),
+                new Normal(200d, 20d),
+                new Normal(300d, 30d),
+                new Normal(400d, 40d)
+            ])
+        };
+        var analysis = new CompetingRiskAnalysis(model);
+
+        var (isValid, messages) = analysis.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(message => message.Contains("at most 3")));
     }
 
     /// <summary>Verifies that validate returns valid when with GEV components.</summary>
@@ -502,6 +530,94 @@ public class CompetingRiskAnalysisTests
 
         Assert.IsTrue(analysis.BayesianAnalysis.Iterations > 0,
             "Iterations should have a default value.");
+    }
+
+    /// <summary>
+    /// Verifies the MAP approximation population is deterministic, finite, and supplies
+    /// one best-performing initial state to every configured Markov chain.
+    /// </summary>
+    [TestMethod]
+    public void PopulateSamplerFromPosteriorApproximation_UsesSeedAndInitializesChains()
+    {
+        var model = CreateTestModel();
+        double[] mapParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        var covariance = new double[mapParameters.Length, mapParameters.Length];
+        for (int index = 0; index < mapParameters.Length; index++)
+        {
+            double standardDeviation = Math.Max(1E-3, Math.Abs(mapParameters[index]) * 1E-4);
+            covariance[index, index] = standardDeviation * standardDeviation;
+        }
+
+        var firstAnalysis = new CompetingRiskAnalysis(model);
+        firstAnalysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler firstSampler = firstAnalysis.BayesianAnalysis.Sampler!;
+        firstSampler.InitialIterations = Math.Max(20, firstSampler.NumberOfChains);
+
+        var secondAnalysis = new CompetingRiskAnalysis(model);
+        secondAnalysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler secondSampler = secondAnalysis.BayesianAnalysis.Sampler!;
+        secondSampler.InitialIterations = firstSampler.InitialIterations;
+
+        CompetingRiskAnalysis.PopulateSamplerFromPosteriorApproximation(
+            model,
+            firstSampler,
+            mapParameters,
+            covariance,
+            CancellationToken.None);
+        CompetingRiskAnalysis.PopulateSamplerFromPosteriorApproximation(
+            model,
+            secondSampler,
+            mapParameters,
+            covariance,
+            CancellationToken.None);
+
+        Assert.AreEqual(MCMCSampler.InitializationType.UserDefined, firstSampler.Initialize);
+        Assert.AreEqual(firstSampler.InitialIterations, firstSampler.PopulationMatrix.Count);
+        Assert.AreEqual(firstSampler.PopulationMatrix.Count, secondSampler.PopulationMatrix.Count);
+        for (int populationIndex = 0; populationIndex < firstSampler.PopulationMatrix.Count; populationIndex++)
+        {
+            Assert.IsTrue(double.IsFinite(firstSampler.PopulationMatrix[populationIndex].Fitness));
+            CollectionAssert.AreEqual(
+                firstSampler.PopulationMatrix[populationIndex].Values,
+                secondSampler.PopulationMatrix[populationIndex].Values,
+                $"Population draw {populationIndex} changed with the same sampler seed.");
+        }
+
+        ParameterSet[] expectedInitialStates = firstSampler.PopulationMatrix
+            .OrderByDescending(parameterSet => parameterSet.Fitness)
+            .Take(firstSampler.NumberOfChains)
+            .ToArray();
+        for (int chainIndex = 0; chainIndex < firstSampler.NumberOfChains; chainIndex++)
+        {
+            Assert.AreEqual(1, firstSampler.MarkovChains[chainIndex].Count);
+            CollectionAssert.AreEqual(
+                expectedInitialStates[chainIndex].Values,
+                firstSampler.MarkovChains[chainIndex][0].Values,
+                $"Chain {chainIndex} was not seeded by the expected MAP-population member.");
+        }
+    }
+
+    /// <summary>
+    /// Verifies mismatched MAP covariance dimensions fail before an invalid population is installed.
+    /// </summary>
+    [TestMethod]
+    public void PopulateSamplerFromPosteriorApproximation_WithMismatchedCovariance_Throws()
+    {
+        var model = CreateTestModel();
+        var analysis = new CompetingRiskAnalysis(model);
+        analysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler sampler = analysis.BayesianAnalysis.Sampler!;
+        double[] mapParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            CompetingRiskAnalysis.PopulateSamplerFromPosteriorApproximation(
+                model,
+                sampler,
+                mapParameters,
+                new double[mapParameters.Length - 1, mapParameters.Length - 1],
+                CancellationToken.None));
+        Assert.AreEqual(0, sampler.PopulationMatrix.Count);
+        Assert.IsTrue(sampler.MarkovChains.All(chain => chain.Count == 0));
     }
 
     #endregion

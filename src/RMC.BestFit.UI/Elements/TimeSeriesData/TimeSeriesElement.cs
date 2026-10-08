@@ -1162,7 +1162,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -1183,197 +1184,202 @@ namespace RMC.BestFit.UI
             {
                 _messenger.Clear(this);
                 var wasOpen = sqlite.DataBaseOpen;
-                if (wasOpen == false) sqlite.Open();
-
-                var dtView = sqlite.GetTableManager(ParentCollection.Name);
-                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                if (rowIndex != -1)
+                try
                 {
-                    // Use backing fields during deserialization to avoid repeated SetIsValid() calls.
-                    // A single SetIsValid() call at the end of Open() is sufficient.
-                    if (dtView.ColumnNames.Contains(nameof(Name)))
-                    {
-                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                        foreach (var item in _messages) item.SourceName = _name;
-                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "TS");
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Description)))
-                    {
-                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                        if (string.IsNullOrEmpty(_description))
-                            _messenger.Add(_descriptionMsg);
-                        else
-                            _messenger.Remove(_descriptionMsg);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                    if (dtView.ColumnNames.Contains(nameof(UnitLabel)))
-                    {
-                        _unitLabel = dtView.GetCell(nameof(UnitLabel), rowIndex).ToString();
-                        _unitLabelValid = !string.IsNullOrEmpty(_unitLabel);
-                        if (!_unitLabelValid)
-                            _messenger.Add(_unitLabelMsg);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(EntryMethod))) Enum.TryParse(dtView.GetCell(nameof(EntryMethod), rowIndex).ToString(), out _entryMethod);
-                    if (dtView.ColumnNames.Contains(nameof(SeriesType))) Enum.TryParse(dtView.GetCell(nameof(SeriesType), rowIndex).ToString(), out _seriesType);
+                    if (wasOpen == false) sqlite.Open();
 
-                    // Needed for backwards compatibility with v2.0_beta_1
-                    if (_entryMethod == TimeSeriesEntryMethod.GHCNDailyPrecipitation)
+                    var dtView = sqlite.GetTableManager(ParentCollection.Name);
+                    int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    if (rowIndex != -1)
                     {
-                        _entryMethod = TimeSeriesEntryMethod.GHCN;
-                    }
-                    else if (_entryMethod == TimeSeriesEntryMethod.USGSDailyDischarge)
-                    {
-                        _entryMethod = TimeSeriesEntryMethod.USGS;
-                    }
-                    else if (_entryMethod == TimeSeriesEntryMethod.USGSDailyStage)
-                    {
-                        _entryMethod = TimeSeriesEntryMethod.USGS;
-                        _seriesType = TimeSeriesType.DailyStage;
-                    }
-
-                    if (dtView.ColumnNames.Contains(nameof(HECDSSFullFilename))) _hecDSSFullFilename = dtView.GetCell(nameof(HECDSSFullFilename), rowIndex).ToString();
-                    if (dtView.ColumnNames.Contains(nameof(HECDSSDataPathname))) _hecDSSDataPathname = dtView.GetCell(nameof(HECDSSDataPathname), rowIndex).ToString();
-                    if (dtView.ColumnNames.Contains(nameof(GHCNSiteNumber)))
-                    {
-                        _ghcnSiteNumber = dtView.GetCell(nameof(GHCNSiteNumber), rowIndex).ToString();
-                        _ghcnSiteNumberValid = _ghcnSiteNumber.Length == 11 || _entryMethod != TimeSeriesEntryMethod.GHCN;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(USGSSiteNumber)))
-                    {
-                        _usgsSiteNumber = dtView.GetCell(nameof(USGSSiteNumber), rowIndex).ToString();
-                        _usgsSiteNumberValid = (_usgsSiteNumber.Length >= 8 && _usgsSiteNumber.Length <= 15) || _entryMethod != TimeSeriesEntryMethod.USGS;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(CHMNSiteNumber)))
-                    {
-                        _chmnSiteNumber = dtView.GetCell(nameof(CHMNSiteNumber), rowIndex).ToString();
-                        _chmnSiteNumberValid = _chmnSiteNumber.Length == 7 || _entryMethod != TimeSeriesEntryMethod.CHMN;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(ABOMSiteNumber)))
-                    {
-                        _abomSiteNumber = dtView.GetCell(nameof(ABOMSiteNumber), rowIndex).ToString();
-                        _abomSiteNumberValid = _abomSiteNumber.Length == 6 || _entryMethod != TimeSeriesEntryMethod.ABOM;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(DepthUnit))) Enum.TryParse(dtView.GetCell(nameof(DepthUnit), rowIndex).ToString(), out _depthUnit);
-                    if (dtView.ColumnNames.Contains(nameof(DischargeUnit))) Enum.TryParse(dtView.GetCell(nameof(DischargeUnit), rowIndex).ToString(), out _dischargeUnit);
-                    if (dtView.ColumnNames.Contains(nameof(HeightUnit))) Enum.TryParse(dtView.GetCell(nameof(HeightUnit), rowIndex).ToString(), out _heightUnit);
-                    if (dtView.ColumnNames.Contains(nameof(TimeInterval))) Enum.TryParse(dtView.GetCell(nameof(TimeInterval), rowIndex).ToString(), out _timeInterval);
-                    if (dtView.ColumnNames.Contains(nameof(StartDateTime)))
-                    {
-                        // Try to parse the invariant date string using TryParseExact
-                        // If it fails, do a regular try parse.
-                        if (!DateTime.TryParseExact(dtView.GetCell(nameof(StartDateTime), rowIndex).ToString(), "o", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out _startDateTime))
+                        // Use backing fields during deserialization to avoid repeated SetIsValid() calls.
+                        // A single SetIsValid() call at the end of Open() is sufficient.
+                        if (dtView.ColumnNames.Contains(nameof(Name)))
                         {
-                            DateTime.TryParse(dtView.GetCell(nameof(StartDateTime), rowIndex).ToString(), out _startDateTime);
+                            _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                            foreach (var item in _messages) item.SourceName = _name;
+                            _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "TS");
                         }
-                    }
-                    // Retain compressed USGSRawText until a consumer requests the raw response.
-                    // Full-period instantaneous responses expand to tens of megabytes and are not
-                    // needed merely to populate the project tree.
-                    _usgsRawText = "";
-                    _usgsRawTextCompressed = Array.Empty<byte>();
-                    _usgsRawTextLegacyFallback = "";
-                    _usgsRawTextMaterialized = true;
-                    if (dtView.ColumnNames.Contains("USGSRawTextCompressed"))
-                    {
-                        var cell = dtView.GetCell("USGSRawTextCompressed", rowIndex);
-                        if (cell is byte[] compressedBytes && compressedBytes.Length > 0)
+                        if (dtView.ColumnNames.Contains(nameof(Description)))
                         {
-                            _usgsRawTextCompressed = compressedBytes;
-                            _usgsRawTextMaterialized = false;
-                        }
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(USGSRawText)))
-                    {
-                        var legacyCell = dtView.GetCell(nameof(USGSRawText), rowIndex);
-                        if (legacyCell != null && legacyCell != DBNull.Value)
-                        {
-                            string legacyText = legacyCell.ToString();
-                            if (_usgsRawTextMaterialized)
-                                _usgsRawText = legacyText;
+                            _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                            if (string.IsNullOrEmpty(_description))
+                                _messenger.Add(_descriptionMsg);
                             else
-                                _usgsRawTextLegacyFallback = legacyText;
+                                _messenger.Remove(_descriptionMsg);
                         }
-                    }
-
-                    // Deserialize plot settings into Plot objects, then refresh only axes
-                    // that still carry their factory-default labels.
-                    bool timeSeriesPlotRestored = DeserializePlotSettings(dtView, rowIndex, "TimeSeriesPlotSettings", _timeSeriesPlot);
-                    bool seasonalityPlotRestored = DeserializePlotSettings(dtView, rowIndex, "SeasonalityPlotSettings", _seasonalityPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ACFPlotSettings", _acfPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "PACFPlotSettings", _pacfPlot);
-                    RefreshPlotAxisTitlesAfterOpen(timeSeriesPlotRestored, seasonalityPlotRestored);
-
-                    // Get time series — stream the compressed UTF-8 payload directly so project
-                    // opening does not allocate both a large managed string and an XElement tree.
-                    TimeSeries loadedTimeSeries = null;
-                    bool compressedPayloadFound = false;
-                    if (dtView.ColumnNames.Contains("TimeSeriesCompressed"))
-                    {
-                        byte[] decompressedBytes = null;
-                        try
+                        if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                        if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                        if (dtView.ColumnNames.Contains(nameof(UnitLabel)))
                         {
-                            var cell = dtView.GetCell("TimeSeriesCompressed", rowIndex);
-                            if (cell is byte[] compressedBytes && compressedBytes.Length > 0)
+                            _unitLabel = dtView.GetCell(nameof(UnitLabel), rowIndex).ToString();
+                            _unitLabelValid = !string.IsNullOrEmpty(_unitLabel);
+                            if (!_unitLabelValid)
+                                _messenger.Add(_unitLabelMsg);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(EntryMethod))) Enum.TryParse(dtView.GetCell(nameof(EntryMethod), rowIndex).ToString(), out _entryMethod);
+                        if (dtView.ColumnNames.Contains(nameof(SeriesType))) Enum.TryParse(dtView.GetCell(nameof(SeriesType), rowIndex).ToString(), out _seriesType);
+
+                        // Needed for backwards compatibility with v2.0_beta_1
+                        if (_entryMethod == TimeSeriesEntryMethod.GHCNDailyPrecipitation)
+                        {
+                            _entryMethod = TimeSeriesEntryMethod.GHCN;
+                        }
+                        else if (_entryMethod == TimeSeriesEntryMethod.USGSDailyDischarge)
+                        {
+                            _entryMethod = TimeSeriesEntryMethod.USGS;
+                        }
+                        else if (_entryMethod == TimeSeriesEntryMethod.USGSDailyStage)
+                        {
+                            _entryMethod = TimeSeriesEntryMethod.USGS;
+                            _seriesType = TimeSeriesType.DailyStage;
+                        }
+
+                        if (dtView.ColumnNames.Contains(nameof(HECDSSFullFilename))) _hecDSSFullFilename = dtView.GetCell(nameof(HECDSSFullFilename), rowIndex).ToString();
+                        if (dtView.ColumnNames.Contains(nameof(HECDSSDataPathname))) _hecDSSDataPathname = dtView.GetCell(nameof(HECDSSDataPathname), rowIndex).ToString();
+                        if (dtView.ColumnNames.Contains(nameof(GHCNSiteNumber)))
+                        {
+                            _ghcnSiteNumber = dtView.GetCell(nameof(GHCNSiteNumber), rowIndex).ToString();
+                            _ghcnSiteNumberValid = _ghcnSiteNumber.Length == 11 || _entryMethod != TimeSeriesEntryMethod.GHCN;
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(USGSSiteNumber)))
+                        {
+                            _usgsSiteNumber = dtView.GetCell(nameof(USGSSiteNumber), rowIndex).ToString();
+                            _usgsSiteNumberValid = (_usgsSiteNumber.Length >= 8 && _usgsSiteNumber.Length <= 15) || _entryMethod != TimeSeriesEntryMethod.USGS;
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(CHMNSiteNumber)))
+                        {
+                            _chmnSiteNumber = dtView.GetCell(nameof(CHMNSiteNumber), rowIndex).ToString();
+                            _chmnSiteNumberValid = _chmnSiteNumber.Length == 7 || _entryMethod != TimeSeriesEntryMethod.CHMN;
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(ABOMSiteNumber)))
+                        {
+                            _abomSiteNumber = dtView.GetCell(nameof(ABOMSiteNumber), rowIndex).ToString();
+                            _abomSiteNumberValid = _abomSiteNumber.Length == 6 || _entryMethod != TimeSeriesEntryMethod.ABOM;
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(DepthUnit))) Enum.TryParse(dtView.GetCell(nameof(DepthUnit), rowIndex).ToString(), out _depthUnit);
+                        if (dtView.ColumnNames.Contains(nameof(DischargeUnit))) Enum.TryParse(dtView.GetCell(nameof(DischargeUnit), rowIndex).ToString(), out _dischargeUnit);
+                        if (dtView.ColumnNames.Contains(nameof(HeightUnit))) Enum.TryParse(dtView.GetCell(nameof(HeightUnit), rowIndex).ToString(), out _heightUnit);
+                        if (dtView.ColumnNames.Contains(nameof(TimeInterval))) Enum.TryParse(dtView.GetCell(nameof(TimeInterval), rowIndex).ToString(), out _timeInterval);
+                        if (dtView.ColumnNames.Contains(nameof(StartDateTime)))
+                        {
+                            // Try to parse the invariant date string using TryParseExact
+                            // If it fails, do a regular try parse.
+                            if (!DateTime.TryParseExact(dtView.GetCell(nameof(StartDateTime), rowIndex).ToString(), "o", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out _startDateTime))
                             {
-                                decompressedBytes = Tools.Decompress(compressedBytes);
+                                DateTime.TryParse(dtView.GetCell(nameof(StartDateTime), rowIndex).ToString(), out _startDateTime);
                             }
                         }
-                        catch (Exception ex)
+                        // Retain compressed USGSRawText until a consumer requests the raw response.
+                        // Full-period instantaneous responses expand to tens of megabytes and are not
+                        // needed merely to populate the project tree.
+                        _usgsRawText = "";
+                        _usgsRawTextCompressed = Array.Empty<byte>();
+                        _usgsRawTextLegacyFallback = "";
+                        _usgsRawTextMaterialized = true;
+                        if (dtView.ColumnNames.Contains("USGSRawTextCompressed"))
                         {
-                            System.Diagnostics.Debug.WriteLine($"Could not decompress TimeSeries: {ex.Message}");
+                            var cell = dtView.GetCell("USGSRawTextCompressed", rowIndex);
+                            if (cell is byte[] compressedBytes && compressedBytes.Length > 0)
+                            {
+                                _usgsRawTextCompressed = compressedBytes;
+                                _usgsRawTextMaterialized = false;
+                            }
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(USGSRawText)))
+                        {
+                            var legacyCell = dtView.GetCell(nameof(USGSRawText), rowIndex);
+                            if (legacyCell != null && legacyCell != DBNull.Value)
+                            {
+                                string legacyText = legacyCell.ToString();
+                                if (_usgsRawTextMaterialized)
+                                    _usgsRawText = legacyText;
+                                else
+                                    _usgsRawTextLegacyFallback = legacyText;
+                            }
                         }
 
-                        if (decompressedBytes != null && decompressedBytes.Length > 0)
+                        // Deserialize plot settings into Plot objects, then refresh only axes
+                        // that still carry their factory-default labels.
+                        bool timeSeriesPlotRestored = DeserializePlotSettings(dtView, rowIndex, "TimeSeriesPlotSettings", _timeSeriesPlot);
+                        bool seasonalityPlotRestored = DeserializePlotSettings(dtView, rowIndex, "SeasonalityPlotSettings", _seasonalityPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ACFPlotSettings", _acfPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "PACFPlotSettings", _pacfPlot);
+                        RefreshPlotAxisTitlesAfterOpen(timeSeriesPlotRestored, seasonalityPlotRestored);
+
+                        // Get time series — stream the compressed UTF-8 payload directly so project
+                        // opening does not allocate both a large managed string and an XElement tree.
+                        TimeSeries loadedTimeSeries = null;
+                        bool compressedPayloadFound = false;
+                        if (dtView.ColumnNames.Contains("TimeSeriesCompressed"))
                         {
-                            compressedPayloadFound = true;
+                            byte[] decompressedBytes = null;
                             try
                             {
-                                loadedTimeSeries = DeserializeTimeSeries(decompressedBytes);
+                                var cell = dtView.GetCell("TimeSeriesCompressed", rowIndex);
+                                if (cell is byte[] compressedBytes && compressedBytes.Length > 0)
+                                {
+                                    decompressedBytes = Tools.Decompress(compressedBytes);
+                                }
                             }
                             catch (Exception ex)
                             {
-                                System.Diagnostics.Debug.WriteLine($"Could not deserialize compressed TimeSeries: {ex.Message}");
+                                System.Diagnostics.Debug.WriteLine($"Could not decompress TimeSeries: {ex.Message}");
                             }
-                        }
-                    }
-                    if (!compressedPayloadFound && dtView.ColumnNames.Contains(nameof(TimeSeries)))
-                    {
-                        var legacyCell = dtView.GetCell(nameof(TimeSeries), rowIndex);
-                        if (legacyCell != null && legacyCell != DBNull.Value)
-                        {
-                            string legacyXml = legacyCell.ToString();
-                            if (!string.IsNullOrEmpty(legacyXml))
+
+                            if (decompressedBytes != null && decompressedBytes.Length > 0)
                             {
+                                compressedPayloadFound = true;
                                 try
                                 {
-                                    loadedTimeSeries = DeserializeTimeSeries(legacyXml);
+                                    loadedTimeSeries = DeserializeTimeSeries(decompressedBytes);
                                 }
                                 catch (Exception ex)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"Could not deserialize legacy TimeSeries: {ex.Message}");
+                                    System.Diagnostics.Debug.WriteLine($"Could not deserialize compressed TimeSeries: {ex.Message}");
                                 }
                             }
                         }
-                    }
+                        if (!compressedPayloadFound && dtView.ColumnNames.Contains(nameof(TimeSeries)))
+                        {
+                            var legacyCell = dtView.GetCell(nameof(TimeSeries), rowIndex);
+                            if (legacyCell != null && legacyCell != DBNull.Value)
+                            {
+                                string legacyXml = legacyCell.ToString();
+                                if (!string.IsNullOrEmpty(legacyXml))
+                                {
+                                    try
+                                    {
+                                        loadedTimeSeries = DeserializeTimeSeries(legacyXml);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"Could not deserialize legacy TimeSeries: {ex.Message}");
+                                    }
+                                }
+                            }
+                        }
 
-                    if (loadedTimeSeries != null)
+                        if (loadedTimeSeries != null)
+                        {
+                            // Install complete per-ordinate tracking once the collection is fully populated.
+                            DetachTimeSeriesEventHandlers(_timeSeries);
+                            _timeSeries = loadedTimeSeries;
+                            AttachTimeSeriesEventHandlers(_timeSeries);
+                        }
+                    }
+                    else
                     {
-                        // Install complete per-ordinate tracking once the collection is fully populated.
-                        DetachTimeSeriesEventHandlers(_timeSeries);
-                        _timeSeries = loadedTimeSeries;
-                        AttachTimeSeriesEventHandlers(_timeSeries);
+                        // Row not found by Name in the parent collection table — usually a deleted row
+                        // or a mismatch between disk state and the live ElementList. Surface the
+                        // condition rather than silently leaving the element with constructor defaults.
+                        System.Diagnostics.Debug.WriteLine($"TimeSeriesElement.Open: no row matched NameOnDisk='{NameOnDisk}' in '{ParentCollection.Name}'; element loaded with constructor defaults.");
                     }
                 }
-                else
+                finally
                 {
-                    // Row not found by Name in the parent collection table � usually a deleted row
-                    // or a mismatch between disk state and the live ElementList. Surface the
-                    // condition rather than silently leaving the element with constructor defaults.
-                    System.Diagnostics.Debug.WriteLine($"TimeSeriesElement.Open: no row matched NameOnDisk='{NameOnDisk}' in '{ParentCollection.Name}'; element loaded with constructor defaults.");
+                    if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
                 }
-
-                if (wasOpen == false) sqlite.Close();
 
             if (!_deferBridgeSetup) SetupBridges();
             SetIsValid();
@@ -1407,7 +1413,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1554,7 +1560,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new TimeSeriesElement(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1565,14 +1571,14 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Delete()
         {
-            // Early-return on missing Name BEFORE bridge teardown � otherwise an element
+            // Early-return on missing Name BEFORE bridge teardown — otherwise an element
             // constructed with a null/empty name (rare but possible during partial init)
             // would have its bridges torn down without writing to disk, leaving a
             // half-deleted state. Mirrors InputData.Delete's order.
             if (string.IsNullOrEmpty(Name)) return;
             DisposeBridges();
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {
@@ -2023,26 +2029,33 @@ namespace RMC.BestFit.UI
         /// <param name="e">The PropertyChangedEventArgs containing the name of the changed property.</param>
         /// <remarks>
         /// This method propagates property changes from individual data points to the time series element
-        /// and triggers validation when changes occur.
+        /// and triggers validation when changes occur. Reset events omit removed items, so retained
+        /// ordinates are checked against the current series by reference before forwarding an event.
         /// </remarks>
         private void SeriesOrdinateChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (TimeSeries.SuppressCollectionChanged == false)
+            var series = TimeSeries;
+            if (series?.SuppressCollectionChanged == true) return;
+            if (series == null || !series.Any(item => ReferenceEquals(item, sender)))
             {
-                RaisePropertyChange(e.PropertyName);
-                // Filter validation to property changes that actually affect validity. Index/Value
-                // changes affect series ordering / sentinel detection; other notifications (if any
-                // are added later) would need the same audit before being whitelisted.
-                if (e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index) ||
-                    e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value))
-                    SetIsValid();
+                if (sender is SeriesOrdinate<DateTime, double> removed)
+                    removed.PropertyChanged -= SeriesOrdinateChanged;
+                return;
             }
+
+            RaisePropertyChange(e.PropertyName);
+            // Filter validation to property changes that actually affect validity. Index/Value
+            // changes affect series ordering / sentinel detection; other notifications (if any
+            // are added later) would need the same audit before being whitelisted.
+            if (e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index) ||
+                e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value))
+                SetIsValid();
         }
 
         /// <summary>
         /// Downloads time series data from the specified external source based on the entry method.
         /// </summary>
-        /// <param name="cancellationToken">Token used to cancel HTTP-based downloads.</param>
+        /// <param name="cancellationToken">Token used to cancel downloads, including between DSS block reads.</param>
         /// <returns>A task representing the asynchronous download operation.</returns>
         /// <remarks>
         /// This method supports downloading data from HEC-DSS files, GHCN, USGS, CHMN, and ABOM sources.
@@ -2108,15 +2121,14 @@ namespace RMC.BestFit.UI
                                 $"Use the path selector to choose a valid path. Details: {ex.Message}");
                         }
 
-                        // If the D-part contains a date range (condensed path from catalog) or spaces
-                        // (from a legacy spacing bug), use PathWithoutDate so GetTimeSeries auto-discovers
-                        // the full date range from the native library.
+                        // Normalize catalog ranges and legacy spacing before resolving the
+                        // complete logical series from its concrete storage blocks.
                         if (pathName.IsDPartARange() || pathName.Dpart.Contains(" "))
                         {
                             pathName = new Hec.Dss.DssPath(pathName.PathWithoutDate);
                         }
 
-                        var timeSeries = dssReader.GetTimeSeries(pathName);
+                        var timeSeries = DssTimeSeriesReader.Read(dssReader, pathName, cancellationToken);
 
                         // Check if the time series data was found
                         if (timeSeries == null || timeSeries.Values == null || timeSeries.Values.Length == 0)

@@ -46,6 +46,14 @@ Pull requests may take several weeks or longer to review. Before submitting code
 7. Ensure a clean build with zero errors and zero warnings.
 8. For model-library changes, run the public model test project locally.
 
+## Binary Assets
+
+Binary files stay in the repository history permanently, so they are committed sparingly:
+
+- The technical reference and verification report PDFs in `output/pdf/` are regenerated and committed once per release, at the release's source checkpoint.
+- Example projects (`examples/**/*.bestfit`) are recommitted only when their content changes, for example a corrected fixture or a project-format migration, not after an incidental open and save.
+- Release packages and desktop zips are not committed. They are attached to the GitHub release, and the release description carries the desktop zip's SHA-256 checksum.
+
 ## Coding Standards
 
 RMC-BestFit is used for flood risk and life-safety engineering decisions. Code should be explicit, well-tested, and numerically defensive.

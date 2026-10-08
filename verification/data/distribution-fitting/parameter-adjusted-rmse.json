@@ -1,0 +1,36 @@
+{
+  "finding": "TR-009",
+  "oracle": "Direct sum-of-squared-residuals calculation with n-k residual degrees of freedom",
+  "tolerance_absolute": 1E-12,
+  "fixture": {
+    "observed": [0.0, 0.0, 0.0, 0.0],
+    "modeled": [1.0, 2.0, 3.0, 4.0],
+    "parameter_count": 1,
+    "sum_squared_residuals": 30.0,
+    "degrees_of_freedom": 3,
+    "expected_rmse": 3.1622776601683795
+  },
+  "baseline": {
+    "numerics_commit": "3e058ebe5917817f3dde5e3b2ed6574d6bab083e",
+    "actual_rmse": 2.160246899469287,
+    "outcome": "Failed as expected",
+    "cause": "The n-k value was used as the loop bound, omitting the last k residuals from the numerator.",
+    "trx": "TestResults/VerificationFocused/20260724-134713-RMC_BestFit_Verification_DistributionFitting_GoodnessOfFitRmseVerificationTests_ParameterAdjustedRmse_UsesAllResidualsAndIsPermutationInvariant/haden_HADEN_2026-07-24_19_47_27.052.trx"
+  },
+  "fix": {
+    "numerics_commit": "24bf9f98139b23400bf008df413b0d97330ccfd3",
+    "public_api_changed": false,
+    "formula": "sqrt(sum(i=1..n, (modeled_i-observed_i)^2) / (n-k))",
+    "numerics_net10_unit_tests": {
+      "passed": 1907,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focused_verification": {
+      "test": "RMC.BestFit.Verification.DistributionFitting.GoodnessOfFitRmseVerificationTests.ParameterAdjustedRmse_UsesAllResidualsAndIsPermutationInvariant",
+      "outcome": "Passed",
+      "trx": "TestResults/VerificationFocused/20260724-135414-RMC_BestFit_Verification_DistributionFitting_GoodnessOfFitRmseVerificationTests_ParameterAdjustedRmse_UsesAllResidualsAndIsPermutationInvariant/haden_HADEN_2026-07-24_19_54_31.354.trx"
+    }
+  },
+  "status": "Fixed and verified"
+}

@@ -28,6 +28,7 @@ namespace RMC.BestFit.Api.Tests.DTOs
             Assert.IsNull(request.XOrder);
             Assert.IsNull(request.IncludeIntercept);
             Assert.IsNull(request.TransformType);
+            Assert.IsNull(request.TransformLambda);
             Assert.IsNull(request.TrendType);
             Assert.IsNull(request.IncludeSeasonality);
             Assert.IsNull(request.CovariateTimeSeriesIds);
@@ -54,6 +55,7 @@ namespace RMC.BestFit.Api.Tests.DTOs
                 XOrder = 1,
                 IncludeIntercept = false,
                 TransformType = Transform.Logarithmic,
+                TransformLambda = 0.25,
                 TrendType = ARIMAX.Trend.Quadratic,
                 IncludeSeasonality = true,
                 CovariateTimeSeriesIds = new List<Guid> { Guid.NewGuid() },
@@ -71,6 +73,7 @@ namespace RMC.BestFit.Api.Tests.DTOs
             Assert.AreEqual(1, copy.XOrder);
             Assert.IsFalse(copy.IncludeIntercept!.Value);
             Assert.AreEqual(Transform.Logarithmic, copy.TransformType);
+            Assert.AreEqual(0.25, copy.TransformLambda);
             Assert.AreEqual(ARIMAX.Trend.Quadratic, copy.TrendType);
             Assert.IsTrue(copy.IncludeSeasonality!.Value);
             Assert.AreEqual(1, copy.CovariateTimeSeriesIds!.Count);
@@ -88,13 +91,15 @@ namespace RMC.BestFit.Api.Tests.DTOs
             string json = TestJson.Serialize(new CreateTimeSeriesAnalysisRequest
             {
                 ModelType = TimeSeriesModelType.Arima,
-                TransformType = Transform.BoxCox
+                TransformType = Transform.BoxCox,
+                TransformLambda = -0.35
             });
             StringAssert.Contains(json, "\"timeSeriesId\"");
             StringAssert.Contains(json, "\"modelType\"");
             StringAssert.Contains(json, "\"arima\"");
             StringAssert.Contains(json, "\"transformType\"");
             StringAssert.Contains(json, "\"boxCox\"");
+            StringAssert.Contains(json, "\"transformLambda\"");
             Assert.IsFalse(json.Contains("\"order\""), "Null order should be omitted.");
         }
     }

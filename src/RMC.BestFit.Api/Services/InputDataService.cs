@@ -1,4 +1,6 @@
 using Numerics.Data;
+using System.Text.Json;
+using RMC.BestFit.Api.Mcp;
 using RMC.BestFit.Api.DTOs;
 using RMC.BestFit.Api.Mappers;
 using RMC.BestFit.Api.Services.Exceptions;
@@ -44,6 +46,45 @@ namespace RMC.BestFit.Api.Services
             if (request.ExactData == null || request.ExactData.Count == 0)
             {
                 throw new ArgumentException("At least one exact observation is required.", nameof(request));
+            }
+
+            if (request.UseMultipleGrubbsBeckTest &&
+                (request.LowOutlierThreshold.HasValue || request.ExactData.Any(observation => observation.IsLowOutlier)))
+            {
+                throw new ArgumentException(
+                    "useMultipleGrubbsBeckTest cannot be combined with lowOutlierThreshold or preflagged exact observations.",
+                    nameof(request));
+            }
+
+            // A preflag with no threshold and MGBT off would store IsLowOutlier=true with
+            // NumberOfLowOutliers left at 0 and no censoring threshold - the inconsistent state
+            // behind finding L29 (Bulletin 17C's counter-gated MomentConditions would drop the
+            // flagged values while n still counts them, and the counter-gated analytical-Jacobian
+            // guard and univariate filtering would both still treat them as ordinary exact data).
+            // Reject before building anything, per Haden Smith's 26 September 2026 decision (Task
+            // 3.20). The MGBT+preflag combination is already rejected above, so this covers the
+            // remaining no-threshold case.
+            if (!request.LowOutlierThreshold.HasValue && request.ExactData.Any(observation => observation.IsLowOutlier))
+            {
+                throw new ArgumentException(
+                    "Exact observations flagged isLowOutlier=true require lowOutlierThreshold, which defines their censoring threshold; supply lowOutlierThreshold or remove the flags (useMultipleGrubbsBeckTest derives the flags itself).",
+                    nameof(request));
+            }
+
+            // A manual threshold will be applied to every observation below, so a caller-supplied
+            // isLowOutlier=true on a value the threshold would NOT flag is self-contradictory.
+            // Reject it before building anything, per decision D5's contradiction rule, rather than
+            // silently letting the threshold application below overwrite the caller's flag.
+            if (request.LowOutlierThreshold.HasValue)
+            {
+                double threshold = request.LowOutlierThreshold.Value;
+                var contradiction = request.ExactData.FirstOrDefault(observation => observation.IsLowOutlier && observation.Value >= threshold);
+                if (contradiction != null)
+                {
+                    throw new ArgumentException(
+                        $"Exact observation value {contradiction.Value} is flagged isLowOutlier=true, which contradicts lowOutlierThreshold {threshold}: the threshold only flags values strictly below it.",
+                        nameof(request));
+                }
             }
 
             var dataFrame = new DataFrame();
@@ -110,13 +151,28 @@ namespace RMC.BestFit.Api.Services
             if (request.Lambda.HasValue) dataFrame.SetLambda(request.Lambda.Value);
 
             ThrowIfInvalid(dataFrame);
+            // Mirrors the desktop's InputData.Open: MGBT and a manual threshold are mutually
+            // exclusive (rejected above), so at most one of these applies. SetLowOutliersFromThreshold
+            // throws ArgumentException for fewer than ten exact observations or a threshold that
+            // would censor more than half the record; both propagate unwrapped so the controller's
+            // existing ArgumentException handling maps them to 400 with the data frame's own message,
+            // and nothing is stored because the throw happens before AddInputData below.
+            if (request.UseMultipleGrubbsBeckTest)
+            {
+                dataFrame.SetLowOutliersFromMGBT();
+            }
+            else if (request.LowOutlierThreshold.HasValue)
+            {
+                dataFrame.SetLowOutliersFromThreshold();
+            }
 
             var resource = new InputDataResource
             {
                 Name = string.IsNullOrWhiteSpace(request.Name) ? "Manual input data" : request.Name,
                 Description = request.Description,
                 DataFrame = dataFrame,
-                Method = InputDataMethod.Manual
+                Method = InputDataMethod.Manual,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request))
             };
             return _store.AddInputData(resource);
         }
@@ -146,6 +202,7 @@ namespace RMC.BestFit.Api.Services
                 Description = request.Description,
                 DataFrame = dataFrame,
                 Method = InputDataMethod.BlockMaxima,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request)),
                 SourceTimeSeriesId = source.Id,
                 TimeBlock = request.TimeBlock,
                 BlockFunction = request.BlockFunction,
@@ -186,6 +243,7 @@ namespace RMC.BestFit.Api.Services
                 Description = request.Description,
                 DataFrame = dataFrame,
                 Method = InputDataMethod.PeaksOverThreshold,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request)),
                 SourceTimeSeriesId = source.Id,
                 Threshold = request.Threshold,
                 MinStepsBetweenPeaks = request.MinStepsBetweenPeaks,
@@ -210,7 +268,7 @@ namespace RMC.BestFit.Api.Services
             // Download through the adapter seam (rather than DataFrame.CreateFromUSGS, which calls
             // the static downloader directly) so tests can fake the network; the series population
             // below mirrors DataFrame.CreateFromUSGS exactly.
-            var (timeSeries, _) = await _usgs.DownloadAsync(request.SiteNumber, request.SeriesType, cancellationToken);
+            var (timeSeries, rawText) = await _usgs.DownloadAsync(request.SiteNumber, request.SeriesType, cancellationToken);
 
             var dataFrame = new DataFrame();
             dataFrame.ExactSeries.SuppressCollectionChanged = true;
@@ -223,6 +281,7 @@ namespace RMC.BestFit.Api.Services
             dataFrame.ExactSeries.RaiseCollectionChangedReset();
 
             ThrowIfInvalid(dataFrame);
+            if (request.UseMultipleGrubbsBeckTest) dataFrame.SetLowOutliersFromMGBT();
 
             var resource = new InputDataResource
             {
@@ -232,7 +291,9 @@ namespace RMC.BestFit.Api.Services
                 Method = request.SeriesType == TimeSeriesDownload.TimeSeriesType.PeakStage
                     ? InputDataMethod.UsgsPeakStage
                     : InputDataMethod.UsgsPeakDischarge,
-                UsgsSiteNumber = request.SiteNumber
+                UsgsSiteNumber = request.SiteNumber,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request)),
+                SourceRawText = rawText
             };
             return _store.AddInputData(resource);
         }

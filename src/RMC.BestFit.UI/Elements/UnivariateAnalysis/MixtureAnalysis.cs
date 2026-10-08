@@ -95,7 +95,7 @@ namespace RMC.BestFit.UI
                 _inputDataInValidMsg = new BasicMessageItem(MessageType.Error, "The selected input data is invalid.", this, ParentCollection.Name, Name, nameof(InputData), "MDA-ERR-006");
 
                 // ProbabilityOrdinates validation messages are surfaced by the model-layer
-                // ProbabilityOrdinates.Validate() routed through _validationAdapter â€” defining
+                // ProbabilityOrdinates.Validate() routed through _validationAdapter — defining
                 // duplicates here would produce two messages per error.
                 _messages = new List<BasicMessageItem>()
                 {   _descriptionMsg,
@@ -113,7 +113,7 @@ namespace RMC.BestFit.UI
 
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "MDA");
                 SetIsValid();
-                // Not a v1 feature â€” no legacy migration path, so no openedFromV1 flag.
+                // Not a v1 feature — no legacy migration path, so no openedFromV1 flag.
                 SetIsDirty(false);
             }
             finally
@@ -327,9 +327,9 @@ namespace RMC.BestFit.UI
         private UndoableCollectionBridge<double> _probabilityOrdinatesBridge;
 
         /// <summary>
-        /// Undo bridge for the Distributions ObservableCollection (Add/Remove/Replace).
+        /// Last observed component list, including empty collections, for complete-state undo.
         /// </summary>
-        private UndoableCollectionBridge<UnivariateDistributionType> _distributionsBridge;
+        private UnivariateDistributionType[] _distributionSnapshot = Array.Empty<UnivariateDistributionType>();
 
         /// <summary>
         /// Rolling XElement baseline of the <see cref="MixtureModel"/> state.
@@ -442,6 +442,7 @@ namespace RMC.BestFit.UI
                     _innerAnalysis.MixtureDistribution.SetDefaultMixture(_distributions.ToList());
                 }
 
+                _distributionSnapshot = _distributions.ToArray();
                 RaisePropertyChange(nameof(Distributions));
             }
         }
@@ -558,7 +559,7 @@ namespace RMC.BestFit.UI
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // Check probability ordinates
-            // Validate ordinates locally only for the IsValid flag â€” diagnostic messages are
+            // Validate ordinates locally only for the IsValid flag — diagnostic messages are
             // surfaced by the model-layer ProbabilityOrdinates.Validate() routed through
             // _validationAdapter inside SetIsValid().
             _ordinatesValid = true;
@@ -619,12 +620,38 @@ namespace RMC.BestFit.UI
             // Note: Max-3 enforcement is handled by the App's PreviewAddRows handler
             // to avoid re-entrancy (cannot modify ObservableCollection during CollectionChanged).
 
-            // Update the inner analysis's mixture distribution
-            if (_distributions.Count > 0)
-                _innerAnalysis.MixtureDistribution.SetDefaultMixture(_distributions.ToList());
-            SetIsValid();
-            if (!UndoManager.IsExecutingAction) ClearResults();
-            RaisePropertyChange(nameof(Distributions));
+            // Capture the actual model before rebuilding it: the ordinary model baseline may
+            // predate parameter/prior edits, and replaying only enum values loses those settings.
+            bool wasUndoEnabled = IsUndoEnabled;
+            bool recordAction = wasUndoEnabled && !UndoManager.IsExecutingAction;
+            var oldModel = recordAction ? _innerAnalysis.MixtureDistribution.ToXElement() : null;
+            var oldTypes = _distributionSnapshot;
+            var newTypes = _distributions.ToArray();
+            IsUndoEnabled = false;
+            try
+            {
+                if (_distributions.Count > 0)
+                    _innerAnalysis.MixtureDistribution.SetDefaultMixture(_distributions.ToList());
+                SetIsValid();
+                if (!UndoManager.IsExecutingAction) ClearResults();
+                RaisePropertyChange(nameof(Distributions));
+                _modelSnapshot = _innerAnalysis.MixtureDistribution.ToXElement();
+                _distributionSnapshot = newTypes;
+            }
+            finally
+            {
+                IsUndoEnabled = wasUndoEnabled;
+            }
+
+            if (recordAction)
+            {
+                var newModel = _modelSnapshot;
+                UndoManager.RecordAction(new DelegateAction(
+                    "Change mixture distributions",
+                    () => RestoreModelFromSnapshot(newModel, newTypes),
+                    () => RestoreModelFromSnapshot(oldModel, oldTypes),
+                    this));
+            }
         }
 
         /// <summary>
@@ -749,7 +776,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -765,163 +793,168 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // open element
-            var dtView = sqlite.GetTableManager(CollectionName);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                if (dtView.ColumnNames.Contains(nameof(Name)))
+                if (wasOpen == false) sqlite.Open();
+
+                // open element
+                var dtView = sqlite.GetTableManager(CollectionName);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "MA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                // Get input data
-                if (dtView.ColumnNames.Contains(nameof(InputData)))
-                {
-                    var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
                     {
-                        if (collection.GetType() == typeof(InputDataCollection))
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "MA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                    // Get input data
+                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    {
+                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                         {
-                            foreach (IElement element in collection)
+                            if (collection.GetType() == typeof(InputDataCollection))
                             {
-                                if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                foreach (IElement element in collection)
                                 {
-                                    if (_inputData != null)
+                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
                                     {
-                                        _inputData.PropertyChanged -= InputDataChanged;
-                                        _inputData.Deleted -= OnInputDataDeleted;
+                                        if (_inputData != null)
+                                        {
+                                            _inputData.PropertyChanged -= InputDataChanged;
+                                            _inputData.Deleted -= OnInputDataDeleted;
+                                        }
+                                        _inputData = (InputData)element;
+                                        _inputData.PropertyChanged += InputDataChanged;
+                                        _inputData.Deleted += OnInputDataDeleted;
+                                        _inputDataValid = _inputData.IsValid;
+                                        if (!_inputDataValid)
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Add(_inputDataInValidMsg);
+                                        }
+                                        else
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Remove(_inputDataInValidMsg);
+                                        }
+                                        break;
                                     }
-                                    _inputData = (InputData)element;
-                                    _inputData.PropertyChanged += InputDataChanged;
-                                    _inputData.Deleted += OnInputDataDeleted;
-                                    _inputDataValid = _inputData.IsValid;
-                                    if (!_inputDataValid)
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Add(_inputDataInValidMsg);
-                                    }
-                                    else
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Remove(_inputDataInValidMsg);
-                                    }
-                                    break;
                                 }
                             }
                         }
                     }
-                }
-                // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
-                if (_inputData == null)
-                    _messenger.Add(_inputDataNullMsg);
+                    // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
+                    if (_inputData == null)
+                        _messenger.Add(_inputDataNullMsg);
 
-                // Plot Properties
-                DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                _bayesianController.Deserialize(dtView, rowIndex);
+                    // Plot Properties
+                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                    _bayesianController.Deserialize(dtView, rowIndex);
 
-                // Get probability ordinates (save to local â€” inner analysis gets reconstructed below)
-                string probOrdinatesStr = null;
-                if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                    probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
+                    // Get probability ordinates (save to local — inner analysis gets reconstructed below)
+                    string probOrdinatesStr = null;
+                    if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                        probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
 
-                // Get distributions. Suppress CollectionChanged during the bulk load — each
-                // Add otherwise fires SetDefaultMixture (which rebuilds the inner mixture
-                // distribution) and ClearResults (a no-op during Open since IsUndoEnabled=false,
-                // but still emits PropertyChanged). For a 3-component mixture the inner analysis
-                // would be replaced 4 times before XElement-based reconstruction at line 855
-                // overwrites it.
-                if (dtView.ColumnNames.Contains(nameof(Distributions)))
-                {
-                    _distributions.CollectionChanged -= Distributions_CollectionChanged;
-                    try
+                    // Get distributions. Suppress CollectionChanged during the bulk load — each
+                    // Add otherwise fires SetDefaultMixture (which rebuilds the inner mixture
+                    // distribution) and ClearResults (a no-op during Open since IsUndoEnabled=false,
+                    // but still emits PropertyChanged). For a 3-component mixture the inner analysis
+                    // would be replaced 4 times before XElement-based reconstruction at line 855
+                    // overwrites it.
+                    if (dtView.ColumnNames.Contains(nameof(Distributions)))
                     {
-                        Distributions.Clear();
-                        var types = dtView.GetCell(nameof(Distributions), rowIndex).ToString().Split('|');
-                        for (int i = 0; i < types.Length; i++)
+                        _distributions.CollectionChanged -= Distributions_CollectionChanged;
+                        try
                         {
-                            if (Enum.TryParse(types[i], out UnivariateDistributionType type))
-                                Distributions.Add(type);
+                            Distributions.Clear();
+                            var types = dtView.GetCell(nameof(Distributions), rowIndex).ToString().Split('|');
+                            for (int i = 0; i < types.Length; i++)
+                            {
+                                if (Enum.TryParse(types[i], out UnivariateDistributionType type))
+                                    Distributions.Add(type);
+                            }
+                        }
+                        finally
+                        {
+                            _distributions.CollectionChanged += Distributions_CollectionChanged;
                         }
                     }
-                    finally
+
+                    // Get model and reconstruct the inner analysis
+                    if (dtView.ColumnNames.Contains(nameof(MixtureDistribution)) && InputData != null && InputData.DataFrame != null)
                     {
-                        _distributions.CollectionChanged += Distributions_CollectionChanged;
+                        var modelXElement = XElement.Parse(dtView.GetCell(nameof(MixtureDistribution), rowIndex).ToString());
+                        var model = new MixtureModel(InputData.DataFrame, modelXElement);
+
+                        MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+                        XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+
+                        // Get Bayesian analysis XElement
+                        XElement analysisXElement = null;
+                        if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                        {
+                            var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                            analysisXElement = XElement.Parse(xElementString);
+                        }
+
+                        UncertaintyAnalysisResults analysisResults =
+                            AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                        // Reconstruct inner analysis from persisted data
+                        UnsubscribeInnerAnalysis();
+
+                        if (innerXElement == null && analysisXElement != null)
+                        {
+                            // Build a combined XElement for the inner analysis constructor
+                            innerXElement = new XElement("MixtureAnalysis",
+                                new XAttribute("IsEstimated", mcmcResults != null));
+
+                            // Add probability ordinates
+                            if (!string.IsNullOrEmpty(probOrdinatesStr))
+                                innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
+
+                            // Add Bayesian analysis element
+                            innerXElement.Add(analysisXElement);
+
+                        }
+
+                        if (innerXElement != null)
+                        {
+                            _innerAnalysis = new ModelAnalyses.MixtureAnalysis(model, innerXElement, mcmcResults, analysisResults);
+                        }
+                        else
+                        {
+                            _innerAnalysis = new ModelAnalyses.MixtureAnalysis(model);
+
+                            // Load probability ordinates into the new inner analysis
+                            if (!string.IsNullOrEmpty(probOrdinatesStr))
+                                _innerAnalysis.ProbabilityOrdinates.FromDelimitedString(probOrdinatesStr, "|");
+                        }
+
+                        SubscribeInnerAnalysis();
                     }
-                }
-
-                // Get model and reconstruct the inner analysis
-                if (dtView.ColumnNames.Contains(nameof(MixtureDistribution)) && InputData != null && InputData.DataFrame != null)
-                {
-                    var modelXElement = XElement.Parse(dtView.GetCell(nameof(MixtureDistribution), rowIndex).ToString());
-                    var model = new MixtureModel(InputData.DataFrame, modelXElement);
-
-                    MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-                    XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
-
-                    // Get Bayesian analysis XElement
-                    XElement analysisXElement = null;
-                    if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                    {
-                        var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                        analysisXElement = XElement.Parse(xElementString);
-                    }
-
-                    UncertaintyAnalysisResults analysisResults =
-                        AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                    // Reconstruct inner analysis from persisted data
-                    UnsubscribeInnerAnalysis();
-
-                    if (innerXElement == null && analysisXElement != null)
-                    {
-                        // Build a combined XElement for the inner analysis constructor
-                        innerXElement = new XElement("MixtureAnalysis",
-                            new XAttribute("IsEstimated", mcmcResults != null));
-
-                        // Add probability ordinates
-                        if (!string.IsNullOrEmpty(probOrdinatesStr))
-                            innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
-
-                        // Add Bayesian analysis element
-                        innerXElement.Add(analysisXElement);
-
-                    }
-
-                    if (innerXElement != null)
-                    {
-                        _innerAnalysis = new ModelAnalyses.MixtureAnalysis(model, innerXElement, mcmcResults, analysisResults);
-                    }
-                    else
-                    {
-                        _innerAnalysis = new ModelAnalyses.MixtureAnalysis(model);
-
-                        // Load probability ordinates into the new inner analysis
-                        if (!string.IsNullOrEmpty(probOrdinatesStr))
-                            _innerAnalysis.ProbabilityOrdinates.FromDelimitedString(probOrdinatesStr, "|");
-                    }
-
-                    SubscribeInnerAnalysis();
                 }
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
             SetupBridges();
 
-            // Validate probability ordinates â€” ProbabilityOrdinates_CollectionChanged didn't fire
+            // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
             // during Open because SubscribeInnerAnalysis hadn't been called when the ordinates were loaded.
             // Diagnostic messages are surfaced by the model-layer Validate() routed through
             // _validationAdapter inside SetIsValid(); we only set the local flag here.
@@ -976,7 +1009,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1111,7 +1144,7 @@ namespace RMC.BestFit.UI
                         ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter),
                         ProbabilityOrdinates.DefaultDelimiter);
 
-                // Copy plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null) PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
                 _bayesianController.CopyTo(element._bayesianController);
 
@@ -1137,7 +1170,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new MixtureAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1150,14 +1183,14 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // InputData setter â€” that would re-add _inputDataNullMsg and re-flip IsDirty=true).
+            // InputData setter — that would re-add _inputDataNullMsg and re-flip IsDirty=true).
             if (_inputData != null) _inputData.Deleted -= OnInputDataDeleted;
             DisposeBridges();
             _bayesianController?.Dispose();
             UnsubscribeInnerAnalysis();
             SetIsDirty(false);
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {
@@ -1201,7 +1234,7 @@ namespace RMC.BestFit.UI
             if (_ordinatesValid == false) valid = false;
 
             // Delegate model validation to inner analysis.
-            // Skip model validation when InputData is invalid â€” the UI layer already reports that
+            // Skip model validation when InputData is invalid — the UI layer already reports that
             // via _inputDataNullMsg / _inputDataInValidMsg, and the model's "DataFrame is null"
             // message would be a confusing developer-facing duplicate.
             bool modelValid = _inputDataValid
@@ -1331,7 +1364,8 @@ namespace RMC.BestFit.UI
         /// <see cref="BayesianAnalysis"/> settings and <see cref="ProbabilityOrdinates"/>.
         /// </summary>
         /// <param name="snapshot">The XElement snapshot to restore from.</param>
-        private void RestoreModelFromSnapshot(XElement snapshot)
+        /// <param name="distributionTypes">The exact component list for a collection edit, including an empty reset; otherwise inferred from the model.</param>
+        private void RestoreModelFromSnapshot(XElement snapshot, UnivariateDistributionType[] distributionTypes = null)
         {
             // 1. Disconnect from current inner analysis
             UnsubscribeInnerAnalysis();
@@ -1353,7 +1387,7 @@ namespace RMC.BestFit.UI
                 _innerAnalysis.BayesianAnalysis.SetDefaultAdvancedSimulationOptions();
 
             // 5. Rebuild the Distributions collection from the restored model's component types
-            var restoredTypes = newModel.Mixture.Distributions.Select(d => d.Type).ToList();
+            var restoredTypes = distributionTypes ?? newModel.Mixture.Distributions.Select(d => d.Type).ToArray();
             _distributions.CollectionChanged -= Distributions_CollectionChanged;
             _distributions.Clear();
             foreach (var t in restoredTypes)
@@ -1494,17 +1528,10 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // Collection bridge for the user-editable Distributions list (mixture components)
-            if (_distributions != null)
-            {
-                _distributionsBridge = new UndoableCollectionBridge<UnivariateDistributionType>(
-                    _distributions,
-                    () => IsUndoEnabled ? UndoManager : null,
-                    "mixture distributions",
-                    this);
-            }
+            // Component edits record their complete model and enum state in one custom action.
+            _distributionSnapshot = _distributions?.ToArray() ?? Array.Empty<UnivariateDistributionType>();
 
-            // Model undo â€” capture baseline snapshot for XElement comparison
+            // Model undo — capture baseline snapshot for XElement comparison
             _modelSnapshot = _innerAnalysis?.MixtureDistribution?.ToXElement();
 
             // Plot undo managers for element-level plots
@@ -1536,9 +1563,6 @@ namespace RMC.BestFit.UI
 
             _probabilityOrdinatesBridge?.Dispose();
             _probabilityOrdinatesBridge = null;
-
-            _distributionsBridge?.Dispose();
-            _distributionsBridge = null;
 
             _frequencyPlotUndo?.Dispose();
             _frequencyPlotUndo = null;

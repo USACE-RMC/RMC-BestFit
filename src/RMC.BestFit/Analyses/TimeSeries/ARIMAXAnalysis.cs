@@ -27,9 +27,9 @@ namespace RMC.BestFit.Analyses
     /// and their uncertainty, producing confidence intervals for both historical fit and forecasts.
     /// </para>
     /// <para>
-    /// Model structure: Y(t) = � + ?(t) + ?(t) + �*X(t) + f*Y(t-p) + ?*e(t-q) + e(t)
-    /// where � is the intercept, ?(t) is the trend, ?(t) is seasonality, �*X(t) are exogenous covariates,
-    /// f*Y(t-p) is the autoregressive component, ?*e(t-q) is the moving average component, and e(t) is white noise.
+    /// Model structure: Y(t) = μ + γ(t) + ψ(t) + β*X(t) + φ*Y(t-p) + θ*ε(t-q) + ε(t)
+    /// where μ is the intercept, γ(t) is the trend, ψ(t) is seasonality, β*X(t) are exogenous covariates,
+    /// φ*Y(t-p) is the autoregressive component, θ*ε(t-q) is the moving average component, and ε(t) is white noise.
     /// </para>
     /// <para>
     /// The class implements <see cref="IAnalysis"/> and extends <see cref="AnalysisBase"/>.
@@ -295,7 +295,7 @@ namespace RMC.BestFit.Analyses
             else if (e.PropertyName == nameof(ARIMAX.CovariateExtension))
             {
                 // CovariateExtension affects only how covariates are extrapolated for the
-                // forecast period (block bootstrap, kNN, etc.) � it does not enter the
+                // forecast period (block bootstrap, kNN, etc.) — it does not enter the
                 // likelihood. Reprocess the forecast at the new method without re-running
                 // the chain. (Pre-Phase-6 catch-all cleared instead; this is the corrected
                 // post-processing-only treatment.)
@@ -349,13 +349,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only � the uncertainty/forecast output
+        /// Clears <see cref="AnalysisResults"/> only — the uncertainty/forecast output
         /// whose horizon is <see cref="ForecastingTimeSteps"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results) and
         /// <c>IsEstimated</c> intact. Called when the horizon is set to a value
-        /// that would produce no derived output (e.g., a defensive fallback) � the fit
+        /// that would produce no derived output (e.g., a defensive fallback) — the fit
         /// survives and reprocesses on the next valid horizon change.
         /// </remarks>
         public void ClearUncertaintyAnalysisResults()
@@ -372,7 +372,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// Validity matches the setter clamp (0 = horizon = 100). Reprocess is
-        /// fire-and-forget on the default task scheduler � exceptions are logged
+        /// fire-and-forget on the default task scheduler — exceptions are logged
         /// via <see cref="Debug"/> and do not propagate to the setter.
         /// </remarks>
         private void ReprocessOrClearForecast()
@@ -411,7 +411,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change) can be inside its parallel loop
-            // when ClearResults() nulls AnalysisResults � producing an NRE on the next
+            // when ClearResults() nulls AnalysisResults — producing an NRE on the next
             // AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -429,7 +429,7 @@ namespace RMC.BestFit.Analyses
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process. The base-class gate is held throughout RunAsync, so
-                    // CreateUncertaintyAnalysisResultsAsync runs without contention here �
+                    // CreateUncertaintyAnalysisResultsAsync runs without contention here —
                     // its body (and the UpdatePointEstimateResultsAsync it chains to) does
                     // not itself acquire the gate, so there is no re-entrant deadlock.
                     if (BayesianAnalysis.IsEstimated == true)
@@ -511,7 +511,16 @@ namespace RMC.BestFit.Analyses
                 // with any concurrent UI binding read of ARIMAX.Parameters.
                 int dataLength = ARIMAX.TimeSeries.Count;
                 int forecastStepsForPredict = (dataLength - ARIMAX.TrainingTimeSteps) + ForecastingTimeSteps;
-                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, forecastStepsForPredict).Y;
+                int n = dataLength + ForecastingTimeSteps;
+
+                // forecastStepsForPredict is negative whenever TrainingTimeSteps exceeds n.
+                // Reachable only when the model fails validation (TrainingTimeSteps >
+                // TimeSeries.Count), e.g. injected state; RunAsync refuses such configurations.
+                // Predict now rejects a negative forecastSteps, so predict at least the training
+                // window (clamped to zero) and keep only the leading n values -- identical to the
+                // unclamped values for every t < n because the recursion is forward-only and does
+                // not depend on the loop's upper bound.
+                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, Math.Max(0, forecastStepsForPredict)).Y.Subset(0, n - 1);
 
                 // Get goodness of fit measures
                 // RMSE (comparing predicted vs observed for training period only)
@@ -519,8 +528,9 @@ namespace RMC.BestFit.Analyses
                 var modelValues = AnalysisResults.ModeCurve.Subset(0, ARIMAX.TrainingTimeSteps - 1);
                 var rmse = GoodnessOfFit.RMSE(trueValues, modelValues);
 
-                // AIC/BIC at MAP using full LogLikelihood (data + prior).
-                double mapLogLH = ARIMAX.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                double mapLogLH = ARIMAX.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 AnalysisResults.AIC = GoodnessOfFit.AIC(ARIMAX.NumberOfParameters, mapLogLH);
                 AnalysisResults.BIC = GoodnessOfFit.BIC(ARIMAX.TrainingTimeSteps, ARIMAX.NumberOfParameters, mapLogLH);
                 AnalysisResults.DIC = BayesianAnalysis.DIC;
@@ -575,14 +585,18 @@ namespace RMC.BestFit.Analyses
                 int forecastStepsForPredict = (dataLength - ARIMAX.TrainingTimeSteps) + ForecastingTimeSteps;
                 int n = dataLength + ForecastingTimeSteps;
 
+                // See the clamping note in UpdatePointEstimateResultsAsync: forecastStepsForPredict
+                // can be negative, and Predict now rejects a negative forecastSteps.
+                int clampedForecastSteps = Math.Max(0, forecastStepsForPredict);
+
                 AnalysisResults = new UncertaintyAnalysisResults();
-                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, forecastStepsForPredict).Y;
+                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, clampedForecastSteps).Y.Subset(0, n - 1);
                 AnalysisResults.MeanCurve = new double[n];
                 AnalysisResults.ConfidenceIntervals = new double[n, 3];
 
                 var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
                 // Bind realz to the actual posterior length, not the configured
-                // OutputLength � guards against a partial run / restore where
+                // OutputLength — guards against a partial run / restore where
                 // OutputLength > Output.Count.
                 var realz = Math.Min(BayesianAnalysis.OutputLength, posterior.Count);
                 double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
@@ -592,8 +606,8 @@ namespace RMC.BestFit.Analyses
                 var series = new double[n, realz];
                 Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
-                    var prediction = ARIMAX.Predict(posterior[idx].Values, forecastStepsForPredict, seeds[idx]);
-                    series.SetColumn(idx, prediction.Y);
+                    var prediction = ARIMAX.Predict(posterior[idx].Values, clampedForecastSteps, seeds[idx]);
+                    series.SetColumn(idx, prediction.Y.Subset(0, n - 1));
                 });
 
                 // Compute summary statistics

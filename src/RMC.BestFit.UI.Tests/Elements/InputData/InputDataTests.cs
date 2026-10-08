@@ -382,6 +382,131 @@ public class InputDataTests
     }
 
     /// <summary>
+    /// Verifies that a smoothing period equal to the linked time series' length is rejected for
+    /// <see cref="SmoothingFunctionType.MovingAverage"/>. Numerics' <c>TimeSeries.MovingAverage</c>
+    /// throws unless the period is strictly less than the series length, so period == length must
+    /// not be treated as valid.
+    /// </summary>
+    [STATestMethod]
+    public void Period_EqualToSeriesLength_IsInvalidForMovingAverage()
+    {
+        var id = new UI.InputData("PeriodAtLengthID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodAtLengthTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 30;
+
+        Assert.IsFalse(id.IsSmoothingPeriodValid(),
+            "A period equal to the series length must be rejected: MovingAverage requires period < Count.");
+        Assert.IsFalse(id.IsTimeSeriesInputValid());
+        Assert.IsFalse(id.IsValid);
+        Assert.IsTrue(MessengerHas(id, "ID-ERR-017"),
+            "The period validation message must be active while the period is out of range.");
+    }
+
+    /// <summary>
+    /// Verifies that a smoothing period below 1 is rejected for
+    /// <see cref="SmoothingFunctionType.MovingAverage"/>.
+    /// </summary>
+    [STATestMethod]
+    public void Period_BelowOne_IsInvalidForMovingAverage()
+    {
+        var id = new UI.InputData("PeriodZeroID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodZeroTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 0;
+
+        Assert.IsFalse(id.IsSmoothingPeriodValid());
+        Assert.IsFalse(id.IsTimeSeriesInputValid());
+        Assert.IsFalse(id.IsValid);
+        Assert.IsTrue(MessengerHas(id, "ID-ERR-017"));
+    }
+
+    /// <summary>
+    /// Verifies that a smoothing period strictly between 1 and the series length is accepted for
+    /// <see cref="SmoothingFunctionType.MovingAverage"/>.
+    /// </summary>
+    [STATestMethod]
+    public void Period_WithinSeriesLength_IsValidForMovingAverage()
+    {
+        var id = new UI.InputData("PeriodValidID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodValidTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 5;
+
+        Assert.IsTrue(id.IsSmoothingPeriodValid());
+        Assert.IsTrue(id.IsTimeSeriesInputValid());
+        Assert.IsFalse(MessengerHas(id, "ID-ERR-017"));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UI.InputData.IsSmoothingPeriodValid"/> ignores an out-of-range
+    /// period when <see cref="SmoothingFunctionType.None"/> is selected, since
+    /// <c>TimeSeries.SmoothedSeries</c> returns a clone without consulting the period in that case.
+    /// </summary>
+    [STATestMethod]
+    public void Period_OutOfRange_IsValidWhenSmoothingFunctionIsNone()
+    {
+        var id = new UI.InputData("PeriodNoneID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodNoneTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.None;
+
+        id.Period = 30;
+
+        Assert.IsTrue(id.IsSmoothingPeriodValid());
+        Assert.IsFalse(MessengerHas(id, "ID-ERR-017"));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UI.InputData.IsSmoothingPeriodValid"/> rejects a period below 1 even
+    /// when no time series is linked yet, since the lower bound never depends on the series length.
+    /// </summary>
+    [STATestMethod]
+    public void Period_BelowOneWithNoLinkedTimeSeries_IsInvalid()
+    {
+        var id = new UI.InputData("PeriodNoTsZeroID", _collection!);
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 0;
+
+        Assert.IsFalse(id.IsSmoothingPeriodValid());
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UI.InputData.IsSmoothingPeriodValid"/> accepts any period of at
+    /// least 1 when no time series is linked yet, since the upper bound cannot be evaluated
+    /// without a series to measure.
+    /// </summary>
+    [STATestMethod]
+    public void Period_AtLeastOneWithNoLinkedTimeSeries_IsValid()
+    {
+        var id = new UI.InputData("PeriodNoTsValidID", _collection!);
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 1000;
+
+        Assert.IsTrue(id.IsSmoothingPeriodValid());
+    }
+
+    /// <summary>
     /// Verifies that the StartMonth setter raises PropertyChanged.
     /// </summary>
     [STATestMethod]
@@ -835,6 +960,202 @@ public class InputDataTests
 
         Assert.IsFalse(MessengerHas(id, "ID-WNG-020"),
             "The block-series coverage warning must be removed when block-series input is no longer selected.");
+    }
+
+    /// <summary>
+    /// Verifies that switching <see cref="UI.InputData.ExactDataMethod"/> away from
+    /// <see cref="UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries"/> clears the retained
+    /// POT source-observation span on the shared <see cref="UI.InputData.DataFrame"/>.
+    /// </summary>
+    /// <remarks>
+    /// The InputData element keeps one DataFrame instance across ExactDataMethod switches. Without
+    /// this reset, a POT extraction's <c>PointProcessObservationYears</c> survives a later switch to
+    /// Manual entry (or any other method) and is silently reused by a downstream point-process fit
+    /// even though the manually entered data has no relationship to the original extraction period.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_SwitchingAwayFromPeaksOverThreshold_ClearsPointProcessObservationYears()
+    {
+        var id = new UI.InputData("PotSwitchID", _collection!);
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+        var potValues = Enumerable.Repeat(10.0, 372).Select((v, i) => i == 186 ? 500d : v).ToArray();
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PotSwitchTS",
+            TimeInterval.OneMonth,
+            new DateTime(1990, 1, 1),
+            potValues);
+
+        id.CreatePeaksOverThresholdSeries();
+
+        Assert.IsTrue(double.IsFinite(id.DataFrame.PointProcessObservationYears) && id.DataFrame.PointProcessObservationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure before the method changes.");
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "Switching the exact-data method away from POT extraction must clear the stale source exposure.");
+    }
+
+    /// <summary>
+    /// Verifies that editing the POT-derived exact series in place, while
+    /// <see cref="UI.InputData.ExactDataMethod"/> remains
+    /// <see cref="UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries"/>, keeps the retained
+    /// source-observation span — only a change AWAY from POT extraction clears it.
+    /// </summary>
+    /// <remarks>
+    /// Matches the documented DataFrame-level behavior verified by
+    /// <c>DataFrameLambdaTests.Lambda_AfterExactSeriesReplacement_KeepsPeaksOverThresholdObservationSpan</c>:
+    /// a bootstrap refit, interactive edit, or API round trip that replaces individual POT ordinates
+    /// is not a source change and must not clear the exposure.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_RemainingPeaksOverThreshold_KeepsPointProcessObservationYearsAfterSeriesEdit()
+    {
+        var id = new UI.InputData("PotKeepID", _collection!);
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+        var potValues = Enumerable.Repeat(10.0, 372).Select((v, i) => i == 186 ? 500d : v).ToArray();
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PotKeepTS",
+            TimeInterval.OneMonth,
+            new DateTime(1990, 1, 1),
+            potValues);
+
+        id.CreatePeaksOverThresholdSeries();
+        double observationYears = id.DataFrame.PointProcessObservationYears;
+        Assert.IsTrue(double.IsFinite(observationYears) && observationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure.");
+
+        // Replace a POT-derived ordinate in place without changing ExactDataMethod.
+        id.DataFrame.ExactSeries[0] = new RMC.BestFit.Models.ExactData(id.DataFrame.ExactSeries[0].Index, 999d);
+
+        Assert.AreEqual(observationYears, id.DataFrame.PointProcessObservationYears, 0.0,
+            "Editing the POT series in place must not clear the retained source exposure.");
+    }
+
+    /// <summary>
+    /// Builds a POT-derived <see cref="UI.InputData"/> with a recorded, finite source exposure, for
+    /// the round-trip/undo/series-changed tests below.
+    /// </summary>
+    /// <param name="name">The InputData element name.</param>
+    /// <param name="timeSeriesName">The linked time-series element name.</param>
+    /// <returns>The configured element, already past a successful POT extraction.</returns>
+    private static UI.InputData CreatePeaksOverThresholdInputData(string name, string timeSeriesName)
+    {
+        var id = new UI.InputData(name, _collection!);
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+        var potValues = Enumerable.Repeat(10.0, 372).Select((v, i) => i == 186 ? 500d : v).ToArray();
+        id.TimeSeriesElement = MakeTimeSeriesElement(timeSeriesName, TimeInterval.OneMonth, new DateTime(1990, 1, 1), potValues);
+        id.CreatePeaksOverThresholdSeries();
+        return id;
+    }
+
+    /// <summary>
+    /// Verifies that a plain round trip away from and back to
+    /// <see cref="UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries"/> — re-selecting the
+    /// method with no intervening edit — restores the exposure that was cleared on the way out.
+    /// </summary>
+    /// <remarks>
+    /// Regression coverage for a Critical finding against the initial fix: switching away from POT
+    /// unconditionally cleared <c>PointProcessObservationYears</c>, so returning to POT with the
+    /// exact same, unedited series (no re-extraction) left the exposure at <c>NaN</c> instead of
+    /// restoring the span the series still legitimately represents.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_RoundTripThroughAnotherMethod_RestoresPointProcessObservationYears()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotRoundTripID", "PotRoundTripTS");
+        double observationYears = id.DataFrame.PointProcessObservationYears;
+        Assert.IsTrue(double.IsFinite(observationYears) && observationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure.");
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+
+        Assert.AreEqual(observationYears, id.DataFrame.PointProcessObservationYears, 0.0,
+            "Returning to POT with the exact series unchanged must restore the cleared exposure.");
+    }
+
+    /// <summary>
+    /// Verifies that Undo of a method change away from POT restores both
+    /// <see cref="UI.InputData.ExactDataMethod"/> and the cleared exposure, and that Redo clears the
+    /// exposure again — the stash/restore pair must be symmetric under undo replay.
+    /// </summary>
+    /// <remarks>
+    /// <c>UndoManager.Undo()</c>/<c>Redo()</c> replay a recorded <see cref="UI.InputData.ExactDataMethod"/>
+    /// change by re-invoking the property setter with the old (Undo) or new (Redo) method value —
+    /// the same code path a direct assignment takes. This test is the reason
+    /// <c>RestorePointProcessObservationYearsIfUnchanged</c> and the leave-POT stash must run
+    /// unconditionally rather than being skipped while <c>UndoManager.IsExecutingAction</c> is true.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_UndoRedoAroundPeaksOverThreshold_RestoresAndClearsExposureSymmetrically()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotUndoID", "PotUndoTS");
+        double observationYears = id.DataFrame.PointProcessObservationYears;
+        Assert.IsTrue(double.IsFinite(observationYears) && observationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure.");
+        id.UndoManager.Clear();
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+        Assert.IsTrue(id.UndoManager.CanUndo, "The method change must be recorded for undo.");
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        id.UndoManager.Undo();
+        Assert.AreEqual(UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries, id.ExactDataMethod);
+        Assert.AreEqual(observationYears, id.DataFrame.PointProcessObservationYears, 0.0,
+            "Undoing the method change must restore the exposure recorded before the switch.");
+
+        id.UndoManager.Redo();
+        Assert.AreEqual(UI.InputData.ExactDataEntryType.Manual, id.ExactDataMethod);
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "Redoing the method change must clear the exposure again.");
+    }
+
+    /// <summary>
+    /// Verifies that returning to POT extraction after the exact series was edited in place while
+    /// another method was selected leaves the exposure cleared — the stashed span no longer
+    /// describes the current series.
+    /// </summary>
+    [STATestMethod]
+    public void ExactDataMethod_ReturningToPeaksOverThreshold_KeepsExposureClearedWhenSeriesChangedWhileAway()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotSeriesChangedID", "PotSeriesChangedTS");
+        Assert.IsTrue(double.IsFinite(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        // The series is edited while a different method is selected.
+        id.DataFrame.ExactSeries[0] = new RMC.BestFit.Models.ExactData(id.DataFrame.ExactSeries[0].Index, 999d);
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "The exposure must stay cleared: the exact series changed while a different method was selected.");
+    }
+
+    /// <summary>
+    /// Verifies that returning to POT extraction after the exact series was re-derived by
+    /// <see cref="UI.InputData.CreateBlockSeries()"/> while Block Series was selected leaves the
+    /// exposure cleared.
+    /// </summary>
+    [STATestMethod]
+    public void ExactDataMethod_ReturningToPeaksOverThreshold_KeepsExposureClearedWhenSeriesWasReDerived()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotReDerivedID", "PotReDerivedTS");
+        Assert.IsTrue(double.IsFinite(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.BlockSeries;
+        id.TimeBlock = TimeBlockWindow.CalendarYear;
+        id.CreateBlockSeries();
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "The exposure must stay cleared: the exact series was re-derived by another method while away from POT.");
     }
 
     /// <summary>

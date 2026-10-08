@@ -13,9 +13,9 @@ namespace RMC.BestFit.Tests.Bivariate;
 /// <summary>
 /// Programmatic unit tests for the <c>BivariateAnalysis</c> class.
 /// Constructors, property round-trips, validation, serialization, ClearResults,
-/// event-routing, and copula-type configuration. No MCMC chains are run here —
-/// computational verification (parameter recovery, RunAsync end-to-end) lives in
-/// <c>RMC.BestFit.Verification/Bivariate/BivariateAnalysisTests.cs</c>.
+/// event-routing, cancellation, invalid-run guards, and copula-type configuration.
+/// No MCMC chains are run here. Computational parameter recovery lives in
+/// <c>RMC.BestFit.Verification/Bivariate/BivariateAnalysisParameterRecoveryTests.cs</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -506,6 +506,38 @@ public class BivariateAnalysisTests
         var analysis = CreateTestAnalysis(bivariateDist);
 
         analysis.CancelAnalysis();
+    }
+
+    /// <summary>
+    /// Verifies that an analysis cancelled from its starting event reports an
+    /// unsuccessful completion without advancing the MCMC sampler.
+    /// </summary>
+    [TestMethod]
+    public async Task RunAsync_WhenCanceled_ReportsNotSuccessful()
+    {
+        var analysis = CreateTestAnalysis(CreateTestBivariateDistribution(100));
+        bool wasSuccessful = true;
+
+        analysis.AnalysisStarting += (_, args) => args.Cancel = true;
+        analysis.AnalysisCompleted += (_, args) => wasSuccessful = args.Succeeded;
+
+        await analysis.RunAsync();
+
+        Assert.IsFalse(wasSuccessful, "A cancelled analysis must not report success.");
+    }
+
+    /// <summary>
+    /// Verifies that <c>RunAsync</c> rejects an invalid model before starting an
+    /// estimator.
+    /// </summary>
+    [TestMethod]
+    public async Task RunAsync_WhenValidationFails_ThrowsInvalidOperationException()
+    {
+        var analysis = new BivariateAnalysis(new BivariateDistribution());
+
+        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+            () => analysis.RunAsync(),
+            "RunAsync should reject an invalid bivariate distribution before sampling.");
     }
 
     #endregion

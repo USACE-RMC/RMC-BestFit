@@ -1,0 +1,313 @@
+{
+  "metadata": {
+    "generated": "2026-08-30",
+    "generator": "verification/python/bulletin17c/generate_b17c_covariance_oracle.py",
+    "generator_sha256": "61dcb3280c41ece88e6c7dc1c0c1b8aa5579ea9012ed2a39df1cf5a5d84fb25b",
+    "python": "3.12.13",
+    "dependencies": "Python standard library only",
+    "sources": [
+      {
+        "title": "Guidelines for Determining Flood Flow Frequency - Bulletin 17C, version 1.1",
+        "doi": "10.3133/tm4B5",
+        "url": "https://pubs.usgs.gov/publication/tm4B5"
+      },
+      {
+        "title": "Confidence intervals for expected moments algorithm flood quantile estimates",
+        "doi": "10.1029/2001WR900016",
+        "url": "https://pubs.usgs.gov/publication/70023515"
+      }
+    ],
+    "formula": "Complete-data just-identified sandwich covariance D^-1 S D^-T / N from central moments mu2..mu6; three-coordinate D[2,0] uses -3*(N/(N-2))*sigma^2 for the B17C c3/c2 centered-moment derivative.",
+    "parameterization": "Exponential (Xi,Alpha); Gamma (Theta scale,Kappa shape); Normal (Mu,Sigma); Pearson III (Mu,Sigma,Gamma); log families use the same coordinates in base-10 log space.",
+    "runtime_production_dependencies": "None; the generator imports no RMC.BestFit or Numerics code."
+  },
+  "cases": [
+    {
+      "id": "Exponential_N25",
+      "family": "Exponential",
+      "parameters": [
+        10.0,
+        50.0
+      ],
+      "sampleSize": 25,
+      "covariance": [
+        [
+          100.0,
+          -100.0
+        ],
+        [
+          -100.0,
+          200.0
+        ]
+      ]
+    },
+    {
+      "id": "Exponential_N100",
+      "family": "Exponential",
+      "parameters": [
+        10.0,
+        50.0
+      ],
+      "sampleSize": 100,
+      "covariance": [
+        [
+          25.0,
+          -25.0
+        ],
+        [
+          -25.0,
+          50.0
+        ]
+      ]
+    },
+    {
+      "id": "Gamma_N25",
+      "family": "Gamma",
+      "parameters": [
+        5.0,
+        2.0
+      ],
+      "sampleSize": 25,
+      "covariance": [
+        [
+          3.500000000000002,
+          -1.2000000000000008
+        ],
+        [
+          -1.2000000000000006,
+          0.4800000000000002
+        ]
+      ]
+    },
+    {
+      "id": "Gamma_N100",
+      "family": "Gamma",
+      "parameters": [
+        5.0,
+        2.0
+      ],
+      "sampleSize": 100,
+      "covariance": [
+        [
+          0.8750000000000006,
+          -0.3000000000000002
+        ],
+        [
+          -0.30000000000000016,
+          0.12000000000000005
+        ]
+      ]
+    },
+    {
+      "id": "Normal_N25",
+      "family": "Normal",
+      "parameters": [
+        100.0,
+        15.0
+      ],
+      "sampleSize": 25,
+      "covariance": [
+        [
+          9.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.5
+        ]
+      ]
+    },
+    {
+      "id": "Normal_N100",
+      "family": "Normal",
+      "parameters": [
+        100.0,
+        15.0
+      ],
+      "sampleSize": 100,
+      "covariance": [
+        [
+          2.25,
+          0.0
+        ],
+        [
+          0.0,
+          1.125
+        ]
+      ]
+    },
+    {
+      "id": "PearsonTypeIII_N25",
+      "family": "PearsonTypeIII",
+      "parameters": [
+        100.0,
+        20.0,
+        0.5
+      ],
+      "sampleSize": 25,
+      "covariance": [
+        [
+          16.0,
+          4.0,
+          -0.20869565217391314
+        ],
+        [
+          4.0,
+          9.5,
+          0.5853260869565218
+        ],
+        [
+          -0.20869565217391314,
+          0.5853260869565218,
+          0.3374096172022685
+        ]
+      ]
+    },
+    {
+      "id": "PearsonTypeIII_N100",
+      "family": "PearsonTypeIII",
+      "parameters": [
+        100.0,
+        20.0,
+        0.5
+      ],
+      "sampleSize": 100,
+      "covariance": [
+        [
+          4.0,
+          1.0,
+          -0.012244897959183812
+        ],
+        [
+          1.0,
+          2.375,
+          0.15631377551020406
+        ],
+        [
+          -0.012244897959183812,
+          0.15631377551020406,
+          0.08370935938150773
+        ]
+      ]
+    },
+    {
+      "id": "LogNormal_N25",
+      "family": "LogNormal",
+      "parameters": [
+        3.0,
+        0.5
+      ],
+      "sampleSize": 25,
+      "covariance": [
+        [
+          0.01,
+          0.0
+        ],
+        [
+          0.0,
+          0.005
+        ]
+      ]
+    },
+    {
+      "id": "LogNormal_N100",
+      "family": "LogNormal",
+      "parameters": [
+        3.0,
+        0.5
+      ],
+      "sampleSize": 100,
+      "covariance": [
+        [
+          0.0025,
+          0.0
+        ],
+        [
+          0.0,
+          0.00125
+        ]
+      ]
+    },
+    {
+      "id": "LogPearsonTypeIII_N25",
+      "family": "LogPearsonTypeIII",
+      "parameters": [
+        3.0,
+        0.5,
+        0.2
+      ],
+      "sampleSize": 25,
+      "covariance": [
+        [
+          0.01,
+          0.001,
+          -0.005217391304347821
+        ],
+        [
+          0.001,
+          0.00515,
+          0.005538260869565217
+        ],
+        [
+          -0.005217391304347821,
+          0.005538260869565217,
+          0.2572421172022685
+        ]
+      ]
+    },
+    {
+      "id": "LogPearsonTypeIII_N100",
+      "family": "LogPearsonTypeIII",
+      "parameters": [
+        3.0,
+        0.5,
+        0.2
+      ],
+      "sampleSize": 100,
+      "covariance": [
+        [
+          0.0025,
+          0.00025,
+          -0.00030612244897959307
+        ],
+        [
+          0.00025,
+          0.0012875,
+          0.0014843877551020403
+        ],
+        [
+          -0.00030612244897959307,
+          0.0014843877551020403,
+          0.06366748438150771
+        ]
+      ]
+    },
+    {
+      "id": "LogPearsonTypeIII_Bulletin17CExample1_N68",
+      "family": "LogPearsonTypeIII",
+      "parameters": [
+        3.328623159,
+        0.140287994,
+        0.396626124
+      ],
+      "sampleSize": 68,
+      "covariance": [
+        [
+          0.0002894223714785888,
+          5.739623669922041e-05,
+          -0.000187550794117646
+        ],
+        [
+          5.739623669922041e-05,
+          0.00016178482090994318,
+          0.0012384717692809598
+        ],
+        [
+          -0.000187550794117646,
+          0.00123847176928096,
+          0.10985993995561796
+        ]
+      ]
+    }
+  ]
+}

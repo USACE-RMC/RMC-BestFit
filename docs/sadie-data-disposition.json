@@ -1,0 +1,326 @@
+{
+  "targetCommit": "ed6f39aea84747cd06c8c330a915a215be415644",
+  "contributorCommit": "f8df4848b2d4be5e864d7cd46cccf84262f1c3b8",
+  "dataPaths": [
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+      "contributorPath": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+      "targetPath": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "fee997625118f4a92728efe2f4963fa9400ca4987595f3f394d4c00e89687bb1"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+      "contributorPath": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+      "targetPath": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "089a2350365824ea4ea52e167f0e619341a2c4a3ec65132e50c59820763d718c"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+      "contributorPath": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+      "targetPath": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "04103c81d60a39125004a67a923b333eca35e450257dee563b90a076daec61d9"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+      "contributorPath": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+      "targetPath": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "18ed33933930d5b9d627ba1acb7f1482e9e85b71e739a13e073b8fe0b57684f6"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
+      "contributorPath": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
+      "targetPath": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "8c8e19ab48e900187a278a8fea7abf969fc7a6f876f6ddb50c680a3cf133ed2a"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+      "contributorPath": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+      "targetPath": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "86b7da6dcb53ea202929311af1a55deb5be1035f6a3e7e54d263904262e2ff7d"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+      "contributorPath": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+      "targetPath": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "fee46359abfc1abcc2a9550653dd7afe9538c0e93f535690cb8555909179473c"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+      "contributorPath": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+      "targetPath": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "06f471c420106383a13135db5a07ed2e0401b39138520f872f047da32de065ca"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+      "contributorPath": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+      "targetPath": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "6c1531ac615ab8b580ecd0ca7865c0932db05f8e3737e9e489bc6291c1b6face"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+      "contributorPath": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+      "targetPath": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "1e2a98e72f3fddb736405c70e0e8f6fcdc634d0e4880e0cec07ed4781a381206"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "aaf1ae263749ad69e0c225893348be2904fa4e4060ba4aab6295184f3a690f4f"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "5da35a52e401eaad31018339c9a2dc190b3fd06b25de3309f268c1788b8eee70"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "ae028ece438495db46a78cb8625102d7c1a32ee313320bc5f1526dfc4e14f31f"
+    },
+    {
+      "contributorStatus": "D",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin17C-examples.bestfit.bak",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin17C-examples.bestfit.bak",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin17C-examples.bestfit.bak",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "89e5dd8da59c4643b195ff11e305f9466992ff241ac9d6f6ad8614b412a05139"
+    },
+    {
+      "contributorStatus": "D",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/Sinnamahoning-MOVE.3-example.bestfit.bak",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/Sinnamahoning-MOVE.3-example.bestfit.bak",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/Sinnamahoning-MOVE.3-example.bestfit.bak",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "3e5466171bc34e3654bbfc86772f19adf1826c9327fe4b84c8dff782a9c73738"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "b1bec39b00e7507cf6314fffbc41a225eb4456b215260f80395b5bf3fc446800"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "831a7d57b39cd47177b7ddaf9cbcb5b63b7bc584cf8848e7f7a47bc033fcf107"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "c5bdd8a2239c88a48046555a89df576659bd1ac715dc6bf4f1addcf86966a36d"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "949aeae29b3ab989b2b40557ceb368b6aea18ad8da7c6e94069e4bd44b33f428"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "1ed41beb72f994b38571aec0180ffa1cace77f0a9b5bdfc1aeac66754a55b474"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "78a1df3913fda1d9d7d24ed50aedf174043fd7242421cf8ee14107f0d4360f0c"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "786d67c7397a8afb2915107a022358a0061a202ef38ff1f445e603facd54d76b"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "f5fd2d186556ee883f80be0c795c398a7e4a8603aa96cf9f6d610d54717bbe53"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "70601a8bd6d9bc1b341bea483a14032fda2be52a0711cd5deacbb56591edb988"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+      "contributorPath": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+      "targetPath": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "c31cac5d78682431eed65731f8b88e8d4b8342ff2894770679aefb96b3f5a230"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+      "contributorPath": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+      "targetPath": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "66b7cd53407227671a2ecf4f112d0c6624ad929dd19b10b6a302bef59461fece"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+      "contributorPath": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+      "targetPath": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "9c83c9b88723093f03ab7be9d5fe9cdeb16e2068c28e6b6f57d6c7bb21d606f1"
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+      "contributorPath": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+      "targetPath": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "a2f826f8f40581ba6607d94c5bba77acd88239f253b34125b68a13dfd02ee2a7"
+    },
+    {
+      "contributorStatus": "D",
+      "originalPath": "examples/6-rating-curve-analysis/USGS 14145000 MF Willamette River.bestfit.bak",
+      "contributorPath": "examples/6-rating-curve-analysis/USGS 14145000 MF Willamette River.bestfit.bak",
+      "targetPath": null,
+      "disposition": "retain-target-absence",
+      "sha256": null
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+      "contributorPath": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+      "targetPath": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "caf84ec5a0c2af3ef57053ebd451532045f19ddd92962a75fe52cfc6a41d6463"
+    },
+    {
+      "contributorStatus": "R099",
+      "originalPath": "examples/6-rating-curve-analysis/USGS 01570500 Susquehanna River at Harrisburg, PA.bestfit.bak",
+      "contributorPath": "examples/6-rating-curve-analysis/usgs-01570500-susquehanna-rating-curve.bestfit",
+      "targetPath": null,
+      "disposition": "retain-target-absence",
+      "sha256": null
+    },
+    {
+      "contributorStatus": "M",
+      "originalPath": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+      "contributorPath": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+      "targetPath": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "64a67cdde88fd78874d90131387ae8f25f7f92553ed4afa7920d711a1a723ae9"
+    },
+    {
+      "contributorStatus": "R100",
+      "originalPath": "examples/7-time-series-analysis/1-synthetic-data-examples/Synthetic Data.xlsx",
+      "contributorPath": "examples/7-time-series-analysis/Synthetic Data.xlsx",
+      "targetPath": "examples/7-time-series-analysis/1-synthetic-data-examples/Synthetic Data.xlsx",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "f3aaa4dbc51eb2b62b74ea0bfa22fb23c056b2f55a11419dcbeca58c5dbc4de8"
+    },
+    {
+      "contributorStatus": "R100",
+      "originalPath": "examples/7-time-series-analysis/2-classic-time-series-examples/airline-passengers.csv",
+      "contributorPath": "examples/7-time-series-analysis/airline-passengers.csv",
+      "targetPath": "examples/7-time-series-analysis/2-classic-time-series-examples/airline-passengers.csv",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "b8c9571eaa06352fbb63a47f0675d397a2205b914466cbf467a628f0f110444f"
+    },
+    {
+      "contributorStatus": "R099",
+      "originalPath": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+      "contributorPath": "examples/7-time-series-analysis/classic-time-series-examples.bestfit",
+      "targetPath": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "32fd922f09fad31f446d6a3b564c2b4d32700b5c44d124d908fd112e96fdeb44"
+    },
+    {
+      "contributorStatus": "A",
+      "originalPath": "examples/7-time-series-analysis/classic-time-series-examples.bestfit.bak",
+      "contributorPath": "examples/7-time-series-analysis/classic-time-series-examples.bestfit.bak",
+      "targetPath": null,
+      "disposition": "retain-target-absence",
+      "sha256": null
+    },
+    {
+      "contributorStatus": "R100",
+      "originalPath": "examples/7-time-series-analysis/2-classic-time-series-examples/mauna-loa-co2.csv",
+      "contributorPath": "examples/7-time-series-analysis/mauna-loa-co2.csv",
+      "targetPath": "examples/7-time-series-analysis/2-classic-time-series-examples/mauna-loa-co2.csv",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "9b40d461bbecda8b6602d20a942c9e1eb1698dc7b34b47841c19e56faf9e546c"
+    },
+    {
+      "contributorStatus": "R100",
+      "originalPath": "examples/7-time-series-analysis/2-classic-time-series-examples/nile-river-flow.csv",
+      "contributorPath": "examples/7-time-series-analysis/nile-river-flow.csv",
+      "targetPath": "examples/7-time-series-analysis/2-classic-time-series-examples/nile-river-flow.csv",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "2c38bd00f3cc8f8291ae1791cb0a6d86b5641464a569adae09bbbb69cf960ab1"
+    },
+    {
+      "contributorStatus": "R099",
+      "originalPath": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+      "contributorPath": "examples/7-time-series-analysis/synthetic-time-series-examples.bestfit",
+      "targetPath": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "28d259f43e5ebc2bb1587a50d45aff86e394844df247506e75314b3172d3b3f6"
+    },
+    {
+      "contributorStatus": "R099",
+      "originalPath": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+      "contributorPath": "examples/7-time-series-analysis/time-series-regression-example.bestfit",
+      "targetPath": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+      "disposition": "retain-target-byte-identical",
+      "sha256": "aafc08b08b45b8015743d03f314ca6a6bba58eb009be46681fd868241cfb51e1"
+    }
+  ]
+}

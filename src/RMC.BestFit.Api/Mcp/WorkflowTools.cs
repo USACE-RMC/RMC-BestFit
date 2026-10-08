@@ -111,6 +111,7 @@ namespace RMC.BestFit.Api.Mcp
         /// <param name="probabilityOrdinates">Optional AEP ordinates.</param>
         /// <param name="name">Optional base name for the created resources.</param>
         /// <param name="cancellationToken">Cancellation token supplied by the MCP host.</param>
+        /// <param name="useMultipleGrubbsBeckTest">True to screen downloaded peaks before analysis creation; default false.</param>
         /// <returns>JSON with the created resource ids and the frequency results.</returns>
         [McpServerTool(Name = "run_usgs_bulletin17c_workflow")]
         [Description("One call: download the USGS annual peak-flow file for a site, build input data, run a Bulletin 17C flood frequency analysis (USGS guidelines), and return the frequency curve with confidence intervals plus the created resource ids. Synchronous.")]
@@ -119,11 +120,13 @@ namespace RMC.BestFit.Api.Mcp
             [Description("Uncertainty method: linkedMultivariateNormal (default), multivariateNormal, bootstrap, biasCorrectedBootstrap.")] string? uncertaintyMethod = null,
             [Description("Optional AEP ordinates, each strictly between 0 and 1.")] double[]? probabilityOrdinates = null,
             [Description("Optional base name for the created resources.")] string? name = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            [Description("Run Multiple Grubbs-Beck screening before analysis creation. Requires at least ten peaks. Default false.")] bool useMultipleGrubbsBeckTest = false)
         {
             var response = await _service.RunUsgsBulletin17CAsync(new UsgsBulletin17CWorkflowRequest
             {
                 SiteNumber = siteNumber,
+                UseMultipleGrubbsBeckTest = useMultipleGrubbsBeckTest,
                 UncertaintyMethod = EnumHelper.ParseOrNull<UncertaintyMethod>(uncertaintyMethod),
                 ProbabilityOrdinates = probabilityOrdinates?.ToList(),
                 Name = name
