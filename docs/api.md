@@ -53,6 +53,30 @@ dotnet run --project src/RMC.BestFit.Api          # http://localhost:5210 (Devel
 - Configuration (`appsettings.json`, section `Api`): `MaxResources` (default 500),
   `MaxConcurrentRuns` (default 2), `MaxIterations` (default 500,000)
 
+### Browser origins and local clients
+
+All routes, including REST, `/mcp`, health and documentation endpoints, enforce
+browser-origin validation in Development and Production. Requests without an
+`Origin` header remain allowed, so same-session Python REST and native MCP clients
+need no browser configuration. An Origin-bearing request is accepted only for an
+explicitly configured origin or a literal localhost/loopback origin matching the
+request scheme, host and effective port. Matching an arbitrary DNS `Host` does not
+grant implicit trust. Invalid or untrusted origins receive HTTP 403 before the
+endpoint runs.
+
+Configure trusted browser clients with `Cors:AllowedOrigins` in `appsettings.json`
+or indexed environment variables such as
+`Cors__AllowedOrigins__0=https://client.example`. Each entry must be a single
+HTTP(S) origin containing only scheme, host and optional port. Wildcards, `null`,
+credentials, trailing slashes/paths, queries, fragments and origin lists are
+invalid configuration. Matching normalizes case and default ports; it does not
+permit subdomains or different ports. The shipped configuration retains
+`https://localhost`. The same allowlist controls CORS for REST and browser MCP.
+
+This is not authentication: a native client can omit `Origin`. Bind the
+[session-local workflow](../skills/bestfit-frequency/references/setup.md) to
+loopback. Publishing a skills-only plugin does not deploy or secure a public API.
+
 ## Concepts
 
 For a terminal-capable Claude or Codex workflow with matplotlib exports and chat
@@ -66,7 +90,7 @@ display, use the [portable frequency-curve skill](bestfit-frequency-skill.md).
   `validationWarnings`, `computationTimeMs`, `timestamp`, `nonFiniteFindings`. JSON is camelCase
   with enums as camelCase strings; NaN serializes as the named literal `"NaN"` (missing data);
   ±Infinity is rejected server-side before serialization.
-- **Status codes.** 200/201 success; 400 validation or argument errors; 404 unknown id or no USGS
+- **Status codes.** 200/201 success; 400 validation or argument errors; 403 rejected origin; 404 unknown id or no USGS
   data; 409 store at capacity or analysis already running; 499 client cancelled; 502/503 USGS
   upstream failures; 500 run failures. Exception: workflow endpoints report step failures in-body
   (`success=false`, `failedStep`) with HTTP 200, preserving the ids of already-created resources.

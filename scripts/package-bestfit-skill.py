@@ -20,6 +20,7 @@ FILES = (
     "bestfit_plots/adapters/diagnostics.py", "bestfit_plots/adapters/response_models.py",
     "bestfit_plots/adapters/api_response_models.py", "bestfit_plots/adapters/desktop.py",
 )
+OPENAI_ASSETS = ("assets/bestfit-icon.png",)
 
 
 def skill_entries():
@@ -57,10 +58,23 @@ def package_marketplace(output):
     templates = root / "packaging/bestfit-frequency"
     prefix = "bestfit-frequency-marketplace/"
     plugin = prefix + "plugins/bestfit-frequency/"
-    entries = [(prefix + ".agents/plugins/marketplace.json", (templates / "marketplace.json").read_bytes()),
-               (plugin + ".codex-plugin/plugin.json", (templates / "plugin.json").read_bytes())]
-    entries.extend((plugin + "skills/bestfit-frequency/" + name, content) for name, content in skill_entries())
+    entries = [(prefix + ".agents/plugins/marketplace.json", (templates / "marketplace.json").read_bytes())]
+    entries.extend((plugin + name, content) for name, content in openai_plugin_entries())
     return write_archive(output, entries)
+
+
+def openai_plugin_entries():
+    """Read the shared OpenAI plugin manifest, official artwork, and maintained skill."""
+    templates = Path(__file__).resolve().parents[1] / "packaging/bestfit-frequency"
+    entries = [(".codex-plugin/plugin.json", (templates / "plugin.json").read_bytes())]
+    entries.extend((name, (templates / name).read_bytes()) for name in OPENAI_ASSETS)
+    entries.extend(("skills/bestfit-frequency/" + name, content) for name, content in skill_entries())
+    return entries
+
+
+def package_openai_plugin(output):
+    """Build the OpenAI submission ZIP with the plugin manifest at the archive root."""
+    return write_archive(output, openai_plugin_entries())
 
 
 def package_claude_plugin(output):
@@ -69,7 +83,8 @@ def package_claude_plugin(output):
     templates = root / "packaging/bestfit-frequency"
     plugin = "bestfit-frequency-claude-plugin/"
     entries = [(plugin + ".claude-plugin/plugin.json", (templates / "claude-plugin.json").read_bytes()),
-               (plugin + ".claude-plugin/marketplace.json", (templates / "claude-marketplace.json").read_bytes())]
+               (plugin + ".claude-plugin/marketplace.json", (templates / "claude-marketplace.json").read_bytes()),
+               (plugin + "README.md", (templates / "claude-README.md").read_bytes())]
     entries.extend((plugin + "skills/bestfit-frequency/" + name, content) for name, content in skill_entries())
     return write_archive(output, entries)
 
@@ -80,9 +95,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=artifacts / "bestfit-frequency-skill.zip")
     parser.add_argument("--plugin-output", type=Path, default=artifacts / "bestfit-frequency-marketplace.zip")
+    parser.add_argument("--openai-plugin-output", type=Path, default=artifacts / "bestfit-frequency-openai-plugin.zip")
     parser.add_argument("--claude-plugin-output", type=Path, default=artifacts / "bestfit-frequency-claude-plugin.zip")
     args = parser.parse_args()
     for path, build in ((args.output, package), (args.plugin_output, package_marketplace),
+                        (args.openai_plugin_output, package_openai_plugin),
                         (args.claude_plugin_output, package_claude_plugin)):
         print(f"{path.resolve()}\nSHA-256 {build(path)}")
 
