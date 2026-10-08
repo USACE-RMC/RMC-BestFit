@@ -90,9 +90,12 @@ namespace RMC_BestFit
             // Unsubscribe collection trackers before re-subscribing for the new element.
             thisControl.UnsubscribeInputDataCollection();
             thisControl.UnsubscribeBivariateAnalysesCollection();
-            thisControl.ClearInputDataSelectionItems();
 
-            if (e.NewValue == null) return;
+            if (e.NewValue == null)
+            {
+                thisControl.ClearInputDataSelectionItems();
+                return;
+            }
             var newElement = e.NewValue as CoincidentFrequencyAnalysis;
             if (newElement == null) return;
 
@@ -125,6 +128,7 @@ namespace RMC_BestFit
                 Dispatcher.BeginInvoke(new Action(() => Element_PropertyChanged(sender, e)));
                 return;
             }
+            if (!ReferenceEquals(sender, Element)) return;
             // The response grid is in the document control. X/Y wrapper rows are synced via
             // Model{X,Y}Values_CollectionChanged below; only property-bound combo state lives here.
             if (e.PropertyName == nameof(Element.InputData))
@@ -372,23 +376,24 @@ namespace RMC_BestFit
         #region Loaded / Unloaded
 
         /// <summary>
-        /// Handles the Loaded event. Collection subscriptions are set up in
-        /// <see cref="ElementCallback"/>; this method is a no-op for future use.
+        /// Refreshes available choices and restores collection subscriptions after a docking reload.
         /// </summary>
+        /// <param name="sender">The control being loaded.</param>
+        /// <param name="e">The routed event data.</param>
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            // No-op: collection subscriptions are owned by ElementCallback.
+            if (Element == null) return;
+            LoadInputData();
+            LoadBivariateAnalyses();
         }
 
         /// <summary>
-        /// Handles the Unloaded event. Unsubscribes the collection change handlers to prevent
-        /// memory leaks and clears input-data selection wrappers when this control is replaced.
+        /// Detaches collection handlers without removing choices from still-bound selectors.
         /// </summary>
         private void UserControl_Unloaded(object sender, RoutedEventArgs e)
         {
             UnsubscribeInputDataCollection();
             UnsubscribeBivariateAnalysesCollection();
-            ClearInputDataSelectionItems();
         }
 
         #endregion
@@ -405,9 +410,10 @@ namespace RMC_BestFit
         private void LoadInputData()
         {
             UnsubscribeInputDataCollection();
-            ClearInputDataSelectionItems();
-            InputDataList.Add(InputDataSelectionItem.CreateNone());
+            if (FindInputDataSelectionItem(null) == null)
+                InputDataList.Add(InputDataSelectionItem.CreateNone());
             if (Element == null) return;
+            var available = new List<InputData>();
             foreach (IElementCollection collection in Element.ParentCollection.ParentProject.ElementCollections)
             {
                 if (collection.GetType() == typeof(InputDataCollection))
@@ -416,9 +422,17 @@ namespace RMC_BestFit
                     collection.ElementAdded += OnInputDataElementAdded;
                     collection.ElementRemoved += OnInputDataElementRemoved;
                     foreach (IElement element in collection)
-                        if (element is InputData id) AddInputDataSelectionItem(id);
+                        if (element is InputData id) available.Add(id);
                     break;
                 }
+            }
+            foreach (var item in InputDataList.Where(item => item.Value != null && !available.Contains(item.Value)).ToArray())
+                RemoveInputDataSelectionItem(item.Value);
+            for (int i = 0; i < available.Count; i++)
+            {
+                AddInputDataSelectionItem(available[i]);
+                int oldIndex = InputDataList.IndexOf(FindInputDataSelectionItem(available[i]));
+                if (oldIndex != i + 1) InputDataList.Move(oldIndex, i + 1);
             }
         }
 
@@ -506,8 +520,8 @@ namespace RMC_BestFit
         /// Disposes all current input-data selection items and clears the list.
         /// </summary>
         /// <remarks>
-        /// This is called before rebuilding the list and when the control unloads to avoid
-        /// retaining stale wrappers through input-data rename subscriptions.
+        /// Final element detachment releases rename subscriptions. A transient unload retains
+        /// these items so its two-way selector cannot turn a theme change into an input edit.
         /// </remarks>
         private void ClearInputDataSelectionItems()
         {
@@ -604,23 +618,32 @@ namespace RMC_BestFit
         /// </summary>
         private void LoadBivariateAnalyses()
         {
-            BivariateAnalysisList.Clear();
+            UnsubscribeBivariateAnalysesCollection();
             if (Element == null) return;
+            var available = new List<BivariateAnalysis>();
             foreach (IElementCollection collection in Element.ParentCollection.ParentProject.ElementCollections)
             {
                 if (collection.GetType() == typeof(BivariateAnalysisCollection))
                 {
-                    UnsubscribeBivariateAnalysesCollection();
                     _subscribedBivariateAnalysesCollection = collection;
                     collection.ElementAdded += OnBivariateAnalysisElementAdded;
                     collection.ElementRemoved += OnBivariateAnalysisElementRemoved;
                     foreach (IElement element in collection)
                     {
                         if (element is BivariateAnalysis ba && !ReferenceEquals(ba, Element))
-                            BivariateAnalysisList.Add(ba);
+                            available.Add(ba);
                     }
                     break;
                 }
+            }
+            foreach (var item in BivariateAnalysisList.Where(item => !available.Contains(item)).ToArray())
+                BivariateAnalysisList.Remove(item);
+            for (int i = 0; i < available.Count; i++)
+            {
+                var item = available[i];
+                if (!BivariateAnalysisList.Contains(item)) BivariateAnalysisList.Add(item);
+                int oldIndex = BivariateAnalysisList.IndexOf(item);
+                if (oldIndex != i) BivariateAnalysisList.Move(oldIndex, i);
             }
         }
 

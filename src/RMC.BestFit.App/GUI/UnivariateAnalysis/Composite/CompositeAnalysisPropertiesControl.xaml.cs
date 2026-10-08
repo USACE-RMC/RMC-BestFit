@@ -6,6 +6,8 @@ using RMC.BestFit.Estimation;
 using RMC.BestFit.UI;
 using ModelAnalyses = RMC.BestFit.Analyses;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -31,6 +33,7 @@ namespace RMC_BestFit
             InitializeComponent();
             DataContext = this;
             CompositeFunctionDataGrid.RowType = typeof(WeightedUnivariateAnalysis);
+            this.Loaded += UserControl_Loaded;
             this.Unloaded += UserControl_Unloaded;
         }
 
@@ -80,9 +83,13 @@ namespace RMC_BestFit
                 oldElement.PropertyChanged -= thisControl.Element_PropertyChanged;
 
             thisControl.UnsubscribeInputDataCollection();
-            thisControl.ClearInputDataSelectionItems();
+            thisControl.UnsubscribeUnivariateAnalysisCollection();
 
-            if (e.NewValue == null) return;
+            if (e.NewValue == null)
+            {
+                thisControl.ClearInputDataSelectionItems();
+                return;
+            }
             var newElement = e.NewValue as CompositeAnalysis;
             if (newElement == null) return;
 
@@ -352,8 +359,19 @@ namespace RMC_BestFit
         }
 
         /// <summary>
-        /// Handles the Unloaded event for the user control. Unsubscribes element event handlers
-        /// to prevent memory leaks and stale event callbacks.
+        /// Refreshes available choices and restores collection subscriptions after a docking reload.
+        /// </summary>
+        /// <param name="sender">The control being loaded.</param>
+        /// <param name="e">The routed event data.</param>
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (Element == null) return;
+            LoadInputData();
+            LoadUnivariateAnalyses();
+        }
+
+        /// <summary>
+        /// Detaches project collection handlers without removing choices from still-bound selectors.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">Event arguments.</param>
@@ -361,7 +379,6 @@ namespace RMC_BestFit
         {
             UnsubscribeInputDataCollection();
             UnsubscribeUnivariateAnalysisCollection();
-            ClearInputDataSelectionItems();
         }
 
         /// <summary>
@@ -379,6 +396,8 @@ namespace RMC_BestFit
                 Dispatcher.BeginInvoke(new Action(() => Element_PropertyChanged(sender, e)));
                 return;
             }
+
+            if (!ReferenceEquals(sender, Element)) return;
 
             // Analyses collection replaced (e.g., during undo) — refresh data grid
             if (e.PropertyName == nameof(Element.Analyses))
@@ -403,9 +422,10 @@ namespace RMC_BestFit
         private void LoadInputData()
         {
             UnsubscribeInputDataCollection();
-            ClearInputDataSelectionItems();
-            InputDataList.Add(InputDataSelectionItem.CreateNone());
+            if (FindInputDataSelectionItem(null) == null)
+                InputDataList.Add(InputDataSelectionItem.CreateNone());
             if (Element == null) return;
+            var available = new List<InputData>();
             foreach (IElementCollection collection in Element.ParentCollection.ParentProject.ElementCollections)
             {
                 if (collection.GetType() == typeof(InputDataCollection))
@@ -414,10 +434,13 @@ namespace RMC_BestFit
                     collection.ElementAdded += OnInputDataAdded;
                     collection.ElementRemoved += OnInputDataRemoved;
                     foreach (IElement element in collection)
-                        if (element is InputData id) AddInputDataSelectionItem(id);
+                        if (element is InputData id) available.Add(id);
                     break;
                 }
             }
+            foreach (var item in InputDataList.Where(item => item.Value != null && !available.Contains(item.Value)).ToArray())
+                RemoveInputDataSelectionItem(item.Value);
+            foreach (var item in available) AddInputDataSelectionItem(item);
         }
 
         /// <summary>Handles a new InputData element being added to the project.</summary>
@@ -497,8 +520,8 @@ namespace RMC_BestFit
         /// Disposes all current input-data selection items and clears the list.
         /// </summary>
         /// <remarks>
-        /// This is called before rebuilding the list and when the control unloads to avoid
-        /// retaining stale wrappers through input-data rename subscriptions.
+        /// Final element detachment releases rename subscriptions. A transient unload retains
+        /// these items so its two-way selector cannot turn a theme change into an input edit.
         /// </remarks>
         private void ClearInputDataSelectionItems()
         {
@@ -553,12 +576,15 @@ namespace RMC_BestFit
         {
             ComboBox cmbo = (ComboBox)sender;
             _inputDataInnerComboBox = cmbo;
-            CollectionViewSource csv = new CollectionViewSource() { Source = InputDataList, IsLiveSortingRequested = true };
-            csv.LiveSortingProperties.Add(nameof(InputDataSelectionItem.SortKey));
-            csv.SortDescriptions.Add(new SortDescription(nameof(InputDataSelectionItem.SortKey), ListSortDirection.Ascending));
-            var view = csv.View;
-            view.MoveCurrentToPosition(-1);
-            cmbo.ItemsSource = view;
+            if (cmbo.ItemsSource == null)
+            {
+                CollectionViewSource csv = new CollectionViewSource() { Source = InputDataList, IsLiveSortingRequested = true };
+                csv.LiveSortingProperties.Add(nameof(InputDataSelectionItem.SortKey));
+                csv.SortDescriptions.Add(new SortDescription(nameof(InputDataSelectionItem.SortKey), ListSortDirection.Ascending));
+                var view = csv.View;
+                view.MoveCurrentToPosition(-1);
+                cmbo.ItemsSource = view;
+            }
             SelectCurrentInputDataItem(cmbo);
         }
 
@@ -632,24 +658,28 @@ namespace RMC_BestFit
         /// </summary>
         private void LoadUnivariateAnalyses()
         {
-            UnivariateAnalysisList.Clear();
+            UnsubscribeUnivariateAnalysisCollection();
             if (Element == null) return;
+            var available = new List<IUnivariate>();
             foreach (IElementCollection collection in Element.ParentCollection.ParentProject.ElementCollections)
             {
                 if (collection.GetType() == typeof(UnivariateAnalysisCollection))
                 {
-                    UnsubscribeUnivariateAnalysisCollection();
                     _subscribedUnivariateCollection = collection;
                     collection.ElementAdded += OnUnivariateAnalysisAdded;
                     collection.ElementRemoved += OnUnivariateAnalysisRemoved;
                     foreach (IElement element in collection)
                     {
                         if (IsEligibleCompositeChild(element, out IUnivariate iu))
-                            UnivariateAnalysisList.Add(iu);
+                            available.Add(iu);
                     }
                     break;
                 }
             }
+            foreach (var item in UnivariateAnalysisList.Where(item => !available.Contains(item)).ToArray())
+                UnivariateAnalysisList.Remove(item);
+            foreach (var item in available)
+                if (!UnivariateAnalysisList.Contains(item)) UnivariateAnalysisList.Add(item);
         }
 
         /// <summary>Handles an analysis being added to the project.</summary>
@@ -699,6 +729,7 @@ namespace RMC_BestFit
         private void DataGridComboBox_Loaded(object sender, RoutedEventArgs e)
         {
             ComboBox cmbo = (ComboBox)sender;
+            if (cmbo.ItemsSource != null) return;
             CollectionViewSource csv = new CollectionViewSource() { Source = UnivariateAnalysisList, IsLiveSortingRequested = true };
             csv.SortDescriptions.Add(new SortDescription(nameof(IUnivariate.Name), ListSortDirection.Ascending));
             var view = csv.View;

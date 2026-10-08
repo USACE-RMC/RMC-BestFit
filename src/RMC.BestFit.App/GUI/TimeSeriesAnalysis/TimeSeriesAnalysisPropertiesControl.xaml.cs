@@ -81,6 +81,7 @@ namespace RMC_BestFit
             if (d as TimeSeriesAnalysisPropertiesControl == null) return;
             var thisControl = (TimeSeriesAnalysisPropertiesControl)d;
             thisControl.DetachElementHandlers();
+            thisControl.UnsubscribeTimeSeriesCollection();
 
             if (e.NewValue == null) return;
             var newElement = e.NewValue as TimeSeriesAnalysis;
@@ -630,23 +631,30 @@ namespace RMC_BestFit
         /// </summary>
         private void LoadTimeSeries()
         {
-            TimeSeriesElements.Clear();
+            UnsubscribeTimeSeriesCollection();
             if (Element == null) return;
+            var available = new List<TimeSeriesElement>();
             foreach (IElementCollection collection in Element.ParentCollection.ParentProject.ElementCollections)
             {
                 if (collection.GetType() == typeof(TimeSeriesCollection))
                 {
-                    UnsubscribeTimeSeriesCollection();
                     _subscribedTimeSeriesCollection = collection;
                     collection.ElementAdded += OnTimeSeriesElementAdded;
                     collection.ElementRemoved += OnTimeSeriesElementRemoved;
                     foreach (IElement element in collection)
                     {
-                        if (element is TimeSeriesElement ts) TimeSeriesElements.Add(ts);
+                        if (element is TimeSeriesElement ts) available.Add(ts);
                     }
                     break;
                 }
             }
+
+            // A Reset removes the selected item and writes null through the two-way binding.
+            // Keep surviving objects in the list while reconciling changes made when unloaded.
+            foreach (var item in TimeSeriesElements.Where(item => !available.Contains(item)).ToArray())
+                TimeSeriesElements.Remove(item);
+            foreach (var item in available)
+                if (!TimeSeriesElements.Contains(item)) TimeSeriesElements.Add(item);
         }
 
         /// <summary>Handles a new TimeSeriesElement being added to the project.</summary>
@@ -701,6 +709,7 @@ namespace RMC_BestFit
         private void TimeSeriesDataComboBox_Loaded(object sender, RoutedEventArgs e)
         {
             ComboBox cmbo = (ComboBox)sender;
+            if (cmbo.ItemsSource != null) return;
             CollectionViewSource csv = new CollectionViewSource() { Source = TimeSeriesElements, IsLiveSortingRequested = true };
             csv.SortDescriptions.Add(new SortDescription(nameof(IElement.Name), ListSortDirection.Ascending));
             var view = csv.View;
