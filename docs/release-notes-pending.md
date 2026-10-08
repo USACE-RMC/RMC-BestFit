@@ -614,11 +614,10 @@ information-criteria and PSIS-LOO entries above).
 
 ## Known issues and limitations
 
-- Desktop updater: when an update is available, RMC-BestFit 2.0.0 and 2.0.1 show the "Update
-  Available" prompt twice at startup. Answering Yes to the first prompt starts the Tools-menu
-  update check, which asks again; answer Yes to the second prompt as well to download and install
-  the update. The single-prompt fix needs RMC.Wpf.Framework 1.0.5, which is not yet published;
-  this release stays on Framework 1.0.4.
+- Desktop updater: RMC-BestFit 2.0.0 can show the "Update Available" prompt twice at startup;
+  answer Yes to both prompts to download and install the update. The v2.0.1 candidate now pins
+  RMC.Wpf.Framework 1.0.5, the dependency required for the single-prompt fix. Confirm the live
+  updater behavior against the published release during release acceptance.
 - Sharing projects with RMC-BestFit 2.0.0: version 2.0.0 opens projects saved by 2.0.1, but teams
   that share projects should upgrade together. A mixture analysis estimated in 2.0.1 stores its
   weight posterior with one fewer free weight than components (the shipped mixture example
