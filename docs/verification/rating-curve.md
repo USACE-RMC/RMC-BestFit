@@ -2,12 +2,12 @@
 
 # Rating-Curve Verification
 
-This chapter records the Phase 6 (Batch 6.1) verification of the stage-discharge rating-curve model:
+This chapter records the scientific verification of the stage-discharge rating-curve model:
 the discharge-space likelihood (TR-043), continuity at activation stages (TR-044), aligned-pair
 validation (TR-045), and the replication of the three synthetic cases of
 `examples/6-rating-curve-analysis` as Verification recovery cells. The technical treatment is in the
 [rating-curve chapter](../technical-reference/analysis/rating-curve.md); the findings are in the
-[review register](../technical-reference/review-findings.md#tr-043).
+[status table](#status).
 
 ## Status
 
@@ -20,7 +20,7 @@ validation (TR-045), and the replication of the three synthetic cases of
 | Reconciled rating-curve recovery cells (1,000 observations) | Passed 10/10 (31 August 2026) | Five scientifically distinct fixtures retained for both MLE and Bayesian recovery; ten redundant declarations consolidated before execution; log10 residual and parameter uncertainty propagated separately into simultaneous predictive bands |
 
 No sampler, generator or estimator seed, prior other than the approved exponent bound, production
-optimizer default, convergence rule, or tolerance of a closed phase changed. The new Verification-only
+optimizer default, convergence rule, or previously established tolerance changed. The new Verification-only
 predictive-draw seeds are recorded below. The complete Verification project was not run.
 
 ## Fixtures and oracles
@@ -149,9 +149,9 @@ counts and `Validate_NonPositiveDischarge_IsInvalid` keeps the aligned-pair erro
   one, two, and three segments. The estimate must remain inside the declared model bounds.
 | Exact method | Latest outcome | Wall-clock per guarded invocation |
 |---|---|---|
-| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141102-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074946-...`, Task 2.12) | 1.452 s |
-| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141123-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074950-...`, Task 2.12) | 4.375 s |
-| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141108-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074957-...`, Task 2.12) | 10.461 s |
+| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141102-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074946-...`) | 1.452 s |
+| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141123-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074950-...`) | 4.375 s |
+| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141108-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074957-...`) | 10.461 s |
 
 The three former Bayesian example calculations are now non-discovered historical methods. Their sampled-MAP
 5-10% coordinate bands, 2% curve band, and reported pointwise fractions did not provide an independent
@@ -161,7 +161,7 @@ diagnostic, and simultaneous response-space claims. Historical Bayesian passes w
 ## Reconciled recovery coverage and identification matrix
 
 The legacy ten-fixture Cartesian set mixed distinct hydraulic interactions with arbitrary names for
-width, slope, sample size, and range. Chunk 12 reconciles the design before executing it. Every retained
+width, slope, sample size, and range. rating-curve recovery reconciles the design before executing it. Every retained
 fixture generates exactly 1,000 stage-discharge observations, preserves its existing seed, generating
 physics, Bayesian priors and sampler configuration, and uses production Differential Evolution with
 untouched default tolerances for MLE. The Bayesian recovery cells publish posterior MAP as their point
@@ -225,4 +225,22 @@ treated multiple pointwise intervals as one 95% statement. Parents, generator se
 samplers, chains, convergence rules, optimizer defaults, and fitted realizations were unchanged. Current
 accounting is 22 rating-curve declarations, all verified.
 
-[Verification index](README.md) | [Technical treatment](../technical-reference/analysis/rating-curve.md) | [Scientific findings](../technical-reference/review-findings.md#tr-043)
+[Verification index](README.md) | [Technical treatment](../technical-reference/analysis/rating-curve.md) | [Scientific findings](rating-curve.md#status)
+
+
+## Recorded rating-curve recovery runs
+
+The following recorded results retain the original method identities, isolated result directories, and outcomes. Interpret them using this chapter's sample design, oracle, and acceptance rules; documentation maintenance does not constitute a new execution.
+
+| Exact current identity | Latest isolated result directory | Result |
+|---|---|---|
+| `RatingCurveMLERecoveryTests.Test_EstimateParameters_SingleSegment_Default` | `20260831-101709-..._SingleSegment_Default` | Passed; exactly 1 result |
+| `RatingCurveMLERecoveryTests.Test_EstimateParameters_SingleSegment_LowNoise` | `20260831-101715-..._SingleSegment_LowNoise` | Passed; exactly 1 result |
+| `RatingCurveMLERecoveryTests.Test_EstimateParameters_SingleSegment_WideRange` | `20260831-101722-..._SingleSegment_WideRange` | Passed; exactly 1 result |
+| `RatingCurveMLERecoveryTests.Test_EstimateParameters_TwoSegment_BankfullTransition` | `20260831-101728-..._TwoSegment_BankfullTransition` | Passed; exactly 1 result; exact allocation 495/505; stage-6.5 simultaneous predictive band contains truth |
+| `RatingCurveMLERecoveryTests.Test_EstimateParameters_ThreeSegment_MultipleControl` | `20260831-101737-..._ThreeSegment_MultipleControl` | Passed; exactly 1 result; exact allocation 270/406/324; stage-8.5 simultaneous predictive band contains truth |
+| `RatingCurveBayesianRecoveryTests.Test_EstimateParameters_SingleSegment_Default` | `20260831-101837-..._SingleSegment_Default` | Passed; exactly 1 result |
+| `RatingCurveBayesianRecoveryTests.Test_EstimateParameters_SingleSegment_LowNoise` | `20260831-101905-..._SingleSegment_LowNoise` | Passed; exactly 1 result |
+| `RatingCurveBayesianRecoveryTests.Test_EstimateParameters_SingleSegment_WideRange` | `20260831-101935-..._SingleSegment_WideRange` | Passed; exactly 1 result |
+| `RatingCurveBayesianRecoveryTests.Test_EstimateParameters_TwoSegment_BankfullTransition` | `20260831-102004-..._TwoSegment_BankfullTransition` | Passed; exactly 1 result; exact allocation 495/505 |
+| `RatingCurveBayesianRecoveryTests.Test_EstimateParameters_ThreeSegment_MultipleControl` | `20260831-102127-..._ThreeSegment_MultipleControl` | Passed; exactly 1 result; exact allocation 270/406/324; stage-8.5 simultaneous posterior-predictive band contains truth |

@@ -22,7 +22,7 @@ It covers data entry, historical evidence, Bayesian fits, GMM penalties, measure
 error, trends and joint models. All package formats include the guide and the
 same updated Python renderer. Examples supply a standard for explanation and
 source review, not numerical assumptions to copy into another study. Consult the
-[example issue log](example-issues-for-haden.md) for unresolved source/engineering
+[example limitations](example-limitations.md) for unresolved source/engineering
 questions and saved-result limitations.
 
 For a ChatGPT or Claude web session with execution tools, provide the
@@ -111,11 +111,4 @@ and match `Directory.Build.props`; the plugin retains its independent version.
 The workflow does not create a release, publish to a plugin directory, or install
 anything into a client profile.
 
-The [FFA implementation and validation record](plans/agentic-ffa-implementation.md)
-records the current enhancements, tests and acceptance limits. The earlier
-[three-session handoff notes](plans/bestfit-frequency-skill-handoffs.md) record
-the initial plotting skill and its deployment checks.
-The [skill roadmap](plans/bestfit-frequency-skill-roadmap.md) records the intended
-repository-based web workflow and outstanding source-publication, client, and
-runtime acceptance steps. Private workspace import and public directory submission
-are documented separately; this checkout does not establish either publication.
+For source preparation, platform prerequisites and client acceptance checks, use the maintained [installation guide](../skills/bestfit-frequency/references/install.md). Package validation does not establish public directory publication or successful installation in a particular account.

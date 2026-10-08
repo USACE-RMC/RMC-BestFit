@@ -134,6 +134,8 @@ include parameter, Jeffreys-scale, or quantile priors. On exact non-outlier data
 delegates to Numerics, producing identical responsibilities, conditioning, simplex normalization,
 impossible-row behavior, iterations, and physical weights.
 
+EM evaluates exact, censored, interval, positive-conditional and measurement-error contributions logarithmically through responsibility normalization. It centers observation log contributions before adding log weights, preserving relative weights even when a common log density has very large magnitude. Zero-weight components are skipped before singular-density and effective-support checks; active-component, atom, physical-weight and serialization rules remain unchanged.
+
 For mixed records, BestFit adds the fixed atom to each row total and assigns component responsibilities only to continuous contributions:
 
 $$
@@ -207,6 +209,8 @@ private static MixtureAnalysis ConfigureLatentPopulationMixture(
 - Mixture information criteria remain nonregular near boundaries or with unresolved label switching.
 
 The public model and project configuration remain full $K$, while new posterior chains deliberately persist only the identified $K-1$ sampled weights. Existing full-$K$ posterior results open and process directly. No load-time migration or result rewriting occurs.
+
+The dependence backend and normalized 20-point measurement-error quadrature retain their existing scope. These calculations do not provide arbitrary-precision multivariate tails. Positive conditioning can lose a correction when separately returned component logs have already rounded to the same enormous magnitude, for example a Normal mean of -1e100 conditioned above zero.
 
 ## Validation
 

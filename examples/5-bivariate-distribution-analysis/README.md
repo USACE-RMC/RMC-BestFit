@@ -20,6 +20,6 @@ A marginal distribution describes one variable. A copula describes dependence be
 
 Contour labels in the density view are natural logarithms of joint density, while joint-exceedance contours are probabilities. CDF-axis views change the coordinates used to draw the same model; check the tutorial before interpreting a label. Coincident plots place response on the vertical axis and AEP on the horizontal axis, with uncertainty bounds in probability at fixed response.
 
-A chosen copula is a modeling assumption requiring evidence about the relevant dependence and tails. None of these examples establishes a universally preferred family. Read the [author issue log](../../docs/example-issues-for-haden.md) for unresolved source questions.
+A chosen copula is a modeling assumption requiring evidence about the relevant dependence and tails. None of these examples establishes a universally preferred family. Read the [example limitations](../../docs/example-limitations.md) for unresolved source questions.
 
 Figures use the maintained Python renderer. See [reproduction instructions](../README.md#reproducing-the-figures) or return to the [example index](../README.md).

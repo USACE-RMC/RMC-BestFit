@@ -77,7 +77,7 @@ These are parameter credible limits, distinct from the frequency-quantile limits
 
 The restored **B17C Example #3** retains a 1% AEP point estimate of **22,479.428 cfs**, with **90% confidence limits of 17,349.951–33,555.869 cfs**. Its saved iterative GMM configuration uses Nelder–Mead, 10,000 multivariate-normal uncertainty draws and seed 12345; no parameter or quantile penalty is enabled. These values come from the original result cells, which were not rerun or rewritten.
 
-The current app loader expects a newer model-column name than this legacy Back Creek row supplies, so it currently shows the observations without restoring the fitted curves. For this tutorial only, the Python display overlays the exact original ProbabilityOrdinates, ModeCurve, MeanCurve and ConfidenceIntervals arrays onto the desktop observation geometry. No parameter conversion, uncertainty reconstruction, interpolation or new fit is performed. The PlotSpec records this exception; a separate app-loading repair remains in the [author issue log](../../../../docs/example-issues-for-haden.md).
+The current app loader expects a newer model-column name than this legacy Back Creek row supplies, so it currently shows the observations without restoring the fitted curves. For this tutorial only, the Python display overlays the exact original ProbabilityOrdinates, ModeCurve, MeanCurve and ConfidenceIntervals arrays onto the desktop observation geometry. No parameter conversion, uncertainty reconstruction, interpolation or new fit is performed. The PlotSpec records this exception; a separate app-loading repair remains in the [example limitations](../../../../docs/example-limitations.md).
 
 ## Read the figures
 

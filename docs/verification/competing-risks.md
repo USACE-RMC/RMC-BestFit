@@ -2,7 +2,7 @@
 
 # Competing-Risks Verification
 
-This report records the focused Phase 4 evidence for TR-012. It does not claim that the complete `RMC.BestFit.Verification` project was run.
+This report records the dependency and recovery evidence for TR-012. It does not claim that the complete `RMC.BestFit.Verification` project was run.
 
 ## Dependency-Aware Production Simulation
 
@@ -45,7 +45,7 @@ All four methods were run separately through `scripts/run-verification-test.ps1`
 
 ## Identifiable Recovery Design
 
-Chunk 9 replaces the historical 20-method cross-product with five estimator cells over three
+The identified recovery design replaces the historical 20-method cross-product with five estimator cells over three
 predeclared dog-leg fixtures. Every fixture generates exactly
 `RecoveryDesign.SampleSize = 1000` scalar composite observations with seed 12345. The
 Verification-only labeled generator reproduces the production draw sequence exactly and records
@@ -112,8 +112,9 @@ Numerics observed information was not positive definite, and the BestFit Bayesia
 the first ordered scale was [41.593, 52.744] rather than containing its generating value 135.
 The candidate and all three of its estimator methods were therefore removed without tuning.
 
-## Chunk 9 Exact Results - 30 August 2026
+<a id="chunk-9-exact-results---30-august-2026"></a>
 
+## Identifiable competing-risk recovery results - 30 August 2026
 Every retained BestFit method was run individually through
 `scripts/run-verification-test.ps1`. Each listed TRX contains exactly one executed result.
 
@@ -159,7 +160,7 @@ analysis, then adds two fixed-correlation cases. After the authorized MAP-initia
 all 20 methods were rerun individually through the guarded runner. Fourteen passed and six
 Default-DEMCzs methods exposed supplemental findings. On 20 August 2026, the technical authority
 approved deferring those six findings for separate research without changing production behavior;
-they no longer block Phase 5 and were not rerun for that disposition.
+the six methods were not rerun for that disposition.
 
 BestFit deliberately limits competing-risk models and analyses to one through three component
 distributions as an identifiability guard, matching the mixture-analysis limit. Constructor,
@@ -240,10 +241,11 @@ authorized MAP-centered initialization and bounded-Hessian correction were imple
 this rerun. No prior, DEMCzs sampling default, seed, likelihood, acceptance tolerance, or fixture
 was changed in response to the results.
 
-## Historical Disposition - Superseded by Chunk 9
+<a id="historical-disposition---superseded-by-chunk-9"></a>
 
-The following disposition records the earlier Phase 4 checkpoint only; its N=1500 designs,
-arbitrary CDF-error gates, and pass/fail claims are not current Chunk 9 evidence.
+## Historical recovery design and remaining limitations
+The following disposition records the earlier 20-method recovery checkpoint only; its N=1500 designs,
+arbitrary CDF-error gates, and pass/fail claims are not evidence for the current identified recovery design.
 
 TR-012 was then reported complete. Every supported dependency mode controls production simulation and has
 direct analytical rank/CDF evidence. The recovery supplement completed all 20 exact focused runs.
@@ -260,4 +262,4 @@ or in granting the deferral.
 
 ---
 
-[Verification index](README.md) | [Technical treatment](../technical-reference/distributions/competing-risks.md) | [Scientific findings](../technical-reference/review-findings.md#tr-012)
+[Verification index](README.md) | [Technical treatment](../technical-reference/distributions/competing-risks.md) | [Scientific findings](competing-risks.md#historical-recovery-design-and-remaining-limitations)

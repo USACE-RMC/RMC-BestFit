@@ -21,4 +21,4 @@ The field example is a teaching fit, not an official USGS rating or an adopted h
 
 The plots follow the desktop orientation: discharge is horizontal and stage is vertical. Native exports retain the app legend wording; these bands include residual variation and parameter uncertainty. The Python legend identifies prediction intervals explicitly; saved result cells retain their original field names. No estimator was rerun to produce these figures.
 
-See the [author issue log](../../docs/example-issues-for-haden.md), [figure reproduction instructions](../README.md#reproducing-the-figures) and [input-data chapter](../2-input-data/README.md). Converting a continuous stage record into discharge requires a separately justified applicable rating; these examples do not perform that conversion automatically.
+See the [example limitations](../../docs/example-limitations.md), [figure reproduction instructions](../README.md#reproducing-the-figures) and [input-data chapter](../2-input-data/README.md). Converting a continuous stage record into discharge requires a separately justified applicable rating; these examples do not perform that conversion automatically.

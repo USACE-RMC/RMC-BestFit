@@ -18,10 +18,9 @@ import sqlite3
 from project_inventory import ROOT, cell_snapshot, digest, quote, read_project
 
 
-def apply_updates(path, expected_hash, edits, *, remove_abom_test=False):
+def apply_updates(path, expected_hash, edits):
     """Atomically change descriptions and audit every cell before committing.
 
-    The optional deletion is restricted to the explicitly approved ABOM test row.
     Callers managing real example projects must retain the original file first.
     """
     path = Path(path)
@@ -41,23 +40,12 @@ def apply_updates(path, expected_hash, edits, *, remove_abom_test=False):
             raise ValueError(f"Description row does not match the reviewed manifest: {edit['name']}")
         expected[edit["table"]][str(edit["rowid"])]["Description"] = digest(edit["description"])
         changes.append({**edit, "oldDescription": row["Description"]})
-    deleted = None
-    if remove_abom_test:
-        if path.name != "abom-download-example.bestfit":
-            raise ValueError("Only the approved ABOM test element may be removed")
-        matches = [row for row in before.get("Time Series Data", []) if row.get("Name") == "Time Series_7" and row.get("Description") == "Test"]
-        if len(matches) != 1:
-            raise ValueError("The reviewed ABOM test row no longer matches")
-        deleted = matches[0]
-        expected["Time Series Data"].pop(str(deleted["_rowid_"]))
     with closing(sqlite3.connect(path)) as connection, connection:
         connection.row_factory = sqlite3.Row
         connection.execute("BEGIN IMMEDIATE")
         for edit in edits:
             connection.execute(f"UPDATE {quote(edit['table'])} SET Description=? WHERE rowid=?",
                                (edit["description"], edit["rowid"]))
-        if deleted:
-            connection.execute('DELETE FROM "Time Series Data" WHERE rowid=?', (deleted["_rowid_"],))
         after = {table: [dict(row) for row in connection.execute(f"SELECT rowid AS _rowid_, * FROM {quote(table)} ORDER BY rowid")]
                  for table in before}
         if cell_snapshot(after) != expected:
@@ -68,7 +56,7 @@ def apply_updates(path, expected_hash, edits, *, remove_abom_test=False):
         raise ValueError("Persisted SQLite cells differ from the audited transaction")
     return {"beforeSha256": expected_hash, "afterSha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "onlyApprovedCellsChanged": True, "edits": changes,
-            "deletedRow": {"table": "Time Series Data", "rowid": deleted["_rowid_"], "name": deleted["Name"]} if deleted else None,
+            "deletedRow": None,
             "preservedCellCount": sum(len(row) for rows in expected.values() for row in rows.values()) - len(edits)}
 
 
@@ -79,6 +67,8 @@ def main():
     parser.add_argument("--audit-dir", type=Path, default=ROOT / "artifacts/example-documentation/metadata-audit")
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    if any("removeAbomTest" in item for item in manifest):
+        raise ValueError("removeAbomTest is retired; manifests may request description edits only")
     for item in manifest:
         path = (ROOT / item["project"]).resolve()
         if not path.is_relative_to((ROOT / "examples").resolve()) or path.suffix != ".bestfit":
@@ -94,7 +84,7 @@ def main():
             raise ValueError(f"Refusing to overwrite a different original backup: {backup}")
         if not backup.exists():
             shutil.copy2(path, backup)
-        receipt = apply_updates(path, item["sha256"], item["edits"], remove_abom_test=item.get("removeAbomTest", False))
+        receipt = apply_updates(path, item["sha256"], item["edits"])
         (args.audit_dir / (path.stem + ".json")).write_text(json.dumps(receipt, indent=2, ensure_ascii=False), encoding="utf-8")
 
 

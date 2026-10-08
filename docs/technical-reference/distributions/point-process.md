@@ -229,6 +229,8 @@ A positive seed is deterministic; nonpositive seeds use a clock-seeded generator
 - Floored changepoint posteriors can be genuinely multimodal. Assess integer-day posterior mass, credible sets, and posterior-predictive recovery rather than posterior means alone [3](#ref-3).
 - The mixed-data extension lacks event-time uncertainty and does not add uncertain or interval records to the Poisson event product.
 
+An unusable initialization sample produces a validation diagnostic while parameters and priors remain editable. The point-process path still refreshes annual-maximum/exposure structure and supplies its seasonal changepoint defaults; a later valid sample clears the initialization diagnostic. It does not substitute invented data or relaxed GEV bounds.
+
 ## Implementation and Verification Traceability
 
 All ten guarded point-process cells pass. Recovery fixtures use 1,000 observations and the production `BayesianAnalysis` defaults: DEMCzs, four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 20, and seed 12345. Calendar-year uniform recovery, October-water-year block-origin parity, and both production-generator recovery cells pass. The water-year fixture retains changepoints `170/350` while changing the dates and block convention so that it preserves the modeled partition. No production formula, sampler default, prior, or tolerance is modified by the verification. See [Point-Process Analysis](../../verification/report/point-process-analysis.md) for the methods and results.

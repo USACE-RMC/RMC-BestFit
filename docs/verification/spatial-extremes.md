@@ -2,14 +2,14 @@
 
 # Spatial Extremes Verification
 
-This chapter records the Phase 6 verification of the spatial GEV model (`SpatialGEV`,
-`SpatialGEVAnalysis`, the Gaussian copula, and the spatial regression errors). Batch 6.3 covers the
+This chapter records the scientific verification of the spatial GEV model (`SpatialGEV`,
+`SpatialGEVAnalysis`, the Gaussian copula, and the spatial regression errors). spatial likelihood verification covers the
 likelihood core: observed-site marginalization of missing sites (TR-048), the data/prior decomposition
 of the latent Gaussian-process densities (TR-049), the consistency of the Godambe estimating equations
 (TR-057), and the closure of the TR-055 criteria caveats. Batches 6.4 through 6.6 (cross-validation,
 prediction, uncertainty, simulation, dispatch, naming, and distance metric) follow. The technical
 treatment is in the [spatial extremes chapter](../technical-reference/spatial/spatial-extremes.md);
-the findings are TR-048 through TR-062 in the [review register](../technical-reference/review-findings.md#tr-048).
+the findings are TR-048 through TR-062 in the [review register](spatial-extremes.md#status).
 
 ## Status
 
@@ -22,10 +22,10 @@ the findings are TR-048 through TR-062 in the [review register](../technical-ref
 | GEV, copula, and kernel conventions | Verified | Complete-row copula likelihood, marginal-only likelihood, and the posterior-kernel invariance guard pass against the `mvtnorm` oracle before and after the corrections |
 | Current spatial recovery matrix | Reconciled 2 September 2026 | Two MLE and six Bayesian cells use ten sites with 100 observations each (total scalar N=1,000 and 100 complete multivariate rows), current statistical uncertainty rules, and one-result focused TRXs; the former large-sample cell was consolidated because interval tightening alone was not a precision-scaling oracle |
 | TR-091 spatial clone structure (found by these runs) | Corrected (approved and implemented 21 August 2026) | `SpatialGEV.Clone()` dropped the copula/error parameter blocks and reset the trend intercepts, so every copula or latent-error Bayesian run failed in post-processing; the clone now rebuilds its list from the cloned components and copies values, bounds, and priors; three fast contracts and the two blocked cells pass |
-| TR-050 through TR-053 leave-one-site-out cross-validation | Corrected (approved and implemented 22 August 2026) | Reduced training model per fold (`SpatialGEV.CreateReducedModel`), fold analyses with the main settings and seed, held-out covariate rows, explicit fold accounting; three guarded cells and the fast contracts pass; see [Batch 6.4](#batch-64-leave-one-site-out-cross-validation-22-august-2026) |
-| TR-054, TR-056, TR-058, TR-061, TR-062 prediction, bootstrap, regional bounds, simulation, dispatch | Corrected (approved and implemented 22 August 2026) | Conditional Gaussian-process prediction per draw, temporal block bootstrap with MAP refits, per-draw regional posterior, Cholesky-dependent simulation, method dispatch with recorded applied method; R conditional-GP oracle, seven guarded cells, and fast contracts pass; see [Batch 6.5](#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) |
-| TR-092, TR-093 (found by the Batch 6.5 runs) | Corrected (approved and implemented 22 August 2026) | Non-finite site parameters return negative-infinite likelihood; latent-error default bounds follow the link space |
-| TR-059, TR-060 site-weight naming and distance metric | Corrected (approved and implemented 22 August 2026) | `ComputeCorrelationHeuristicSiteWeights` with an obsolete alias and corrected remarks; additive `SpatialDistanceMetric` (Cartesian default bitwise, geodesic haversine kilometres) verified against the R haversine oracle; see [Batch 6.6](#batch-66-site-weight-naming-and-distance-metric-22-august-2026) |
+| TR-050 through TR-053 leave-one-site-out cross-validation | Corrected (approved and implemented 22 August 2026) | Reduced training model per fold (`SpatialGEV.CreateReducedModel`), fold analyses with the main settings and seed, held-out covariate rows, explicit fold accounting; three guarded cells and the fast contracts pass; see [leave-one-site-out evidence](#batch-64-leave-one-site-out-cross-validation-22-august-2026) |
+| TR-054, TR-056, TR-058, TR-061, TR-062 prediction, bootstrap, regional bounds, simulation, dispatch | Corrected (approved and implemented 22 August 2026) | Conditional Gaussian-process prediction per draw, temporal block bootstrap with MAP refits, per-draw regional posterior, Cholesky-dependent simulation, method dispatch with recorded applied method; R conditional-GP oracle, seven guarded cells, and fast contracts pass; see [prediction and uncertainty evidence](#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) |
+| TR-092, TR-093 (found by the spatial prediction and uncertainty verification runs) | Corrected (approved and implemented 22 August 2026) | Non-finite site parameters return negative-infinite likelihood; latent-error default bounds follow the link space |
+| TR-059, TR-060 site-weight naming and distance metric | Corrected (approved and implemented 22 August 2026) | `ComputeCorrelationHeuristicSiteWeights` with an obsolete alias and corrected remarks; additive `SpatialDistanceMetric` (Cartesian default bitwise, geodesic haversine kilometres) verified against the R haversine oracle; see [site weighting and distance evidence](#batch-66-site-weight-naming-and-distance-metric-22-august-2026) |
 
 Production changes (approved 21 August 2026): `Models/SpatialExtremes/CopulaModels/GaussianCopula.cs`,
 `Models/SpatialExtremes/SpatialGEV.cs`, and `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs`; see
@@ -70,7 +70,7 @@ R 4.4.3, no sampling), records the conditional (simple-kriging) mean `k*'K^-1 ep
 `sigma^2 - k*'K^-1 k*` of the latent-error process at five target locations for three (scale, range,
 errors) parameter sets on the same five-site network, computed with dense `solve`; it is the oracle of
 `SpatialRegressionErrors.GetKrigingPrediction`, the predictor the analysis-level ungauged prediction uses
-since Batch 6.5 (tolerance `1e-10`).
+since spatial prediction and uncertainty verification (tolerance `1e-10`).
 
 ## Confirmation runs (21 August 2026)
 
@@ -180,9 +180,10 @@ latent spatial errors exclude the process densities; `ComputeGodambeCovariance` 
 of returning the variability matrix. Parameter estimates and posteriors of complete-data models and of
 models without latent errors are unchanged.
 
-## Batch 6.4 leave-one-site-out cross-validation (22 August 2026)
+<a id="batch-64-leave-one-site-out-cross-validation-22-august-2026"></a>
 
-Confirmation on the Batch 6.3 source (21-22 August 2026, guarded runner): both new cross-validation cells
+## Leave-one-site-out cross-validation (22 August 2026)
+Confirmation on the spatial likelihood verification source (21-22 August 2026, guarded runner): both new cross-validation cells
 threw `InvalidOperationException: Analysis must be run before predicting at ungauged locations` from
 `RunCrossValidationAsync` on a fresh analysis, because the fold refit never set the analysis's own estimated
 flag; the fast mechanism contracts showed that a zero site weight leaves the held-out observations in the
@@ -233,17 +234,18 @@ Guarded acceptance runs (one method per invocation, production defaults, 40 rows
 | `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` | Results retained; fold 1 prediction error equals an independently reduced three-site copula model fitted through the production path with the same defaults and seed (`1e-6` relative) | Passed (112.0 s) |
 | `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` | Results retained; fold 1 equals the reduced location-regression model evaluated at the held-out covariate row (`1e-6` relative) | Passed (113.0 s) |
 | `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored` | A fully missing site is `NoObservations` with NaN metrics; the other three folds succeed; aggregates average the successful folds | Passed (54.3 s) |
-| Spot checks after the change: `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix`, `LocationErrorModel_ScalarAndPointwiseDecompositionsAgree`, `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks`, `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversRangeParameter`, `Bayesian_WithLocationRegression_RecoversIntercept` | Batch 6.3 likelihood, criteria, and recovery contracts unchanged | Passed 5/5 (3.4 s, 3.4 s, 17.7 s, 94.5 s, 74.8 s) |
+| Spot checks after the change: `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix`, `LocationErrorModel_ScalarAndPointwiseDecompositionsAgree`, `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks`, `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversRangeParameter`, `Bayesian_WithLocationRegression_RecoversIntercept` | spatial likelihood verification likelihood, criteria, and recovery contracts unchanged | Passed 5/5 (3.4 s, 3.4 s, 17.7 s, 94.5 s, 74.8 s) |
 
 Behavior changes for users: leave-one-site-out no longer refits the full model or mutates site weights, its
 results survive the run, folds are genuine reduced-network fits evaluated at the held-out covariate rows,
 failed folds are visible with NaN metrics instead of zero errors, and the ungauged-prediction methods reject
 a missing covariate vector for covariate trends. The per-fold prediction still interpolates latent errors by
-inverse distance (TR-054, Batch 6.5).
+inverse distance (TR-054, spatial prediction and uncertainty verification).
 
-## Batch 6.5 prediction, uncertainty, simulation, and dispatch (22 August 2026)
+<a id="batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026"></a>
 
-Confirmation on the Batch 6.4 source (guarded runner and fast contracts): the regional-bounds cell on a
+## Prediction, uncertainty, simulation, and dispatch (22 August 2026)
+Confirmation on the spatial cross-validation verification source (guarded runner and fast contracts): the regional-bounds cell on a
 five-site location-regression network found the lower bound at p = 1e-6 equal to 66,486 where the posterior
 5% quantile of the per-draw regional mean is 66,526 (TR-058); the dependence contract found a normal-score
 correlation of −0.02 between two sites whose copula correlation is 0.57 (TR-061); the ungauged-prediction
@@ -289,7 +291,7 @@ Guarded acceptance runs (one method per invocation, production defaults):
 | `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_BayesianInflated_WidensThePosteriorIntervals` | Applied method recorded; site and regional intervals widened by sqrt(VIF) relative to the posterior run with the same seed | Passed (63.0 s) |
 | `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_GodambeSandwich_BuildsResultsFromGaussianDraws` | Copula network: the sensitivity matrix is singular at the sampled MAP, so the run fails explicitly (`GodambeCovarianceStatus = Failed`, no method recorded); homogeneous network: covariance available, applied method recorded, finite ordered bounds, MAP quantile inside the Gaussian-draw interval, mode curve at the MAP | Passed (49.0 s) |
 | `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting` | Twenty replicates: accounting, automatic block size, finite ordered bounds, seed sensitivity | Passed (74.4 s) |
-| Regression set (15 cells): the eight `mvtnorm` oracle cells, the criteria cell, the three cross-validation cells, and three recovery cells | Batch 6.3 and 6.4 contracts unchanged after the prediction change (the cross-validation folds now predict with kriging plus residual, and the independent reduced models follow the same production path) | Passed 15/15 (3-118 s) |
+| Regression set (15 cells): the eight `mvtnorm` oracle cells, the criteria cell, the three cross-validation cells, and three recovery cells | spatial likelihood verification and 6.4 contracts unchanged after the prediction change (the cross-validation folds now predict with kriging plus residual, and the independent reduced models follow the same production path) | Passed 15/15 (3-118 s) |
 
 Behavior changes for users: ungauged-site predictions use the conditional Gaussian process with a seeded
 residual (set `SampleConditionalResidual = false` for the conditional mean); regional credible bounds are
@@ -297,8 +299,9 @@ posterior quantiles of the regional mean quantile; copula simulations are spatia
 fits resampled data and reports its accounting; the selected uncertainty method is applied and recorded;
 default latent-error bounds under the log link are a few log units instead of the raw spread.
 
-## Batch 6.6 site-weight naming and distance metric (22 August 2026)
+<a id="batch-66-site-weight-naming-and-distance-metric-22-august-2026"></a>
 
+## Site-weight naming and distance metric (22 August 2026)
 Confirmation by source audit: `ComputeEffectiveSampleSizeWeights` rescales `w*_j = 1/(1+(S-1)ρ̄_j)` to sum
 S and the likelihood applies the weights to the marginal terms only (TR-059); `GaussianCopula` and
 `SpatialRegressionErrors` built every separation with planar `Tools.Distance` while advertising (Lat, Lon)
@@ -337,33 +340,34 @@ Behavior changes for users: none for existing projects (Cartesian default); lati
 can select the geodesic metric; `ComputeEffectiveSampleSizeWeights` is obsolete in favor of
 `ComputeCorrelationHeuristicSiteWeights`.
 
-## Verification completeness Chunk 14 independent-oracle reconciliation (31 August 2026)
+<a id="verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026"></a>
 
+## Independent spatial oracles (31 August 2026)
 The historical three cross-validation cells remain useful implementation history, but they compare a full
 production cross-validation run with another production reduced-model fit or assert fold accounting. Their
 `TestMethod` attributes were removed deliberately: reduced-network construction, missing-site status,
 held-out-row removal, result publication, and no-success behavior remain covered by fast tests. No historical
 pass was transferred to a new identity.
 
-The current Chunk 14A matrix is minimal and independently targeted:
+The independent prediction and validation matrix is minimal and independently targeted:
 
 | Area | Metric/design | Independent target | Current outcome |
 |---|---|---|---|
 | Basic Exponential | Cartesian; `h={0,5,10,20,30}`, range 20 | `exp(-h/range)` | Passed |
 | Powered Exponential | Cartesian; same grid, range 20, smoothness 1.6 | `exp(-(h/range)^1.6)` | Passed |
 | Spherical | Cartesian; same grid, range 20 | cubic inside support; zero at and beyond range | Passed |
-| Copula held-out fold | 120 row/year vectors at three training sites, one target, exponential Gaussian copula | independent SciPy reduced-fold optimum plus unregularized observed-information held-out quantile bands | Passed fresh (`20260901-144228-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074931-...`, Task 2.12) |
+| Copula held-out fold | 120 row/year vectors at three training sites, one target, exponential Gaussian copula | independent SciPy reduced-fold optimum plus unregularized observed-information held-out quantile bands | Passed fresh (`20260901-144228-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074931-...`) |
 | Covariate held-out fold | Four training sites, two covariates, one target row | executable normal-equation OLS link mean, physical log-link value, and distinct parameter/residual variances | Passed |
 | Missing held-out site | No finite response | fast-owned unscored-fold/status contract | Consolidated to fast ownership |
 
-Every retained Chunk 14A method is sampler-free and reads
+Every retained method in this matrix is sampler-free and reads
 `verification/data/spatial-extremes/chunk14-independent-oracle.json`; all five exact guarded runs passed with
 one result in each latest inspected TRX. The artifact uses Python 3.12.13, NumPy 2.3.5, and SciPy 1.18.1 and
 records Cartesian and geodesic metrics, physical parameter order, training dimensions, held-out sites,
 uncertainty sources, fixed draws, seeds, and tolerances. The first review superseded the initial latent-error
 fold identity with the fitted copula fold; its earlier one-result pass was not transferred.
 
-Chunk 14B replaces two same-production posterior recomputations and three estimator/dispatch/accounting
+The independent uncertainty checks replace two same-production posterior recomputations and three estimator/dispatch/accounting
 cells with five sampler-free independent targets. The historical method bodies remain for design provenance,
 but their `TestMethod` attributes and catalog entries were removed; fast tests retain dispatch, validation,
 row-construction, and result-state ownership.
@@ -376,7 +380,7 @@ row-construction, and result-state ownership.
 | Temporal bootstrap | 12 complete three-site row vectors; wrapping block size 4; MT19937 seed 24681357; five independently fitted bounded SciPy flat-prior MAP replicates (optimizer seed 20260837 plus replicate); production default-DE fitted-output intervals agree within 2% relative/0.02 near zero with 5/5 success | Passed |
 | VIF | Ten complete three-site rows; independently computed Pearson matrix and `1+2*rho-bar`; exact midpoint/half-width site and regional transform | Passed |
 
-All five exact Chunk 14B invocations passed, with exactly one result in every inspected TRX. No end-to-end
+All five exact uncertainty-oracle invocations passed, with exactly one result in every inspected TRX. No end-to-end
 MCMC was used as an independent oracle. The bootstrap target instead fits the five frozen row replicates in
 SciPy and compares production MAP-refit physical-parameter, site-quantile, and regional-quantile intervals.
 Parameter uncertainty, GP residual variance, bootstrap resampling, independent optimization, and numerical
@@ -384,8 +388,9 @@ finite-difference error remain separate in the artifact. The deterministic 1E-9 
 cross-runtime arithmetic roundoff; the 2E-5 Godambe tolerance covers independent finite-difference cancellation,
 and the 2% fitted-bootstrap tolerance is smaller than every frozen bootstrap interval width.
 
-## Verification completeness Chunk 15 recovery reconciliation (2 September 2026)
+<a id="verification-completeness-chunk-15-recovery-reconciliation-2-september-2026"></a>
 
+## Spatial recovery design (2 September 2026)
 The approved recovery design defines total scalar N as the site-by-time cross-product: ten sites with 100
 observations per site, or 1,000 finite scalar values. The estimator nevertheless receives 100 complete
 ten-site row/year vectors, so the likelihood contribution count is 100 multivariate rows rather than 1,000.
@@ -396,8 +401,8 @@ same ten-site partial-grid construction at spacing `100/3`. Every retained row i
 
 | Experiment | Scientific distinction and likelihood | Parent order and seed | Identification and acceptance | Focused result |
 |---|---|---|---|---|
-| MLE homogeneous, 10 sites | Independent marginal GEVs; each of 100 rows contributes 10 marginal densities | `[log(location=10000), log(scale=3000), shape=-0.1]`; generator 54321 | All three estimator-owned coordinates are identified. Default Differential Evolution seed 12345; unregularized observed-information covariance required; absolute standardized error at most 1.96 | Passed, 1.716 s; `20260902-074615-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074936-...` (Task 2.12) |
-| MLE copula, 10 sites | Exponential Gaussian copula `rho(h)=exp(-h/40)` plus 10 margins per row | `[range=40, log(location), log(scale), shape]`; generator 66666 | All four coordinates monitored. Same MLE rule; singular or regularized information is explicit failure | Passed, 4.931 s; `20260902-074645-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074940-...` (Task 2.12) |
+| MLE homogeneous, 10 sites | Independent marginal GEVs; each of 100 rows contributes 10 marginal densities | `[log(location=10000), log(scale=3000), shape=-0.1]`; generator 54321 | All three estimator-owned coordinates are identified. Default Differential Evolution seed 12345; unregularized observed-information covariance required; absolute standardized error at most 1.96 | Passed, 1.716 s; `20260902-074615-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074936-...` |
+| MLE copula, 10 sites | Exponential Gaussian copula `rho(h)=exp(-h/40)` plus 10 margins per row | `[range=40, log(location), log(scale), shape]`; generator 66666 | All four coordinates monitored. Same MLE rule; singular or regularized information is explicit failure | Passed, 4.931 s; `20260902-074645-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074940-...` |
 | Bayesian homogeneous, 10 sites | Independent mildly bounded-tail baseline; 10 margins per row | `[log(location=10000), log(scale=3000), shape=-0.1]`; generator 12345 | Every parent in central 95% interval, R-hat below 1.10, ESS at least 100 | Passed, 68.472 s; `20260902-075604-...` |
 | Bayesian copula, 10 sites | Exponential Gaussian copula `rho(h)=exp(-h/40)` plus 10 margins per row | `[range=40, log(location), log(scale), shape]`; generator 33333 | All four coordinates monitored under the common Bayesian rule | Passed, 165.125 s; `20260902-075735-...` |
 | Bayesian location regression, 10 sites | `log(location)=beta0+betaX X+betaY Y`; X and Y are the two coordinate columns; independent margins | `[beta0=8.987, betaX=0.005, betaY=0.008, log(scale), shape]`; generator 66666 | The full-rank two-covariate design identifies all five estimator-owned coordinates | Passed, 130.429 s; `20260902-080047-...` |
@@ -427,12 +432,48 @@ nonzero parent.
 would duplicate the homogeneous cell, and “narrower is better” supplied neither a predeclared rate such as inverse-square-root
 precision scaling nor a distinct scientific interaction. No old result was transferred. The current regression
 set for later spatial changes is the eight `mvtnorm` likelihood cells; kriging, geodesic, criteria, simulation,
-the ten independent Chunk 14 cells, and the eight recovery cells above. Historical cross-validation,
+the ten independent independent spatial verification cells, and the eight recovery cells above. Historical cross-validation,
 prediction, and dispatch cells remain design history with fast-test ownership.
 
 The eight earlier one-result passes under the superseded 1,000-row design (`20260901-202329-...` through
 `20260901-220241-...`) are not evidence for the revised identities. The first revised guarded invocation was
 blocked before test execution because the sandbox could not read the existing NuGet profile; it produced no
-TRX. No zero-result Chunk 15 TRX was accepted.
+TRX. No zero-result spatial recovery TRX was accepted.
 
-[Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](../technical-reference/review-findings.md#tr-048)
+[Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](spatial-extremes.md#status)
+
+
+## Recorded independent spatial checks
+
+The following recorded results retain the original method identities, isolated result directories, and outcomes. Interpret them using this chapter's sample design, oracle, and acceptance rules; documentation maintenance does not constitute a new execution.
+
+| Current identity or owner | Layer | Scientific/contract role | Outcome |
+|---|---|---|---|
+| `SpatialGEVChunk14OracleTests.BasicExponentialCorrelation_MatchesAnalyticalGrid` | Verification | Analytical exponential grid including zero and the range | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.PoweredExponentialCorrelation_MatchesAnalyticalGrid` | Verification | Analytical powered-exponential grid with smoothness 1.6 | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.SphericalCorrelation_MatchesAnalyticalGridAndCompactSupport` | Verification | Analytical compact-support boundary and beyond-range zeros | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.HeldOutCopulaFold_MatchesIndependentFittedOracle` | Verification | Independent complete Gaussian-copula reduced-fold optimum and held-out quantile uncertainty | Passed; one-result TRX `20260901-144228-...` after the final sign-safe LR review; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074931-...` |
+| `SpatialGEVChunk14OracleTests.HeldOutCovariateFold_MatchesIndependentRegressionOracle` | Verification | Independent held-out covariate row plus executable normal-equation uncertainty split | Passed; one-result TRX |
+| Historical three `SpatialGEVCrossValidationVerificationTests` methods | Design history | Same-ecosystem production parity or result accounting; no longer executable Verification declarations | Consolidated; fast owners retained |
+| `SpatialGEVChunk14OracleTests.UngaugedDrawSpecificPrediction_MatchesIndependentGeodesicGaussianOracle` | Verification | Four fixed geodesic GP draws, conditional mean/variance, physical location | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.RegionalFixedDrawAggregation_MatchesIndependentPosteriorOracle` | Verification | Nine fixed draws, three nonexchangeable sites, three central-95% regional ordinates | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.GodambeSensitivityVariabilityAndSandwich_MatchIndependentOracle` | Verification | Independent H, J, and unregularized sandwich covariance | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.TemporalBlockBootstrap_MatchesIndependentWholeRowOracle` | Verification | Whole-row wrapping blocks, five independent SciPy flat-prior MAP fits, and production fitted physical-parameter/site/regional interval parity | Passed; one-result TRX |
+| `SpatialGEVChunk14OracleTests.VarianceInflation_UsesExactIndependentAnalyticalTransformation` | Verification | Independent VIF plus exact site and regional endpoint transformation | Passed; one-result TRX |
+| Historical two `SpatialGEVPredictionVerificationTests` and three `SpatialGEVUncertaintyMethodVerificationTests` methods | Design history | Same-production posterior recomputation or estimator dispatch/accounting; no longer executable Verification declarations | Consolidated; fast owners retained |
+
+
+## Recorded spatial recovery runs
+
+The following recorded results retain the original method identities, isolated result directories, and outcomes. Interpret them using this chapter's sample design, oracle, and acceptance rules; documentation maintenance does not constitute a new execution.
+
+| Current exact identity | Network and distinction | Outcome and exact result directory |
+|---|---|---|
+| `SpatialGEVMLERecoveryTests.MLE_BasicHomogeneous_RecoversParameters` | 10 sites; independent homogeneous GEV | Passed 1/1, 1.716 s; `20260902-074615-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074936-...` |
+| `SpatialGEVMLERecoveryTests.MLE_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 4.931 s; `20260902-074645-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074940-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_BasicHomogeneous_RecoversParameters` | 10 sites; mildly negative shape baseline | Passed 1/1, 68.472 s; `20260902-075604-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 165.125 s; `20260902-075735-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithLocationRegression_RecoversParameters` | 10 sites; X/Y location regression | Passed 1/1, 130.429 s; `20260902-080047-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithPositiveShape_RecoversParameters` | 10 sites; shape 0.1 | Passed 1/1, 71.070 s; `20260902-080322-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithZeroShape_RecoversParameters` | 10 sites; Gumbel limit | Passed 1/1, 68.439 s; `20260902-080456-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithNegativeShape_RecoversParameters` | 10 sites; shape -0.2 | Passed 1/1, 78.168 s; `20260902-080630-...` |

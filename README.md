@@ -60,7 +60,7 @@ Source builds include the model library, unit tests, UI/project layer, desktop a
 | Documentation | `docs/` | Public technical documentation and references |
 | Examples | `examples/` | Tutorial `.bestfit` projects, input data, spreadsheets, and walkthrough markdown |
 
-The long-running verification project, verification datasets, and additional validation reports are intentionally excluded from the initial public source release. Those materials are being prepared for follow-on publication.
+The repository includes the numerical verification project, independent reference datasets and generators, and the technical reference and verification reports. See [verification methodology and evidence](docs/verification/README.md) for the scope and limitations of those records. Normal development uses the four fast test suites; numerical verification runs are explicitly scoped.
 
 ## Quick Start
 

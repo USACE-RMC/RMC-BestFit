@@ -31,6 +31,6 @@ Use these examples to connect flood evidence, model assumptions and saved freque
 
 For Bayesian analyses, use **Distribution Results > Frequency Plot** and **Distribution Results > Tabular Results**, then **MCMC Report** and the parameter selectors in **Kernel Density**, **Markov Chain Traces** and **Autocorrelation**. B17C analyses instead use **GMM Report** and frequentist parameter-ensemble views. Composite analyses expose **Frequency Plot** and **Tabular Results** directly; inspect their upstream fits for MCMC diagnostics.
 
-The tutorials preserve saved results, including incomplete or questionable cases. They do not establish EMA equivalence or design acceptance. Review the [author issue log](../../docs/example-issues-for-haden.md) before adopting a teaching configuration in a study.
+The tutorials preserve saved results, including incomplete or questionable cases. They do not establish EMA equivalence or design acceptance. Review the [example limitations](../../docs/example-limitations.md) before adopting a teaching configuration in a study.
 
 The tutorials identify native BestFit exports for the selected frequency and parameter views. Additional Python figures and companion SVG/PlotSpec links preserve the wider saved-result comparisons, including the explicitly documented Back Creek legacy display exception. See [figure reproduction](../README.md#reproducing-the-figures) for the Python companions. Continue to [bivariate analysis](../5-bivariate-distribution-analysis/README.md) when the question involves two variables or a joint response.

@@ -3,10 +3,11 @@
 
 ## Status
 
-The approved Phase 3 scope is closed. TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior-reference assumptions for the general nonstationary univariate workflow. TR-016 documents the intentional reuse of the Bayesian analysis result-storage architecture without changing code, public API, or serialization. TR-017 through TR-019 retain their previously recorded naming and bootstrap-refit dispositions. TR-020 restricts Cohn diagnostics to exact-data Log-Pearson Type III (LP3) and is covered by fast unit tests. TR-021 is verified by the seven formal Bulletin 17C worked-example parameter tests described below.
+TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior-reference assumptions for the general nonstationary univariate workflow. TR-016 documents the intentional reuse of the Bayesian analysis result-storage architecture without changing code, public API, or serialization. TR-017 through TR-019 retain their previously recorded naming and bootstrap-refit dispositions. TR-020 restricts Cohn diagnostics to exact-data Log-Pearson Type III (LP3) and is covered by fast unit tests. TR-021 is verified by the seven formal Bulletin 17C worked-example parameter tests described below.
 
-## Phase 3 data-handling assumptions
+<a id="phase-3-data-handling-assumptions"></a>
 
+## Data-handling assumptions
 For nonstationary univariate models, grouped perception-threshold counts are expanded conditionally: explicit records keep their indexes, unoccupied earlier indexes are assigned below-threshold status, and unoccupied indexes in the terminal `NumberAbove` portion are assigned above-threshold status. The allocation is an explicit modeling assumption rather than an inferred event chronology. Distribution-dependent Jeffreys and quantile-prior terms are evaluated once at the last, most-recent observed index, consistent with the published quantile-prior workflow. The [data-frame chronology](../technical-reference/data-frame/index.md#stationary-and-nonstationary-chronology) and [prior reference-time](../technical-reference/models/parameters-and-priors.md#complete-univariate-prior) sections define the full contract. TR-003 is documentation-only and makes no permutation-invariance claim.
 
 ## Formal worked-example parameter parity
@@ -60,7 +61,7 @@ Bulletin 17C uses penalized GMM and frequentist uncertainty ensembles, while del
 
 ## Evidence boundary
 
-The seven passed worked-example methods verify current specialized LP3 GMM parameter parity with the published Bulletin 17C examples. Three additional PeakFQ cells verify Hirsch-Stedinger plotting-position parity, and twelve analytical penalty cells verify regional parameter/quantile weighting behavior. Chunk 7 separately verifies six generated-parent recovery cells and all thirteen independently derived complete-data covariance cells. The evidence still does not verify:
+The seven passed worked-example methods verify current specialized LP3 GMM parameter parity with the published Bulletin 17C examples. Three additional PeakFQ cells verify Hirsch-Stedinger plotting-position parity, and twelve analytical penalty cells verify regional parameter/quantile weighting behavior. complete-data Bulletin 17C verification separately verifies six generated-parent recovery cells and all thirteen independently derived complete-data covariance cells. The evidence still does not verify:
 
 - Cohn confidence-interval values or coverage;
 - bootstrap covariance;
@@ -70,8 +71,9 @@ The seven passed worked-example methods verify current specialized LP3 GMM param
 
 Those are separate claims and require separately authorized, exactly filtered verification methods or independent artifacts. The legacy version 1 Comparison with EMA report evaluates an earlier Bayesian workflow and is not the oracle for the current specialized GMM path.
 
-## Chunk 7 six-family parameterization crosswalk
+<a id="chunk-7-six-family-parameterization-crosswalk"></a>
 
+## Six-family parameterization crosswalk
 The generated-parent recovery design uses exactly 1,000 complete scalar observations and the fixed
 generator seed `12345` for every supported family. The generator constructs the listed Numerics
 distribution directly; `Bulletin17CDistribution` exposes the same parameter names and order through
@@ -92,20 +94,20 @@ For each parameter-coordinate check, the generating coordinate must have absolut
 no greater than `1.96` using the fitted method-of-moments covariance at `N=1000`. For the two
 predeclared Q(0.99) response checks, the generating quantile must lie inside the fitted response's
 central Normal-approximation 95-percent band formed from Numerics `QuantileVariance`. These
-acceptance rules are fixed before observing the Chunk 7 GMM results; estimator success, finiteness,
+acceptance rules are fixed before observing the GMM results; estimator success, finiteness,
 or agreement with sample product moments is not the scientific oracle.
 
 The covariance cells use a separate evidence boundary. Approval to use Numerics uncertainty for the
-recovery acceptance above does not make Numerics an independent covariance oracle. Their Chunk 7
-replacement derives the complete-data just-identified GMM sandwich independently from the first six
+recovery acceptance above does not make Numerics an independent covariance oracle. The independent oracle derives the complete-data just-identified GMM sandwich independently from the first six
 central moments and the finite-sample centered-moment Jacobian. In particular, the three-coordinate
 Jacobian uses `D[2,0] = -3 * (N / (N - 2)) * Sigma^2`, preserving the B17C second- and third-moment
 Bessel factors. The derivation is checked against frozen values generated without RMC.BestFit or
 Numerics production code and cites Bulletin 17C version 1.1 and Cohn, Lane, and Stedinger (2001) for
 the method-of-moments/EMA uncertainty framework.
 
-## Chunk 7 current results
+<a id="chunk-7-current-results"></a>
 
+## Complete-data covariance and recovery evidence
 All six generated-parent recovery identities and all thirteen covariance identities passed current
 exact guarded runs on 30 August 2026. The covariance artifact was generated with Python 3.12.13
 standard library only and independently cross-checked by the C# analytical evaluator.
@@ -119,27 +121,104 @@ and fallback remain unchanged for rejected candidates. No covariance formula, or
 or B17C estimator behavior changed. Fresh isolated TRXs at `20260830-094558` and `20260830-094618`
 record the two Pearson cells passing; the other eleven covariance cells and all six recoveries passed in
 the `20260830-094658` through `20260830-094833` series. The exact method/TRX ledger is in the
-[Chunk 7 inventory](test-inventory.md#chunk-7-bulletin-17c-reconciliation).
+[Recorded covariance and recovery runs](bulletin-17c.md#recorded-covariance-and-recovery-runs).
 
 The twelve penalty identities, twelve example/plotting-position identities, and seven selected general
 GMM identities also passed fresh exact guarded runs after the shared change. Three discarded wrong-class
 attempts produced zero-result TRXs and are not evidence; the corrected
 `HirschStedingerPlottingPositionVerificationTests` identities each passed exactly once.
 
-No confidence-interval coverage method was executed. The 56 catalog entries in the three coverage
-classes remain execution-excluded historical evidence and reruns-on-request.
+No confidence-interval coverage method was executed. The 56 retired catalog entries in the three coverage
+classes remain historical evidence; their source declarations were later removed, as described in
+[Retired interval-coverage studies](#retired-interval-coverage-studies).
 
-## Phase 7 dispositions - 22 August 2026
+<a id="phase-7-dispositions---22-august-2026"></a>
 
-Three Bulletin 17C items from the 21 August 2026 reruns were diagnosed and disposed in the closeout:
+## Covariance and bootstrap findings - 22 August 2026
+Three Bulletin 17C items from the 21 August 2026 reruns have the following recorded scientific dispositions:
 
-- **TR-085 (GMM covariance, independently closed).** The eigenvalue cap was removed and only the positive-definite floor remained. The historical 13/13 result compared with the same Numerics covariance ecosystem. Chunk 7 replaced that oracle with an independent analytical sandwich. After the approved shared Numerics correction stopped adding a ridge to already-positive-definite matrices, all 13 current exact methods passed without changing the independent oracle or tolerance.
+- **TR-085 (GMM covariance, independently closed).** The eigenvalue cap was removed and only the positive-definite floor remained. The historical 13/13 result compared with the same Numerics covariance ecosystem. The 30 August independent covariance study replaced that oracle with an independent analytical sandwich. After the approved shared Numerics correction stopped adding a ridge to already-positive-definite matrices, all 13 current exact methods passed without changing the independent oracle or tolerance.
 - **TR-086 (bootstrap re-centring, fixed).** `DataFrame.BootstrapDataFrame` re-centres additive measurement-error distributions by the simulated/original ratio for log-space fits and strictly positive error supports, so MOVE.3-style relative errors keep their relative spread and never cross zero. `UncertainDataBootstrapVerificationTests` 2/2 and the reliability grid 14/14 after the fix.
-- **TR-087 (censored coverage frames and initial parameters, fixed).** The coverage fixture now computes plotting positions; `Bulletin17CDistribution` keeps the constraint-based initial values and records a validation warning when the censored-data (ROS) initial estimate is unavailable instead of reporting zero parameters. The censored coverage cells and the `B17CCoverageTests` cells (TR-088) were not rerun, by decision; they remain exact-method reruns on request.
+- **TR-087 (censored coverage frames and initial parameters, fixed).** The coverage fixture now computes plotting positions; `Bulletin17CDistribution` keeps the constraint-based initial values and records a validation warning when the censored-data (ROS) initial estimate is unavailable instead of reporting zero parameters. The censored coverage cells and the `B17CCoverageTests` cells (TR-088) were not rerun, by decision; their later retirement is documented in [Retired interval-coverage studies](#retired-interval-coverage-studies).
 
-Details: [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026) and the register sections [TR-085](../technical-reference/review-findings.md#tr-085), [TR-086](../technical-reference/review-findings.md#tr-086), [TR-087](../technical-reference/review-findings.md#tr-087), and [TR-088](../technical-reference/review-findings.md#tr-088).
+The [recorded historical runs](#historical-numerical-results---22-august-2026) retain the outcomes and timings for the two uncertain-data bootstrap checks and thirteen covariance checks.
 
 ## Traceability
 
-- Findings: [TR-003](../technical-reference/review-findings.md#tr-003) and [TR-016 through TR-021](../technical-reference/review-findings.md#tr-016)
+- Findings: [TR-003](bulletin-17c.md#data-handling-assumptions) and [TR-016 through TR-021](bulletin-17c.md#result-storage-architecture)
 - Technical method: [Bulletin 17C analysis](../technical-reference/analysis/bulletin-17c.md)
+
+
+## Recorded covariance and recovery runs
+
+These nineteen isolated results were recorded on 30 August 2026. Each identifies one method, one result directory, and its recorded outcome; they are historical execution evidence, not a claim of a new run at the current documentation checkpoint. The recovery design and independent covariance oracle are described above.
+
+| Exact recovery identity | Latest isolated result directory | Result |
+|---|---|---|
+| `B17CSyntheticDataTests.Exponential_GmmRecoversGeneratingParent` | `20260830-094803-..._Exponential_GmmRecoversGeneratingParent` | Passed |
+| `B17CSyntheticDataTests.Gamma_GmmRecoversGeneratingParent` | `20260830-094809-..._Gamma_GmmRecoversGeneratingParent` | Passed |
+| `B17CSyntheticDataTests.Normal_GmmRecoversGeneratingParent` | `20260830-094815-..._Normal_GmmRecoversGeneratingParent` | Passed |
+| `B17CSyntheticDataTests.PearsonTypeIII_GmmRecoversGeneratingParentAndQ99` | `20260830-094821-..._PearsonTypeIII_GmmRecoversGeneratingParentAndQ99` | Passed |
+| `B17CSyntheticDataTests.LogNormal_GmmRecoversGeneratingLog10Parent` | `20260830-094827-..._LogNormal_GmmRecoversGeneratingLog10Parent` | Passed |
+| `B17CSyntheticDataTests.LogPearsonTypeIII_GmmRecoversGeneratingLog10ParentAndQ99` | `20260830-094833-..._LogPearsonTypeIII_GmmRecoversGeneratingLog10ParentAndQ99` | Passed |
+
+| Exact covariance identity | Latest isolated result directory | Result |
+|---|---|---|
+| `B17CCovarianceTests.Exponential_Covariance_N25` | `20260830-094658-..._Exponential_Covariance_N25` | Passed |
+| `B17CCovarianceTests.Exponential_Covariance_N100` | `20260830-094703-..._Exponential_Covariance_N100` | Passed |
+| `B17CCovarianceTests.Gamma_Covariance_N25` | `20260830-094709-..._Gamma_Covariance_N25` | Passed |
+| `B17CCovarianceTests.Gamma_Covariance_N100` | `20260830-094714-..._Gamma_Covariance_N100` | Passed |
+| `B17CCovarianceTests.Normal_Covariance_N25` | `20260830-094720-..._Normal_Covariance_N25` | Passed |
+| `B17CCovarianceTests.Normal_Covariance_N100` | `20260830-094726-..._Normal_Covariance_N100` | Passed |
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N25` | `20260830-094558-..._PearsonTypeIII_Covariance_N25` | Passed |
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N100` | `20260830-094618-..._PearsonTypeIII_Covariance_N100` | Passed |
+| `B17CCovarianceTests.LogNormal_Covariance_N25` | `20260830-094733-..._LogNormal_Covariance_N25` | Passed |
+| `B17CCovarianceTests.LogNormal_Covariance_N100` | `20260830-094740-..._LogNormal_Covariance_N100` | Passed |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_N25` | `20260830-094746-..._LogPearsonTypeIII_Covariance_N25` | Passed |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_N100` | `20260830-094751-..._LogPearsonTypeIII_Covariance_N100` | Passed |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_Example1` | `20260830-094757-..._LogPearsonTypeIII_Covariance_Example1` | Passed |
+
+The aggregate outcome was **19 passed, 0 failed, 0 skipped**. The frozen covariance artifact is [b17c-gmm-covariance-oracle.json](../../verification/data/bulletin17c/b17c-gmm-covariance-oracle.json); its Python-standard-library generator and hashes are listed in the [verification data manifest](../../verification/data/MANIFEST.md).
+
+## Retired interval-coverage studies
+
+The [retired catalog](verification-catalog-retired.json) preserves 56 coverage-study records from source removed in commit `ae4aaa1` on 9 September 2026: 18 `B17CCoverageTests` records, eight `B17CCensoredCoverageTests` records, and 30 `B17CCohnEtAlCoverageTests` records. They are excluded from the 329-method active inventory. Their model definitions, sample sizes, seeds, oracle descriptions, acceptance rules, execution exclusions, and limitations remain historical records; updated links do not reinstate the deleted methods or promote their results to current coverage claims.
+
+These studies address repeated-sample confidence-interval coverage, a different claim from single-dataset parameter recovery, complete-data covariance identities, or successful bootstrap delivery. The Cohn method is restricted to exact LP3 data without low-outlier flags. Censored, uncertain-data, bootstrap covariance, and broad interval-coverage claims are not established by the seven worked examples or nineteen runs above. Historical coverage results require a separately scoped reproduction; none was rerun during documentation consolidation.
+
+The 30 historical Cohn scenarios cross skew values `-1, -0.5, 0, 0.5, 1`, systematic lengths `Ns=25` or `100`, and historical lengths `Nh=0`, `50`, or `150`. Each used 1,000 replicates, master seed `12345`, nominal coverage `0.90`, and a historical minimum of 800 completed replicates. Completion accounting is not a quantitative coverage oracle.
+
+## Bootstrap repair evidence
+
+Three frozen packages record successive experiments on Example #1 - BCB, with 68 systematic observations, 1,000 bootstrap realizations, seed 12345, and the enabled regional-skew penalty preserved:
+
+- [BFGS and analytical-Jacobian repair](b17c-repair-evidence-20260917/README.md): frozen XML inputs, benchmark, initial solver repair, and residual failures.
+- [Cholesky/ridge and outer-iteration diagnosis](b17c-cholesky-evidence-20260917/README.md): exception-removal parity, checked ridge escalation, independent derivative/rounding calculations, and unstable outer fixed points.
+- [Objective-rounding repair](bfgs-roundoff-evidence-20260917/README.md): the later bounded gradient check and its recorded effects.
+
+The final recorded replay retained **1,000 accepted bootstrap outputs, 947 outer-converged fits, 53 capped fits, and 77 BFGS fallbacks**. These counts are distinct. Positive-definite returned matrices and accepted outputs do not establish interval coverage or solve the remaining outer iteration problem. The general three-to-five-pass target remains unmet; no tolerance, penalty, seed, fallback policy, or outer-GMM equation was changed to conceal it.
+
+
+<a id="historical-recovery-results---22-august-2026"></a>
+
+## Historical numerical results - 22 August 2026
+
+These isolated results were recorded at the 22 August 2026 checkpoint. The covariance checks then used the same Numerics covariance ecosystem; the independent sandwich oracle and nineteen runs described above supersede that covariance claim. The two uncertain-data bootstrap results retain their stated stability scope. Timings are recorded wall-clock observations, not current performance guarantees.
+
+| Method | Outcome | Time |
+|---|---|---|
+| `UncertainDataBootstrapVerificationTests.NormalBootstrap_UncertainObservationsRemainStable` | Passed | 3.6 s |
+| `UncertainDataBootstrapVerificationTests.LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable` | Passed | 3.8 s |
+| `B17CCovarianceTests.Exponential_Covariance_N25` | Passed | 3.4 s |
+| `B17CCovarianceTests.Exponential_Covariance_N100` | Passed | 3.2 s |
+| `B17CCovarianceTests.Gamma_Covariance_N25` | Passed | 3.2 s |
+| `B17CCovarianceTests.Gamma_Covariance_N100` | Passed | 3.1 s |
+| `B17CCovarianceTests.Normal_Covariance_N25` | Passed | 3.3 s |
+| `B17CCovarianceTests.Normal_Covariance_N100` | Passed | 3.3 s |
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N25` | Passed | 3.1 s |
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N100` | Passed | 3.2 s |
+| `B17CCovarianceTests.LogNormal_Covariance_N25` | Passed | 3.4 s |
+| `B17CCovarianceTests.LogNormal_Covariance_N100` | Passed | 3.4 s |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_N25` | Passed | 3.3 s |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_N100` | Passed | 3.2 s |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_Example1` | Passed | 3.2 s |

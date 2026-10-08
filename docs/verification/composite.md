@@ -2,7 +2,7 @@
 
 # Composite Analysis Verification
 
-This report records the Phase 4 evidence for TR-013, TR-014, and TR-015.
+This report records the composite weighting, resampling, and dependence evidence for TR-013, TR-014, and TR-015.
 
 ## Criterion Weighting
 
@@ -83,8 +83,9 @@ the published table, and deterministic bisection; posterior oracles enumerate th
 20-by-20-by-20 product of the child supports without calling the production resampler or a
 production composite constructor.
 
-### Chunk 10B predictive-recovery coverage matrix
+<a id="chunk-10b-predictive-recovery-coverage-matrix"></a>
 
+### Predictive-recovery experiment matrix
 The deterministic oracle cells above remain theory, published, orthant, or independent Cartesian
 evidence; their 8,000 combinations and 5,000 resampling draws are not recovery N and remain
 unchanged. Four additional cells cover only the scientifically distinct fitted-child interactions:
@@ -163,8 +164,8 @@ duplicate those deterministic contracts as long-running methods.
 TR-013 and TR-015 remain complete with fast programmatic evidence. TR-014 retains its existing
 fast and independent numerical evidence, and both exact TR-014 methods passed again. The
 ten current oracle identities and all four fitted-child predictive-recovery identities pass. The
-Composite supplement no longer blocks Phase 5. The complete Verification project was not run.
+complete Verification project was not run.
 
 ---
 
-[Verification index](README.md) | [Technical treatment](../technical-reference/distributions/composite.md) | [Scientific findings](../technical-reference/review-findings.md#tr-014)
+[Verification index](README.md) | [Technical treatment](../technical-reference/distributions/composite.md) | [Scientific findings](#independent-posterior-resampling)

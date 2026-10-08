@@ -3,7 +3,7 @@
 Validates the XML documentation and namespace conventions of the RMC.BestFit solution.
 
 .DESCRIPTION
-Runs the documentation gate described in CLAUDE.md:
+Runs the repository XML documentation and namespace gate:
 
 1. Builds every source project with EnforceXmlDocumentation=true (skipped with -SkipBuild);
    any build error or CS15xx XML documentation warning fails the gate.
@@ -19,6 +19,9 @@ undocumented declaration and fails the gate unless -ReportOnly is supplied.
 
 .PARAMETER Configuration
 Build configuration (Debug or Release). Default: Debug. RMC.BestFit.Verification is built only in Debug.
+
+.PARAMETER DotNetPath
+Optional path to the .NET executable. Defaults to dotnet on PATH.
 
 .PARAMETER SkipBuild
 Skip the strict builds and run only the namespace and private-documentation scans.
@@ -36,6 +39,7 @@ Report undocumented private declarations without failing the gate.
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
+    [string]$DotNetPath = '',
     [switch]$SkipBuild,
     [switch]$ReportOnly
 )
@@ -60,6 +64,13 @@ if ($Configuration -eq 'Debug') {
 }
 
 if (-not $SkipBuild) {
+    if ([string]::IsNullOrWhiteSpace($DotNetPath)) {
+        $dotnetCommand = Get-Command dotnet -CommandType Application -ErrorAction Stop | Select-Object -First 1
+        $DotNetPath = $dotnetCommand.Source
+    }
+    if (-not (Test-Path -LiteralPath $DotNetPath -PathType Leaf)) {
+        throw "Unable to locate .NET. Supply -DotNetPath or install dotnet on PATH."
+    }
     foreach ($relative in $projects) {
         $projectPath = Join-Path $sourceRoot $relative
         if (-not (Test-Path -LiteralPath $projectPath)) {
@@ -67,7 +78,7 @@ if (-not $SkipBuild) {
             continue
         }
         Write-Host "Building $relative ($Configuration) with EnforceXmlDocumentation=true"
-        $output = & dotnet build $projectPath -c $Configuration -p:EnforceXmlDocumentation=true --nologo -v q 2>&1
+        $output = & $DotNetPath build $projectPath -c $Configuration -p:EnforceXmlDocumentation=true --nologo -v q 2>&1
         $exitCode = $LASTEXITCODE
         $xmlWarnings = @($output | Where-Object { $_ -match 'warning CS15[0-9]{2}' })
         $errors = @($output | Where-Object { $_ -match ': error ' })

@@ -17,6 +17,8 @@ $$
 
 The public `Mu` and `Sigma` properties expose these internal log-space values, while `GetParameters`, `ParametersToString`, `Mean`, and `StandardDeviation` expose or return natural-space moments. Code that mixes these surfaces can silently change parameterization.
 
+The physical-parameter cache preserves the exact serialized natural-space mean and standard deviation through clone and round-trip operations. Persisted coordinates and logarithmic bases are unchanged.
+
 ## Distribution
 
 For $x>0$,

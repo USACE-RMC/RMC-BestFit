@@ -32,4 +32,4 @@ This document is a technical draft supplied for independent scientific and engin
 
 ## Revision record
 
-This edition describes the source checkpoints above. It is a finished draft for external review; scientific approval and public release remain separate decisions. Validation built against the published RMC.Numerics 2.2.0 package, which was built from the stated Numerics commit. The source checkpoint identifies the reviewed implementation, while the documentation commit and final PDF checksum are recorded in the publication-quality receipt.
+This edition describes the source checkpoints above. It is a finished draft for external review; scientific approval and public release remain separate decisions. Validation built against the published RMC.Numerics 2.2.0 package, which was built from the stated Numerics commit. The source checkpoint identifies the reviewed implementation, while the retained PDF checksum is recorded in the [artifact checksum inventory](../../output/pdf/SHA256SUMS).

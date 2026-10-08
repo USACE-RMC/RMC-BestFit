@@ -93,6 +93,8 @@ powershell -ExecutionPolicy Bypass -File scripts\build-technical-reference-book.
 
 The build first checks that the consolidated bibliography is current, then produces `output/pdf/rmc-bestfit-technical-reference.pdf`. Intermediate HTML, the browser-produced PDF, and rendered QA images belong under `tmp/pdfs/`.
 
+The report-specific source checkpoint is recorded in [report-metadata.json](../report-metadata.json). [SHA256SUMS](../../output/pdf/SHA256SUMS) identifies the retained reviewed PDF bytes. Markdown can evolve after that edition; a source edit does not update the retained PDF or establish a fresh page review. Rebuilding the PDF requires equation, navigation and page-level visual checks before replacing the reviewed artifact.
+
 ## Publication states
 
 | Marker | Meaning |

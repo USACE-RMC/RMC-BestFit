@@ -2,10 +2,10 @@
 
 # Bivariate and Coincident-Frequency Verification
 
-This chapter consolidates the Phase 6 (Batch 6.2) verification evidence for copula-based bivariate
+This chapter presents the independent evidence for copula-based bivariate
 distributions, Bayesian bivariate analysis, and coincident-frequency analysis. No review finding is
-open in this area: TR-047 (bivariate AIC/BIC posterior kernel) was corrected and closed in Phase 2,
-and TR-014 (cross-analysis posterior draw coupling) was closed in Phase 4. The technical treatment is
+open in this area: TR-047 (bivariate AIC/BIC posterior kernel) was corrected,
+and TR-014 (cross-analysis posterior draw coupling) was corrected. The technical treatment is
 in the [bivariate](../technical-reference/analysis/bivariate.md) and
 [coincident-frequency](../technical-reference/analysis/coincident-frequency.md) chapters.
 
@@ -19,8 +19,9 @@ in the [bivariate](../technical-reference/analysis/bivariate.md) and
 | Independent product-posterior propagation (TR-014) | `PosteriorResamplingVerificationTests.CoincidentFrequencyPosteriorResampling_MatchesIndependentClosedFormOracle` | Passed (3 August 2026) |
 | AIC/BIC use the copula data likelihood at the stored MAP (TR-047) | Fast routing regression `AnalysisInformationCriteriaRoutingTests.BivariateCriteria_UseOneDataLikelihoodCallAtMap` | Passed (fast gate) |
 
-## Chunk 11 identification and ownership design
+<a id="chunk-11-identification-and-ownership-design"></a>
 
+## Copula identification and recovery design
 Every generated-parent bivariate recovery cell uses exactly 1,000 matched pairs. The physical
 marginals are `X ~ Normal(mu=100, sigma=15)` and `Y ~ Normal(mu=80, sigma=25)`, in X-then-Y
 coordinate order. Each marginal is fitted separately by maximum likelihood in `[mu, sigma]` order;
@@ -117,7 +118,7 @@ artifact's same-point numerical tolerance and the joint two-coordinate cutoff
 1 September 2026 (`20260901-143648-...` through `20260901-143950-...`); the twelve historical
 identities were not rerun after consolidation. The 1 September runs were produced under the former
 `max(100, 10*k)` Differential Evolution population minimum; all 14 methods were rerun individually
-on 26 September 2026 under the current `10*k` population (Task 2.12, `20260926-074810-...` through
+on 26 September 2026 under the current `10*k` population (`20260926-074810-...` through
 `20260926-074915-...`) and all 14 passed again.
 
 ## Bayesian recovery and coincident frequency
@@ -137,7 +138,7 @@ fit checks, and central-95% propagated parent-response bands at five predeclared
 current cells passed separately on 31 August 2026. The three `SumOfNormals_Rho*` cells fit their
 Normal marginals by Differential Evolution MLE and their 31 August record could not be confirmed
 outside the former `max(100, 10*k)` population-minimum window (31 August-8 September 2026); they were
-rerun individually on 26 September 2026 under the current `10*k` population (Task 2.12,
+rerun individually on 26 September 2026 under the current `10*k` population (
 `20260926-075022-...`, `20260926-075045-...`, and `20260926-075110-...`) and all three passed again.
 The fourth cell (`ExponentialLinearCombination_ParentResponseInsidePredictiveBands`) predates the
 window and was not rerun. The TR-014 product-posterior oracle is
@@ -147,7 +148,7 @@ recorded in the [composite chapter](composite.md#independent-posterior-resamplin
 
 `BivariateAnalysis` evaluates AIC and BIC from `BivariateDistribution.DataLogLikelihood` at the stored
 MAP with the number of fitted copula parameters and the matched-pair count; copula-prior densities are
-excluded (TR-047, Phase 2). With a flat copula prior the MAP coincides with the constrained copula MLE
+excluded (TR-047). With a flat copula prior the MAP coincides with the constrained copula MLE
 and the criteria have their usual likelihood interpretation conditional on the fixed marginals; with an
 informative copula prior use DIC, WAIC, or verified PSIS-LOO. The fast routing regression
 `AnalysisInformationCriteriaRoutingTests.BivariateCriteria_UseOneDataLikelihoodCallAtMap` injects a
@@ -163,4 +164,33 @@ degrees-of-freedom coordinate is not claimed recovered. The bivariate analysis r
 conditional on fixed marginal fits, and comparisons of its criteria are valid only across models with
 identical marginals, paired events, and likelihood convention.
 
-[Verification index](README.md) | [Technical treatment](../technical-reference/analysis/bivariate.md) | [Scientific findings](../technical-reference/review-findings.md#tr-047)
+[Verification index](README.md) | [Technical treatment](../technical-reference/analysis/bivariate.md) | [Scientific findings](bivariate.md#status)
+
+
+## Recorded bivariate recovery runs
+
+The following recorded results retain the original method identities, isolated result directories, and outcomes. Interpret them using this chapter's sample design, oracle, and acceptance rules; documentation maintenance does not constitute a new execution.
+
+| Exact current identity | Latest isolated result directory | Result |
+|---|---|---|
+| `BivariateAnalysisParameterRecoveryTests.RecoverAMHCopulaParameters` | `20260831-072731-..._RecoverAMHCopulaParameters` | Passed |
+| `BivariateAnalysisParameterRecoveryTests.RecoverClaytonCopulaParameters` | `20260831-072836-..._RecoverClaytonCopulaParameters` | Passed |
+| `BivariateAnalysisParameterRecoveryTests.RecoverFrankCopulaParameters` | `20260831-072951-..._RecoverFrankCopulaParameters` | Passed |
+| `BivariateAnalysisParameterRecoveryTests.RecoverGumbelCopulaParameters` | `20260831-073105-..._RecoverGumbelCopulaParameters` | Passed |
+| `BivariateAnalysisParameterRecoveryTests.RecoverJoeCopulaParameters` | `20260831-073231-..._RecoverJoeCopulaParameters` | Passed |
+| `BivariateAnalysisParameterRecoveryTests.RecoverNormalCopulaParameters` | `20260831-073409-..._RecoverNormalCopulaParameters` | Passed |
+| `BivariateAnalysisParameterRecoveryTests.RecoverStudentTCopulaParametersWithMaximumLikelihood` | `20260831-073524-..._RecoverStudentTCopulaParametersWithMaximumLikelihood` | Passed |
+| `CopulaEstimationOracleTests.StudentT_PseudoLikelihood_MatchesIndependentOptimum` | `20260901-143725-..._StudentT_PseudoLikelihood_MatchesIndependentOptimum`; rerun 26 September 2026, `20260926-074859-...` (current `10*k` Differential Evolution population) | Passed |
+| `CopulaEstimationOracleTests.StudentT_InferenceFromMargins_MatchesIndependentOptimum` | `20260901-143950-..._StudentT_InferenceFromMargins_MatchesIndependentOptimum`; rerun 26 September 2026, `20260926-074915-...` (current `10*k` Differential Evolution population) | Passed |
+
+
+## Recorded coincident-frequency runs
+
+The following recorded results retain the original method identities, isolated result directories, and outcomes. Interpret them using this chapter's sample design, oracle, and acceptance rules; documentation maintenance does not constitute a new execution.
+
+| Exact current identity | Latest isolated result directory | Result |
+|---|---|---|
+| `CoincidentFrequencyAnalysisTests.ExponentialLinearCombination_ParentResponseInsidePredictiveBands` | `20260831-073912-..._ExponentialLinearCombination_ParentResponseInsidePredictiveBands` | Passed |
+| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoZero_MatchesClosedForm` | Originally `20260831-073650-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-075022-..._SumOfNormals_RhoZero_MatchesClosedForm` | Passed |
+| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoPositive_MatchesClosedForm` | Originally `20260831-073728-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-075045-..._SumOfNormals_RhoPositive_MatchesClosedForm` | Passed |
+| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoNegative_MatchesClosedForm` | Originally `20260831-073809-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-075110-..._SumOfNormals_RhoNegative_MatchesClosedForm` | Passed |

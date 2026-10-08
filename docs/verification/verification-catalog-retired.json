@@ -2,7 +2,23 @@
   "schemaVersion": 1,
   "retirementDate": "2026-09-09",
   "retirementCommit": "ae4aaa1",
-  "reason": "Source coverage-study files were deleted in commit ae4aaa1. Original catalog entries are preserved verbatim as historical records, excluded from the active library denominator and current evidence claims.",
+  "reason": "Source coverage-study files were deleted in commit ae4aaa1. Scientific catalog fields are preserved as historical records, excluded from the active library denominator and current evidence claims. Navigation-only reportAnchor updates are documented separately below.",
+  "navigationUpdate": {
+    "date": "2026-10-08",
+    "scope": "Navigation only; all scientific fields in the 56 retired entries remain unchanged.",
+    "mappings": [
+      {
+        "from": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+        "to": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
+        "entryCount": 30
+      },
+      {
+        "from": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+        "to": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
+        "entryCount": 26
+      }
+    ]
+  },
   "entries": [
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCensoredCoverageTests.cs",
@@ -24,7 +40,7 @@
       "oracle": "A seeded 5-skew by 3-scale by 4-censoring simulation table records completion, coverage, miss direction, interval asymmetry, link triggers, bias, and RMSE; the method asserts no scientific target.",
       "acceptanceRule": "No quantitative pass/fail oracle: the method only emits 84 cells, each based on 200 replicates and 50 systematic observations.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -48,7 +64,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -72,7 +88,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -96,7 +112,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -120,7 +136,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -144,7 +160,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -168,7 +184,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -192,7 +208,7 @@
       "oracle": "Monte Carlo coverage of generating quantiles under low-outlier, historical-threshold, or combined censoring.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and each ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -217,7 +233,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -242,7 +258,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -267,7 +283,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -292,7 +308,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -317,7 +333,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -342,7 +358,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -367,7 +383,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -392,7 +408,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -417,7 +433,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -442,7 +458,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -467,7 +483,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -492,7 +508,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -517,7 +533,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -542,7 +558,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -567,7 +583,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -592,7 +608,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -617,7 +633,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -642,7 +658,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -667,7 +683,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -692,7 +708,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -717,7 +733,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -742,7 +758,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -767,7 +783,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -792,7 +808,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -817,7 +833,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -842,7 +858,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -867,7 +883,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -892,7 +908,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -917,7 +933,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -942,7 +958,7 @@
       "oracle": "Cohn, Lane, and Stedinger (2001) Table 3 scenario design; current code computes empirical coverage but does not assert the published Table 3 value.",
       "acceptanceRule": "At least 800 of 1000 replicates must complete; empirical coverage is emitted for comparison but no published coverage value is asserted.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#execution-excluded-cohn-coverage-methods",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -966,7 +982,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -990,7 +1006,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1014,7 +1030,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1038,7 +1054,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1062,7 +1078,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1086,7 +1102,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1110,7 +1126,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1134,7 +1150,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1158,7 +1174,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1182,7 +1198,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1206,7 +1222,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1230,7 +1246,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1254,7 +1270,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1278,7 +1294,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1302,7 +1318,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1326,7 +1342,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1350,7 +1366,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     },
@@ -1374,7 +1390,7 @@
       "oracle": "Monte Carlo coverage of the generating-distribution quantile by the reported 90% interval; this is historical coverage evidence, not parameter recovery.",
       "acceptanceRule": "Across 1000 replicates, at least 900 must complete, mean ordinate coverage must lie in [0.82, 0.97], and every reported ordinate must have coverage at least 0.70.",
       "artifact": "",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#audit-checkpoint",
+      "reportAnchor": "docs/verification/bulletin-17c.md#retired-interval-coverage-studies",
       "status": "execution-excluded",
       "gap": "Execution exclusion: retain this historical confidence-interval coverage evidence as reruns-on-request; Codex must not execute this class during the remediation program."
     }

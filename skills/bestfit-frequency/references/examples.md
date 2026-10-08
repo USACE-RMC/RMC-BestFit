@@ -55,7 +55,7 @@ bundled evidence workflow; do not invent a tutorial's contents or results.
    follow: what changed between alternatives, why, which evidence supports it,
    and what still requires engineering judgment.
 
-The [example issue log](https://github.com/USACE-RMC/RMC-BestFit/blob/main/docs/example-issues-for-haden.md)
+The [example limitations](https://github.com/USACE-RMC/RMC-BestFit/blob/main/docs/example-limitations.md)
 records source-data discrepancies and unresolved study decisions. In particular,
 the retained GHCN snowfall scale and Nile date offset must not be copied as
 correct source handling. The [Blakely Bayesian reference](https://github.com/USACE-RMC/RMC-BestFit/blob/main/examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/blakely-mountain-dam-bayesian.md)

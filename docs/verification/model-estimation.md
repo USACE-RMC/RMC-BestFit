@@ -3,9 +3,9 @@
 
 ## Status
 
-Phase 2 is complete for its approved scope. The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, GMM objective/covariance scaling, scoped fit/variance/combined-influence diagnostics, DIC, WAIC, PSIS-LOO, Hansen J, overidentified one-step fitting, MLE/MAP nuisance profiling, fixed-weight and efficient GMM sandwich covariance, ARWMH realized-state covariance, NUTS gradient and acceptance-contract integration, and rank-normalized R-hat and conservative bulk/tail ESS are verified. TR-023 and TR-032 retain their public signatures; TR-027 exposes explicit covariance status and failure contracts; TR-028 remains a documented, verified limitation.
+The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, GMM objective/covariance scaling, scoped fit/variance/combined-influence diagnostics, DIC, WAIC, PSIS-LOO, Hansen J, overidentified one-step fitting, MLE/MAP nuisance profiling, fixed-weight and efficient GMM sandwich covariance, ARWMH realized-state covariance, NUTS gradient and acceptance-contract integration, and rank-normalized R-hat and conservative bulk/tail ESS are verified. TR-023 and TR-032 retain their public signatures; TR-027 exposes explicit covariance status and failure contracts; TR-028 remains a documented, verified limitation.
 
-Phase 2 is closed for its approved scope. The 3 August 2026 normalized checkpoint confirms all seven model-estimation artifact hashes match `verification/data/MANIFEST.md`. BestFit closes through commits `6ffab67` and `1a848ef`, with Numerics diagnostic anchors `5c693a8`, `76f7dd0`, and `b3f14b0`; current gates are Numerics 2,024/2,024, Core 3,116/3,116, UI 568/568, and App 428/428 with zero failures.
+The 3 August 2026 normalized checkpoint confirms all seven model-estimation artifact hashes match `verification/data/MANIFEST.md`. This historical checkpoint used BestFit commits `6ffab67` and `1a848ef`, with Numerics diagnostic anchors `5c693a8`, `76f7dd0`, and `b3f14b0`; its recorded test results were Numerics 2,024/2,024, Core 3,116/3,116, UI 568/568, and App 428/428 with zero failures.
 
 ## Shared Generated-Parent Recovery Policy
 
@@ -27,9 +27,10 @@ the generating response. A secondary 5% point/curve check is permitted only when
 band is narrower than 5% of a nonzero parent. Status is assigned only from specifically approved,
 reviewed current focused evidence; historical results are not transferred.
 
-### Chunk 5 exact execution - 29 August 2026
+<a id="chunk-5-exact-execution---29-august-2026"></a>
 
-Twenty-two current Chunk 5 identities were run one method at a time through
+### Recorded estimator recovery runs - 29 August 2026
+Twenty-two current estimator recovery identities were run one method at a time through
 `scripts/run-verification-test.ps1`: two Bayesian recovery cells, the Normal-Normal conjugate oracle,
 one MAP recovery cell, two MAP information-criteria oracles, thirteen family MLE recovery cells, the
 retained LnNormal closed-form MLE comparison, the two-step GMM recovery cell, and the LP3 Q(0.99)
@@ -475,7 +476,7 @@ Focused methods:
 
 ## Univariate Family and Trend Recovery
 
-The fifteen stationary generated-parent Bayesian family cells use 1,000 scalar observations with seed 12345 and the untouched production sampler defaults. Each non-boundary coordinate requires central-95% parent inclusion, R-hat below 1.10, ESS at least 100, and the secondary five-percent point criterion only when the existing 95% band is narrower than five percent of a nonzero parent. Exponential and Generalized Pareto generate `Xi=0`; that boundary location remains diagnostically monitored, but its parent-recovery assertion is the predeclared Q(0.99) central-95% response band. LogNormal and KappaFour do not duplicate generic MLE evidence: their default-MLE generated-parent coverage is the Chunk 6A `FittingAnalysis` recovery cell.
+The fifteen stationary generated-parent Bayesian family cells use 1,000 scalar observations with seed 12345 and the untouched production sampler defaults. Each non-boundary coordinate requires central-95% parent inclusion, R-hat below 1.10, ESS at least 100, and the secondary five-percent point criterion only when the existing 95% band is narrower than five percent of a nonzero parent. Exponential and Generalized Pareto generate `Xi=0`; that boundary location remains diagnostically monitored, but its parent-recovery assertion is the predeclared Q(0.99) central-95% response band. LogNormal and KappaFour do not duplicate generic MLE evidence: their default-MLE generated-parent coverage is the distribution-fitting recovery `FittingAnalysis` recovery cell.
 
 The first guarded pass on 29 August 2026 produced 15 passes from 17 identities. Exponential failed before estimation because a Numerics regression calculated the location upper bound with `Log10` of the negative fixed-seed initializer. Restoring the support-aware constraint `upper location = sample minimum` makes every bound finite while preserving the MLE support condition. The reciprocal Normal response-grid cell completed but its Normal-scale ESS was below 100 because BestFit copied the stationary response initializer directly into reciprocal coefficient `a`, so the initial response was its reciprocal and both reciprocal priors were orders of magnitude broader than the generating coefficients.
 
@@ -483,7 +484,7 @@ The approved remediation initializes reciprocal trends in response space: `a=1/r
 
 The deterministic fast test `AllSupportedParentAndTemporalTrendAssignments_HaveFiniteValidDefaults` crosses all 38 parameters of the 15 supported parent distributions with the ten temporal trend types: 380 assignments. It requires finite ordered priors, valid model construction, and valid default response trajectories across all 1,000 time indices. This exhausts the supported default-configuration space without treating construction success as statistical recovery.
 
-Five Bayesian covering-array cells add nonredundant statistical evidence under the shared central-95% rule: Normal reciprocal scale (`20260829-183018-*`), Normal sinusoidal scale (`183058-*`), GEV linear shape (`183143-*`), GPD linear location with exponential scale (`183323-*`), and Log-Pearson III linear log-mean with exponential log-scale (`183534-*`). All five exact runs passed their predeclared response grids, directly identified constant coordinates, R-hat, ESS, and conditional secondary criteria. Together with the earlier 15 passes and the two repaired reruns, the current Chunk 6B matrix is 22 of 22 passed identities.
+Five Bayesian covering-array cells add nonredundant statistical evidence under the shared central-95% rule: Normal reciprocal scale (`20260829-183018-*`), Normal sinusoidal scale (`183058-*`), GEV linear shape (`183143-*`), GPD linear location with exponential scale (`183323-*`), and Log-Pearson III linear log-mean with exponential log-scale (`183534-*`). All five exact runs passed their predeclared response grids, directly identified constant coordinates, R-hat, ESS, and conditional secondary criteria. Together with the earlier 15 passes and the two repaired reruns, the current univariate family and trend recovery matrix is 22 of 22 passed identities.
 
 The older sixteen Normal-only trend methods were consolidated rather than migrated. Fifteen are now
 non-discovered historical calculations; the retained constant-trend identity uses exactly 1,000
@@ -492,4 +493,28 @@ under `20260902-082205-...`. Exhaustively running 380 Bayesian cells is neither 
 substitute for a multi-seed coverage study; the deterministic matrix plus the targeted family/parameter-role
 covering array is the current bounded verification design.
 
-The scoped DIC, WAIC, PSIS-LOO, Pareto-k, and GMM covariance artifacts are committed and consumed without an R or Python runtime. ArviZ would be a redundant secondary WAIC/LOO implementation, not missing verification evidence or a Phase 2 exit requirement.
+The scoped DIC, WAIC, PSIS-LOO, Pareto-k, and GMM covariance artifacts are committed and consumed without an R or Python runtime. ArviZ would be a redundant secondary WAIC/LOO implementation, not missing verification evidence or a estimation and diagnostics verification exit requirement.
+
+
+## Historical recovery results - 22 August 2026
+
+These are the last recorded one-method results at the 22 August 2026 checkpoint. They retain the then-used fixtures and acceptance rules described in the historical evidence above. Later N=1000 central-95% recovery designs and current catalog dispositions supersede earlier percentage-band, four-standard-deviation, or central-90% rules where indicated; results are not transferred between changed designs. Timings are recorded wall-clock observations, not current performance guarantees.
+
+| Method | Outcome | Time |
+|---|---|---|
+| `NonstationaryValidationTests.Nonstationary_ConstantTrend_RecoversTrueParameters` | Passed | 25 s |
+| `NonstationaryValidationTests.Nonstationary_LinearTrend_RecoversTrueParameters` | Passed | 33 s |
+| `NonstationaryValidationTests.Nonstationary_QuadraticTrend_RecoversTrueParameters` | Passed | 47 s |
+| `NonstationaryValidationTests.Nonstationary_CubicTrend_RecoversTrueParameters` | Passed | 67 s |
+| `NonstationaryValidationTests.Nonstationary_ExponentialTrend_RecoversTrueParameters` | Passed | 39 s |
+| `NonstationaryValidationTests.Nonstationary_LogisticTrend_RecoversTrueParameters` | Passed | 41 s |
+| `NonstationaryValidationTests.Nonstationary_PowerTrend_RecoversTrueParameters` | Passed | 41 s |
+| `NonstationaryValidationTests.Nonstationary_SinusoidalTrend_RecoversTrueParameters` | Passed | 73 s |
+| `NonstationaryValidationTests.Nonstationary_StepFunctionTrend_RecoversTrueParameters` | Passed | 48 s |
+| `NonstationaryValidationTests.Nonstationary_SigmaLinearTrend_RecoversTrueParameters` | Passed | 34 s |
+| `NonstationaryValidationTests.Nonstationary_SigmaQuadraticTrend_RecoversTrueParameters` | Passed | 57 s |
+| `NonstationaryValidationTests.Nonstationary_SigmaExponentialTrend_RecoversTrueParameters` | Passed | 45 s |
+| `NonstationaryValidationTests.Nonstationary_BothLinearTrend_RecoversTrueParameters` | Passed | 52 s |
+| `NonstationaryValidationTests.Nonstationary_MuQuadraticSigmaLinear_RecoversTrueParameters` | Passed | 62 s |
+| `NonstationaryValidationTests.Nonstationary_MuLinearSigmaExponential_RecoversTrueParameters` | Passed | 53 s |
+| `NonstationaryValidationTests.Nonstationary_BothStepFunction_RecoversTrueParameters` | Passed | 71 s |

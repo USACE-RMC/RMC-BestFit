@@ -137,7 +137,7 @@ $$
 \tag{6}
 $$
 
-Here $D$ is the determinant supplied by the distribution's `IStandardError.QuantileJacobian` implementation for probabilities $(1-\alpha_1,\ldots,1-\alpha_p)$. It converts the density specified in quantile coordinates to the distribution-parameter coordinates used by the posterior. A zero determinant returns negative infinity. This is a parameterization Jacobian, not a data-transformation Jacobian.
+Here $D$ is the distribution's quantile-Jacobian determinant for probabilities $(1-\alpha_1,\ldots,1-\alpha_p)$. The univariate and point-process models evaluate its logarithmic magnitude through the Numerics `LogAbsQuantileJacobian` extension in both aggregate and pointwise prior paths. A finite log determinant remains usable when the raw determinant overflows or underflows; exact singularity returns negative infinity. The factor converts quantile-coordinate density to the distribution-parameter coordinates used by the posterior. This is a parameterization Jacobian, not a data-transformation Jacobian.
 
 ## Complete univariate prior
 

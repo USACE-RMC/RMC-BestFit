@@ -19,4 +19,4 @@ The available [one-day GMM tutorial](../../2-bulletin-17C-analysis/2-information
 
 The existing Bayesian project must establish the actual input elements, fitted alternatives, prior distributions, saved sampler settings, diagnostics and results. The author should identify the duration-specific basis for the adopted regional and rainfall-runoff information. Once supplied, figures can be rendered from those saved results without replacing them or rerunning the analyses.
 
-Until then, this is a study-reference page, not a completed numerical example. The missing project and required source context are listed in the [author follow-up log](../../../../docs/example-issues-for-haden.md).
+Until then, this is a study-reference page, not a completed numerical example. The missing project and required source context are listed in the [example limitations](../../../../docs/example-limitations.md).

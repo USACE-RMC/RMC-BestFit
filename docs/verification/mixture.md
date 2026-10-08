@@ -4,7 +4,7 @@
 
 ## Scope
 
-This report covers Phase 4 findings TR-006, TR-007, and TR-008:
+This report covers mixture-analysis findings TR-006, TR-007, and TR-008:
 
 - the full-$K$ public model and identified $K-1$ BestFit sampler parameterization;
 - a coherent point mass at zero with positive-conditioned components; and
@@ -92,8 +92,9 @@ Bayesian recovery pass counts are not promoted into a current passing claim.
 
 ## Focused Recovery Results
 
-### Chunk 10A parameterization and identification crosswalk
+<a id="chunk-10a-parameterization-and-identification-crosswalk"></a>
 
+### Mixture parameterization and identification crosswalk
 All six current recovery identities use exactly N=1000 observations from production generation
 seed 12345. Ordinary two-component Bayesian estimation uses seed 22345, positive-hurdle
 two-component estimation uses 32345, and ordinary three-component estimation uses 42345. These
@@ -121,8 +122,9 @@ ordinates. scikit-learn does not implement BestFit's positive-conditioned zero-h
 external-package parity is claimed for that fixture; its exact law is checked directly by the
 generated-parent likelihood and recovery construction.
 
-### Chunk 10A exact results - 30 August 2026
+<a id="chunk-10a-exact-results---30-august-2026"></a>
 
+### Mixture recovery results - 30 August 2026
 Every completed method below ran separately through the guarded runner and produced exactly one
 TRX result. The method names ending in `_Parity` are retained for identity continuity, but their
 scientific oracle is now generated-parent recovery; same-ecosystem parity was removed from their
@@ -146,8 +148,24 @@ runs passed unsorted posterior arrays to `Statistics.Percentile` while declaring
 two false exclusions and one nonfinite interval were discarded as test-oracle evidence. Sorting the
 same retained arrays before central-95% evaluation produced the passing exact TRXs above.
 
-## Closeout State
+<a id="closeout-state"></a>
 
+## Evidence boundary
 TR-007 and TR-008 remain complete because the positive-hurdle and impossible-row contracts did not
 change. All six current recovery identities and the independent scikit-learn identity are verified
 under the common acceptance rule. The complete Verification project was not run.
+
+
+## Recorded mixture verification runs
+
+The following recorded results retain the original method identities, isolated result directories, and outcomes. Interpret them using this chapter's sample design, oracle, and acceptance rules; documentation maintenance does not constitute a new execution.
+
+| Test method | Oracle or recovery contract | Status |
+|---|---|---|
+| `MixtureRecoveryTests.NormalMixture2D_Recovery_Parity` | Two-component generated-parent EM recovery | Passed - 0.373 s |
+| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_Recovery_Parity` | Separate atom plus positive-hurdle component EM recovery | Passed - 0.744 s |
+| `MixtureRecoveryTests.NormalMixture3D_Recovery_Parity` | Three-component generated-parent EM recovery | Passed - 1.371 s |
+| `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Full-K posterior reconstruction, central-95% parent inclusion, diagnostics | Passed - 1:47.770 |
+| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Atom plus positive-mass full-K posterior reconstruction and diagnostics | Passed - 4:04.938 |
+| `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Full-K posterior reconstruction, central-95% parent inclusion, diagnostics | Passed - 4:05.235 |
+| `MixtureExternalPackageOracleTests.OrdinaryNormalMixture2D_MatchesScikitLearnArtifact` | Frozen scikit-learn fit plus independent likelihood/CDF values | Passed - 0.242 s |

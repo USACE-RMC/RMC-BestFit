@@ -21,4 +21,4 @@ Time-series models retain observation order and can describe trends, serial depe
 
 The plotted bands are prediction intervals: they include process/residual variability and parameter uncertainty. They are not just uncertainty about a mean trend. The vertical training boundary and the colors distinguish the fitted period from withheld or future prediction periods.
 
-Read the [author issue log](../../docs/example-issues-for-haden.md) before adopting an example configuration. Saved settings and results are preserved; these figures do not constitute a new recovery or forecasting validation experiment. See [figure reproduction](../README.md#reproducing-the-figures) or return to the [example index](../README.md).
+Read the [example limitations](../../docs/example-limitations.md) before adopting an example configuration. Saved settings and results are preserved; these figures do not constitute a new recovery or forecasting validation experiment. See [figure reproduction](../README.md#reproducing-the-figures) or return to the [example index](../README.md).

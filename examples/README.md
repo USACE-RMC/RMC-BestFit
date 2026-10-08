@@ -30,7 +30,7 @@ For a first flood-frequency study, read the USGS annual-peak tutorial, then a st
 4. For Bayesian results, inspect chains, R-hat, effective sample size and uncertainty as well as the fitted curve. A completed run alone does not establish convergence or suitability.
 5. Record any change you make to the data, assumptions or settings, and retain the original project for comparison.
 
-The saved projects are teaching records, not accepted design studies. Known limitations are explained in the relevant tutorial. In particular, the GHCN snowfall scale, Nile dates, some study-specific prior provenance and several saved diagnostics require attention. [The guidance register](../docs/example-guidance-questions.md) lists source questions; [the author issue log](../docs/example-issues-for-haden.md) records all follow-up items.
+The saved projects are teaching records, not accepted design studies. Known limitations are explained in the relevant tutorial. The [example limitations](../docs/example-limitations.md) collect unresolved source questions and interpretation boundaries, including the GHCN snowfall scale, Nile dates, study-specific prior provenance and saved diagnostics.
 
 ## Reading the figures
 
@@ -40,7 +40,7 @@ Additional Python figures retain broader scientific and diagnostic coverage. The
 
 Frequency plots distinguish a Bayesian credible interval from a Bulletin 17C confidence interval. Plotting positions describe the sample; they are not fitted probabilities. Logarithmic plots cannot display zero or negative magnitudes, so also inspect the chronology and the original data. Each native capture snapshot or Python PlotSpec identifies its project hash and selected element. Inspect whether a probability band is vertical quantile uncertainty or horizontal probability uncertainty at a fixed CFA response. An app legend label alone does not establish the scientific interval type.
 
-Two source-preserving display exceptions are documented: the restored Back Creek GMM figure overlays its original saved arrays because the current app omits that legacy result format; regression residual figures pass saved coefficients to BestFit's residual method because covariate loading resets live model values. These do not repair the underlying app-loading issues or change any database result. Rating/time-series prediction bands include residual/process variation as well as parameter uncertainty. Parameter-chain autocorrelation, residual autocorrelation and observed-series autocorrelation are distinct diagnostics.
+Two source-preserving display exceptions are documented: the restored Back Creek GMM figure overlays its original saved arrays because the app omits that legacy result format; older regression residual figures pass saved coefficients to BestFit's residual method to bypass the covariate-loading defect fixed in v2.0.1. These figure-generation exceptions do not change any database result. Rating/time-series prediction bands include residual/process variation as well as parameter uncertainty. Parameter-chain autocorrelation, residual autocorrelation and observed-series autocorrelation are distinct diagnostics.
 
 ## Reproducing the figures
 
@@ -58,7 +58,7 @@ The screenshot and figure manifests select each project, element and view. Add `
 
 Native PNGs and compressed capture snapshots live alongside each tutorial under `screenshots/`, with source and output hashes in `screenshot-manifest.json`. Integration checks are recorded under `artifacts/sadie-integration/`. Python render receipts and original desktop snapshots are written under `artifacts/example-documentation/`. Use `--refresh` when the desktop runtime changes. To inspect saved descriptions and configuration without opening the app, run `tools/ExampleDocumentation/project_inventory.py`. The [maintenance guide](../tools/ExampleDocumentation/README.md) explains the metadata preservation audit.
 
-Sadie Niblett contributed the GUI walkthroughs and example views integrated here. The [integration record](../docs/SADIE-DOCUMENTATION-INTEGRATION.md) explains the retained contributions, scientific corrections and exclusions.
+Sadie Niblett contributed the GUI walkthroughs and example views integrated here; her citation credit is retained in [CITATION.cff](../CITATION.cff). The [screenshot manifest](screenshot-manifest.json) records each contributor image's disposition and the native replacement's source, selected view and output hashes. The [data disposition](../docs/sadie-data-disposition.json) records retained target projects and omitted obsolete contributor data. Current native captures and older Python companions retain separate provenance; neither establishes convergence or engineering acceptance.
 
 ## Report an issue
 

@@ -124,7 +124,7 @@ Ten legacy Bayesian Estimation Analysis records remain in the database, includin
 
 The separate fitting analysis 16031000_WaimeaPk binds the current Waimea input and contains **15 successful, visible distribution fits**. Current AnalysisXml is estimated, while the old IsFitted flag is zero. The current loader prioritizes AnalysisXml. No populated fit or conflicting flag has been deleted or repaired.
 
-The author follow-up log records the prior sources, regional applicability, Makaweli units, conditional selection, hydraulic response definition, Simulated Proof role and legacy-result conflicts. These are necessary study decisions before design interpretation. A readable saved curve does not supply the missing evidence.
+The example limitations records the prior sources, regional applicability, Makaweli units, conditional selection, hydraulic response definition, Simulated Proof role and legacy-result conflicts. These are necessary study decisions before design interpretation. A readable saved curve does not supply the missing evidence.
 
 ![Normal Copula - Conditional: native Value-space simulated scatter and eligible observations. Makaweli units and conditional-event provenance remain unresolved.](screenshots/waimea-conditional-scatter.png)
 

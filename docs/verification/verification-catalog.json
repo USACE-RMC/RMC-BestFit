@@ -21,7 +21,7 @@
       "oracle": "The N=1000 fixture is generated from declared Normal(mu=100,sigma=15) parents with System.Random seed 12345 and fitted through BayesianAnalysis using unchanged production defaults.",
       "acceptanceRule": "Both generating parameters must lie in central 95% posterior intervals; each coordinate must have R-hat < 1.10 and ESS >= 100.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#verification-completeness-chunk-3-model-estimation-ownership---28-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#recovery-from-generated-data",
       "status": "verified",
       "gap": ""
     },
@@ -45,7 +45,7 @@
       "oracle": "The N=1000 fixture is generated from declared Normal(mu=100,sigma=15) parents with System.Random seed 12345; the method checks the actual default central posterior intervals rather than a width surrogate.",
       "acceptanceRule": "Both generating parameters must lie in central 95% posterior intervals; each coordinate must have R-hat < 1.10 and ESS >= 100.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#verification-completeness-chunk-3-model-estimation-ownership---28-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#recovery-from-generated-data",
       "status": "verified",
       "gap": ""
     },
@@ -69,7 +69,7 @@
       "oracle": "For known sigma=15 and prior mu~Normal(120,5), the source independently computes Vpost=1/(N/sigma^2+1/tau^2), mpost=Vpost*(sum(x)/sigma^2+120/tau^2), and the default central interval from Normal(mpost,Vpost).",
       "acceptanceRule": "Posterior mean <= 0.05 absolute from mpost; posterior standard deviation <= 0.03 absolute from sqrt(Vpost); default central interval limits <= 0.10 absolute from the conjugate quantiles.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#verification-completeness-chunk-3-model-estimation-ownership---28-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#an-exact-bayesian-posterior",
       "status": "verified",
       "gap": ""
     },
@@ -522,7 +522,7 @@
       "oracle": "Seeded Normal(mu=100,sigma=10) generated-parent fixture with MAP observed-information Hessian standard errors.",
       "acceptanceRule": "Each parent coordinate must have absolute standardized error no greater than 1.96 using MaximumAPosteriori.GetStandardErrors().",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#default-mcmc-settings-in-verification-recovery-tests---21-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#recovery-from-generated-data",
       "status": "verified",
       "gap": ""
     },
@@ -595,7 +595,7 @@
       "oracle": "Closed-form Normal information n/sigma^2 gives variance sigma^2/n and mean equal to the sample average.",
       "acceptanceRule": "The fitted mean must have absolute standardized error no greater than 1.96 using the known variance sigma^2/n; the deterministic variance and standard-error identities must agree within 1e-8 relative; Cook distances must be finite and nonnegative for all 10 observations.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#estimation-and-diagnostics-corrections---21-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#profile-likelihood-and-covariance",
       "status": "verified",
       "gap": null
     },
@@ -619,7 +619,7 @@
       "oracle": "The unit-curvature quadratic has identity inverse information; a bounded flat prior adds only a constant, so MLE and MAP Hessians coincide.",
       "acceptanceRule": "Every covariance cell must match the identity target and MLE/MAP parity within 1e-4 absolute.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#estimation-and-diagnostics-corrections---21-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#profile-likelihood-and-covariance",
       "status": "verified",
       "gap": null
     },
@@ -1107,7 +1107,7 @@
       "oracle": "For fixed theta1=t, the independently derived nuisance optimum is theta2=rho*t and the correlated-quadratic profile log likelihood is -t^2/2. Unsupported points are excluded from this numerical claim.",
       "acceptanceRule": "All 16 grid abscissae must match the declared [-4,4] midpoint stratification within 1e-12; each of the 10 supported profile ordinates must match -t^2/2 within 1e-6.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#verification-completeness-chunk-3-model-estimation-ownership---28-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#profile-likelihood-and-covariance",
       "status": "verified",
       "gap": ""
     },
@@ -1131,7 +1131,7 @@
       "oracle": "For fixed theta1=t, the independently derived nuisance optimum is theta2=rho*t and the flat-prior MAP profile is -t^2/2-2*log(8). Unsupported points are excluded from this numerical claim.",
       "acceptanceRule": "All 16 grid abscissae must match the declared [-4,4] midpoint stratification within 1e-12; each of the 10 supported profile ordinates must match -t^2/2-2*log(8) within 1e-6.",
       "artifact": null,
-      "reportAnchor": "docs/verification/test-inventory.md#verification-completeness-chunk-3-model-estimation-ownership---28-august-2026",
+      "reportAnchor": "docs/verification/report/estimation-diagnostics.md#profile-likelihood-and-covariance",
       "status": "verified",
       "gap": ""
     },
@@ -2283,7 +2283,7 @@
       "oracle": "Seeded Normal(mu=100,sigma=15) parent; the actual default-list FittingAnalysis Normal candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the Normal candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2307,7 +2307,7 @@
       "oracle": "Seeded base-10 LogNormal(mu=3,sigma=0.5) parent; the actual default-list FittingAnalysis LogNormal candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the LogNormal candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2331,7 +2331,7 @@
       "oracle": "Seeded LnNormal(real-space mean=3.5,real-space standard deviation=0.4) parent; both the parent and actual default-list FittingAnalysis distribution are compared in Numerics covariance coordinates (Mu,Sigma^2).",
       "acceptanceRule": "Analysis must complete and the LnNormal candidate must fit. Mu and Sigma^2 must each have absolute standardized parent error no greater than 1.96 using the untransformed Numerics covariance; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2355,7 +2355,7 @@
       "oracle": "Seeded Exponential(xi=10,alpha=25) parent; the actual default-list FittingAnalysis Exponential candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the Exponential candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2379,7 +2379,7 @@
       "oracle": "Seeded Gamma(theta=5,kappa=3) parent; the actual default-list FittingAnalysis Gamma candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the Gamma candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2403,7 +2403,7 @@
       "oracle": "Seeded GEV(xi=50,alpha=15,kappa=0.1) parent; the actual default-list FittingAnalysis GEV candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the GeneralizedExtremeValue candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2427,7 +2427,7 @@
       "oracle": "Seeded GLO(xi=75,alpha=10,kappa=0.15) parent; an auxiliary same-data production MaximumLikelihood fit supplies alpha=0.05 profile intervals because Numerics variance APIs are unavailable.",
       "acceptanceRule": "Analysis and auxiliary MLE must complete; each profile interval must be finite and ordered, contain its parent, and contain the actual FittingAnalysis coordinate. Apply the secondary 5% point rule only for a narrower nonzero profile interval.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2451,7 +2451,7 @@
       "oracle": "Seeded GNO(xi=50,alpha=10,kappa=-0.3) parent; an auxiliary same-data production MaximumLikelihood fit supplies alpha=0.05 profile intervals because Numerics variance APIs are unavailable.",
       "acceptanceRule": "Analysis and auxiliary MLE must complete; each profile interval must be finite and ordered, contain its parent, and contain the actual FittingAnalysis coordinate. Apply the secondary 5% point rule only for a narrower nonzero profile interval.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2475,7 +2475,7 @@
       "oracle": "Seeded GPA(xi=0,alpha=20,kappa=0.15) parent; alpha and kappa use the fitted Numerics parameter covariance, while the zero location uses Q(0.99) and Numerics QuantileVariance.",
       "acceptanceRule": "Analysis must complete and the GeneralizedPareto candidate must fit. Alpha and kappa must have absolute standardized error no greater than 1.96; parent Q(0.99) must lie in the fitted 95% quantile-variance band, with any conditional secondary rule evaluated in response space.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2499,7 +2499,7 @@
       "oracle": "Seeded Gumbel(xi=50,alpha=15) parent; the actual default-list FittingAnalysis Gumbel candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the Gumbel candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2523,7 +2523,7 @@
       "oracle": "Seeded KappaFour(xi=100,alpha=20,kappa=-0.1,hondo=0.1) parent; an auxiliary same-data production MaximumLikelihood fit supplies alpha=0.05 profile intervals because Numerics variance APIs are unavailable.",
       "acceptanceRule": "Analysis and auxiliary MLE must complete; each profile interval must be finite and ordered, contain its parent, and contain the actual FittingAnalysis coordinate. Apply the secondary 5% point rule only for a narrower nonzero profile interval.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2547,7 +2547,7 @@
       "oracle": "Seeded Logistic(xi=75,alpha=10) parent; the actual default-list FittingAnalysis Logistic candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the Logistic candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2571,7 +2571,7 @@
       "oracle": "Seeded LogPearsonTypeIII moment parent (mu=2,sigma=0.3,gamma=0.5); both the parent and actual default-list FittingAnalysis distribution are compared in Numerics MLE covariance coordinates (Mu,1/Beta,Alpha).",
       "acceptanceRule": "Analysis must complete and the LogPearsonTypeIII candidate must fit. Mu, 1/Beta, and Alpha must each have absolute standardized parent error no greater than 1.96 using the untransformed Numerics MLE covariance; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2595,7 +2595,7 @@
       "oracle": "Seeded PearsonTypeIII moment parent (mu=100,sigma=20,gamma=0.8); both the parent and actual default-list FittingAnalysis distribution are compared in Numerics MLE covariance coordinates (Mu,1/Beta,Alpha).",
       "acceptanceRule": "Analysis must complete and the PearsonTypeIII candidate must fit. Mu, 1/Beta, and Alpha must each have absolute standardized parent error no greater than 1.96 using the untransformed Numerics MLE covariance; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2619,7 +2619,7 @@
       "oracle": "Seeded Weibull(lambda=100,kappa=2.5) parent; the actual default-list FittingAnalysis Weibull candidate uses its Numerics maximum-likelihood parameter covariance.",
       "acceptanceRule": "Analysis must complete and the Weibull candidate must fit. Every parent coordinate must have absolute standardized error no greater than 1.96; apply the secondary 5% point rule only for a narrower nonzero 95% coordinate band.",
       "artifact": null,
-      "reportAnchor": "docs/verification/distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation",
+      "reportAnchor": "docs/verification/distribution-fitting.md#generated-parent-recovery-design",
       "status": "verified",
       "gap": ""
     },
@@ -2643,7 +2643,7 @@
       "oracle": "Seeded Exponential parent [Xi=0, Alpha=50]; primary evidence is central-95% posterior inclusion for Alpha and Q(0.99) response inclusion for zero Xi, with R-hat/ESS for both coordinates. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; Alpha must lie in its central 95% posterior band, Q(0.99) must include the zero-Xi parent response, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-182917-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_Exponential_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2667,7 +2667,7 @@
       "oracle": "Seeded Gamma parent [Theta=5, Kappa=2] in Numerics scale/shape coordinates; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173507-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_Gamma_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2691,7 +2691,7 @@
       "oracle": "Seeded Weibull parent [Lambda=100, Kappa=2.5]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173529-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_Weibull_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2715,7 +2715,7 @@
       "oracle": "Seeded Normal parent [Mu=100, Sigma=15]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173557-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_Normal_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2739,7 +2739,7 @@
       "oracle": "Seeded GeneralizedNormal parent [Xi=100, Alpha=15, Kappa=0.1]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173611-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_GeneralizedNormal_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2763,7 +2763,7 @@
       "oracle": "Seeded Logistic parent [Xi=100, Alpha=10]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173638-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_Logistic_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2787,7 +2787,7 @@
       "oracle": "Seeded GeneralizedLogistic parent [Xi=100, Alpha=15, Kappa=0.1]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173706-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_GeneralizedLogistic_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2811,7 +2811,7 @@
       "oracle": "Seeded Gumbel parent [Xi=100, Alpha=20]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173740-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_Gumbel_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2835,7 +2835,7 @@
       "oracle": "Seeded GeneralizedExtremeValue parent [Xi=100, Alpha=20, Kappa=-0.1]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173753-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_GeneralizedExtremeValue_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2859,7 +2859,7 @@
       "oracle": "Seeded GeneralizedPareto parent [Xi=0, Alpha=50, Kappa=0.1]; primary evidence is central-95% posterior inclusion for Alpha/Kappa and Q(0.99) response inclusion for zero Xi, with R-hat/ESS for all coordinates. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; Alpha and Kappa must lie in their central 95% posterior bands, Q(0.99) must include the zero-Xi parent response, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173827-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_GeneralizedPareto_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2883,7 +2883,7 @@
       "oracle": "Seeded KappaFour parent [Xi=100, Alpha=20, Kappa=-0.1, H=0.1]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173849-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_KappaFour_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2907,7 +2907,7 @@
       "oracle": "Seeded PearsonTypeIII parent [Mu=100, Sigma=20, Gamma=0.5]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-173957-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_PearsonTypeIII_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2931,7 +2931,7 @@
       "oracle": "Seeded LogPearsonTypeIII parent [Mu=3, Sigma=0.5, Gamma=0.2]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-174057-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_LogPearsonTypeIII_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2955,7 +2955,7 @@
       "oracle": "Seeded LogNormal parent [Mu=3, Sigma=0.5]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-174200-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_LogNormal_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -2979,7 +2979,7 @@
       "oracle": "Seeded LnNormal public real-space parent [Mean=4.5, StandardDeviation=0.4]; primary evidence is central-95% posterior parent inclusion with R-hat/ESS. MAP is only the conditional secondary point check.",
       "acceptanceRule": "Analysis must complete; every non-boundary parent coordinate must lie in its central 95% posterior band, every sampled coordinate must have R-hat below 1.10 and ESS at least 100, and the secondary five-percent point rule applies only to a narrower nonzero-parent band.",
       "artifact": "TestResults/VerificationFocused/20260829-174221-RMC_BestFit_Verification_Univariate_ValidationTests_UnivariateValidationTests_LnNormal_RecoversTrueParameters",
-      "reportAnchor": "docs/verification/verification-completeness-audit.md#scientific-analysis-coverage-matrix",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#stationary-bayesian-family-recovery",
       "status": "verified",
       "gap": ""
     },
@@ -3398,7 +3398,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3423,7 +3423,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3448,7 +3448,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3473,7 +3473,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3498,7 +3498,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3523,7 +3523,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3548,7 +3548,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3573,7 +3573,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3598,7 +3598,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3623,7 +3623,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3648,7 +3648,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3673,7 +3673,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -3698,7 +3698,7 @@
       "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
       "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
       "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#uncertainty-in-fitted-moments",
       "status": "verified",
       "gap": null
     },
@@ -4297,7 +4297,7 @@
       "oracle": "Generated-parent truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at the fitted Exponential coordinates, as approved for statistical recovery acceptance.",
       "acceptanceRule": "For Xi and Alpha, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#recovery-of-parameters-and-the-100-year-quantile",
       "status": "verified",
       "gap": null
     },
@@ -4321,7 +4321,7 @@
       "oracle": "Generated-parent truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at fitted Gamma (Theta scale, Kappa shape) coordinates, as approved for statistical recovery acceptance.",
       "acceptanceRule": "For Theta and Kappa, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#recovery-of-parameters-and-the-100-year-quantile",
       "status": "verified",
       "gap": null
     },
@@ -4345,7 +4345,7 @@
       "oracle": "Generated-parent base-10-log truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at fitted Log-Normal (Mu, Sigma) log10 coordinates, as approved for statistical recovery acceptance.",
       "acceptanceRule": "For log10 Mu and Sigma, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#recovery-of-parameters-and-the-100-year-quantile",
       "status": "verified",
       "gap": null
     },
@@ -4369,7 +4369,7 @@
       "oracle": "Generated-parent base-10-log truth assessed with fitted-parameter method-of-moments covariance for Mu and Sigma and analytical Q(0.99) variance for the weak skew direction, as approved for statistical recovery acceptance.",
       "acceptanceRule": "Generating log10 Mu and Sigma and the generating Q(0.99) response must lie in their predeclared central 95% intervals at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#recovery-of-parameters-and-the-100-year-quantile",
       "status": "verified",
       "gap": null
     },
@@ -4393,7 +4393,7 @@
       "oracle": "Generated-parent truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at fitted Normal (Mu, Sigma) coordinates, as approved for statistical recovery acceptance.",
       "acceptanceRule": "For Mu and Sigma, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#recovery-of-parameters-and-the-100-year-quantile",
       "status": "verified",
       "gap": null
     },
@@ -4417,7 +4417,7 @@
       "oracle": "Generated-parent truth assessed with fitted-parameter method-of-moments covariance for Mu and Sigma and analytical Q(0.99) variance for the weak skew direction, as approved for statistical recovery acceptance.",
       "acceptanceRule": "Generating Mu and Sigma and the generating Q(0.99) response must lie in their predeclared central 95% intervals at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#recovery-of-parameters-and-the-100-year-quantile",
       "status": "verified",
       "gap": null
     },
@@ -4442,7 +4442,7 @@
       "oracle": "Independent monthly occurrence counts, block-year rotation, circular [1,2,1]/4 smoothing, unique separated-peak selection, valley placement, and five-month support construction; no production prior helper is invoked.",
       "acceptanceRule": "At N=4000, both production changepoint initial values and inclusive support bounds must exactly equal the independent occurrence-histogram calculation, and each generating effective day must lie inside the independently calculated support.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4467,7 +4467,7 @@
       "oracle": "Independent monthly occurrence counts, October-water-year rotation, circular [1,2,1]/4 smoothing, unique separated-peak selection, valley placement, and five-month support construction; no production prior helper is invoked.",
       "acceptanceRule": "At N=4000, both production changepoint initial values and inclusive support bounds must exactly equal the independently rotated occurrence-histogram calculation, and each generating effective day must lie inside the independently calculated support.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4492,7 +4492,7 @@
       "oracle": "Frozen SciPy 1.17.1 Poisson, generalized-Pareto, and GEV values with the explicit Coles xi versus Numerics Kappa sign crosswalk.",
       "acceptanceRule": "Threshold intensity, exact-event point-process log likelihood, conditional survival at x=120, and annual-maximum Q(0.99) must match the frozen SciPy artifact within 1e-12 scaled tolerance.",
       "artifact": "verification/data/point-process/stationary-poisson-gpa-scipy-oracle.json",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4517,7 +4517,7 @@
       "oracle": "Independently implemented density/CDF/Poisson or seasonal annual-maximum likelihood contribution sum.",
       "acceptanceRule": "Production data log likelihood must match the independent calculation within 2e-7 absolute; fixture event and censoring counts must match exactly.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4541,7 +4541,7 @@
       "oracle": "Generating GEV coordinates plus annual threshold intensity and conditional generalized-Pareto tail, after explicit truth-versus-prior, likelihood, exposure, threshold, and Kappa-sign prechecks.",
       "acceptanceRule": "At N=1000, every continuous parent coordinate must lie in its empirical central 95% posterior interval with R-hat below 1.10 and ESS at least 100; generating annual threshold intensity and the preidentified conditional tail at x=120 must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4566,7 +4566,7 @@
       "oracle": "Analytical Poisson event counts, season assignment/exposure, calendar dates, and conditional generalized-Pareto tail probabilities.",
       "acceptanceRule": "Event/season counts must lie within five Poisson standard errors; conditional-tail proportions within five binomial standard errors; season assignments and date/block mappings must be exact.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": ""
     },
@@ -4591,7 +4591,7 @@
       "oracle": "Independently implemented density/CDF/Poisson or seasonal annual-maximum likelihood contribution sum.",
       "acceptanceRule": "Production data log likelihood must match the independent calculation within 2e-7 absolute; fixture event and censoring counts must match exactly.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4615,7 +4615,7 @@
       "oracle": "Generating likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails, after explicit prior, likelihood, generator, exposure, threshold, Kappa-sign, and annualization prechecks.",
       "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both component intensities and conditional tails must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4639,7 +4639,7 @@
       "oracle": "Generating unequal-intensity likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails, after explicit prior, likelihood, generator, exposure, threshold, Kappa-sign, and annualization prechecks.",
       "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both unequal component intensities and conditional tails must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4664,7 +4664,7 @@
       "oracle": "Analytical Poisson event counts, season assignment/exposure, calendar dates, and conditional generalized-Pareto tail probabilities.",
       "acceptanceRule": "Event/season counts must lie within five Poisson standard errors; conditional-tail proportions within five binomial standard errors; season assignments and date/block mappings must be exact.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": ""
     },
@@ -4689,7 +4689,7 @@
       "oracle": "Analytical Poisson event counts, season assignment/exposure, calendar dates, and conditional generalized-Pareto tail probabilities.",
       "acceptanceRule": "Event/season counts must lie within five Poisson standard errors; conditional-tail proportions within five binomial standard errors; season assignments and date/block mappings must be exact.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": ""
     },
@@ -4713,7 +4713,7 @@
       "oracle": "Independent uniform-timing fixture with generating likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails under production automatic priors and calendar-year block origin.",
       "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both component intensities and conditional tails must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -4737,7 +4737,7 @@
       "oracle": "Independent uniform-timing fixture with generating likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails under production automatic priors and October-water-year block origin; paired calendar data establish block-origin parity.",
       "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both component intensities and conditional tails must lie in their central 95% posterior bands; calendar/water block-day likelihood parity remains 1e-10.",
       "artifact": "",
-      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "reportAnchor": "docs/verification/point-process.md#point-process-likelihood-and-recovery-evidence",
       "status": "verified",
       "gap": null
     },
@@ -8126,7 +8126,7 @@
       "sampleUnit": "retained raw post-burn-in time-series observations",
       "sampleSize": 1000,
       "artifact": "verification/data/time-series/chunk13-independent-oracle.json",
-      "reportAnchor": "docs/verification/time-series.md#chunk-13-completeness-reconciliation---31-august-2026",
+      "reportAnchor": "docs/verification/time-series.md#independent-time-series-oracles---31-august-2026",
       "status": "verified",
       "gap": "",
       "method": "FirstOrderConditionalObjectivesMatchIndependentPythonOracle",
@@ -8152,7 +8152,7 @@
       "sampleUnit": "retained raw post-burn-in time-series observations",
       "sampleSize": 1000,
       "artifact": "verification/data/time-series/chunk13-independent-oracle.json",
-      "reportAnchor": "docs/verification/time-series.md#chunk-13-completeness-reconciliation---31-august-2026",
+      "reportAnchor": "docs/verification/time-series.md#independent-time-series-oracles---31-august-2026",
       "status": "verified",
       "gap": "",
       "method": "HigherOrderArAndMaResponsesMatchIndependentPythonOracle",
@@ -8178,7 +8178,7 @@
       "sampleUnit": "retained raw post-burn-in time-series observations",
       "sampleSize": 1000,
       "artifact": "verification/data/time-series/chunk13-independent-oracle.json",
-      "reportAnchor": "docs/verification/time-series.md#chunk-13-completeness-reconciliation---31-august-2026",
+      "reportAnchor": "docs/verification/time-series.md#independent-time-series-oracles---31-august-2026",
       "status": "verified",
       "gap": "",
       "method": "PureArAndMaThroughArimaMatchIndependentPythonOracle",
@@ -8204,7 +8204,7 @@
       "sampleUnit": "retained raw post-burn-in time-series observations",
       "sampleSize": 1000,
       "artifact": "verification/data/time-series/chunk13-independent-oracle.json",
-      "reportAnchor": "docs/verification/time-series.md#chunk-13-completeness-reconciliation---31-august-2026",
+      "reportAnchor": "docs/verification/time-series.md#independent-time-series-oracles---31-august-2026",
       "status": "verified",
       "gap": "",
       "method": "ArimaxTrendSeasonalityAndCovariatesMatchIndependentPythonOracle",

@@ -27,4 +27,4 @@
   `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`,
   `CompositeHazardVerification.cs` and `CompositeResponseVerification.cs`.
 - RMC-BestFit version 1 verification report, `docs/reports/RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software.pdf`.
-- RMC.BestFit 2.0 [Technical Reference](../technical-reference/index.md) and [Scientific Review Findings](../technical-reference/review-findings.md).
+- RMC.BestFit 2.0 [Technical Reference](../technical-reference/index.md) and [Scientific evidence](README.md#supporting-evidence).

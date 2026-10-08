@@ -37,49 +37,42 @@ function Select-ExistingPath {
     throw "Unable to locate $Description. Supply its path explicitly."
 }
 
-$nodeFromPath = Get-Command node -ErrorAction SilentlyContinue
-$pythonFromPath = Get-Command python -ErrorAction SilentlyContinue
-$latexFromPath = Get-Command latex -ErrorAction SilentlyContinue
-$dvisvgmFromPath = Get-Command dvisvgm -ErrorAction SilentlyContinue
-$userProfilePath = [Environment]::GetFolderPath("UserProfile")
-$programFiles = [Environment]::GetEnvironmentVariable("ProgramFiles")
-$programFilesX86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
-$codexDependencyRoot = Join-Path $userProfilePath ".cache\codex-runtimes\codex-primary-runtime\dependencies"
-$miktexDirectory = Join-Path $userProfilePath "AppData\Local\Programs\MiKTeX\miktex\bin\x64"
+$nodeFromPath = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$pythonFromPath = Get-Command python -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$latexFromPath = Get-Command latex -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$dvisvgmFromPath = Get-Command dvisvgm -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+$browserFromPath = Get-Command chrome, msedge, chromium, chromium-browser -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 
 $nodeExecutable = Select-ExistingPath -Candidates @(
     $NodePath,
-    (Join-Path $codexDependencyRoot "node\bin\node.exe"),
     $(if ($null -ne $nodeFromPath) { $nodeFromPath.Source })
 ) -Description "Node.js"
 
 $pythonExecutable = Select-ExistingPath -Candidates @(
     $PythonPath,
-    (Join-Path $codexDependencyRoot "python\python.exe"),
     $(if ($null -ne $pythonFromPath) { $pythonFromPath.Source })
 ) -Description "Python"
 
 $latexExecutable = Select-ExistingPath -Candidates @(
     $LatexPath,
-    (Join-Path $miktexDirectory "latex.exe"),
     $(if ($null -ne $latexFromPath) { $latexFromPath.Source })
 ) -Description "LaTeX"
 
 $dvisvgmExecutable = Select-ExistingPath -Candidates @(
     $DvisvgmPath,
-    (Join-Path $miktexDirectory "dvisvgm.exe"),
     $(if ($null -ne $dvisvgmFromPath) { $dvisvgmFromPath.Source })
 ) -Description "dvisvgm"
 
 $browserExecutable = Select-ExistingPath -Candidates @(
     $BrowserPath,
-    $(if (![string]::IsNullOrWhiteSpace($programFiles)) { Join-Path $programFiles "Google\Chrome\Application\chrome.exe" }),
-    $(if (![string]::IsNullOrWhiteSpace($programFilesX86)) { Join-Path $programFilesX86 "Microsoft\Edge\Application\msedge.exe" })
-) -Description "Chrome or Edge"
+    $(if ($null -ne $browserFromPath) { $browserFromPath.Source })
+) -Description "Chrome, Edge, or Chromium"
 
 if ([string]::IsNullOrWhiteSpace($NodeModulesPath)) {
-    $nodeRoot = Split-Path -Parent (Split-Path -Parent $nodeExecutable)
-    $NodeModulesPath = Join-Path $nodeRoot "node_modules"
+    $NodeModulesPath = $env:BESTFIT_NODE_MODULES
+}
+if ([string]::IsNullOrWhiteSpace($NodeModulesPath)) {
+    $NodeModulesPath = Join-Path $repositoryRoot "node_modules"
 }
 
 if (!(Test-Path -LiteralPath $NodeModulesPath -PathType Container)) {

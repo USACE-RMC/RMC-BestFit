@@ -51,6 +51,8 @@ The model clones trends, assigns the candidate coefficient slices, predicts ever
 
 `ModelParameter` stores value, bounds, fixed state, and prior; it does not itself transform coordinates. Scale positivity is maintained by bounds and distribution validation. `UseDefaultFlatPriors`, `UseJeffreysRuleForScale`, `EnableQuantilePriors`, and `QuantilePriors` alter the prior target as detailed in the prior chapter.
 
+Unusable samples produce an initialization validation diagnostic while preserving editable parameters and priors. A later valid sample clears that diagnostic. Initialization does not invent missing data or relax parameter support.
+
 ## Pointwise Likelihood and Diagnostics
 
 For stationary models, pointwise output contains one item for each exact, uncertain, or interval record and one aggregate item per threshold period. For nonstationary models, threshold components follow the expanded index sequence. `PointwiseDataLogLikelihoodComponents` attaches type, value, count, and name metadata. The values sum to the scalar data log likelihood for a finite state and feed WAIC, PSIS-LOO, and influence diagnostics. Comparing models with different pointwise partitions is not valid.

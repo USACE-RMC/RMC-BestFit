@@ -1,6 +1,6 @@
-# BFGS repair and B17C regression evidence
+# BFGS and systematic-data Jacobian repair: frozen evidence
 
-The approved BFGS and systematic-data Jacobian repairs are implemented. The headless 1,000-realization Release benchmark completes in approximately 0.77 seconds after warm-up. **The complete B17C numerical/performance defect is not fixed:** 50 realizations still reach 100 outer GMM passes, and indefinite weighting matrices remain possible. No GMM equations, weighting updates, stopping rules, penalties, seeds, limits, or fallback policy were changed.
+This package records the 17 September 2026 BFGS and systematic-data Jacobian repair. The subsequent [Cholesky/ridge experiment](../b17c-cholesky-evidence-20260917/README.md) and [objective-rounding repair](../bfgs-roundoff-evidence-20260917/README.md) supersede its aggregate failure counts; the inputs and results here remain unchanged. The headless 1,000-realization Release benchmark completes in approximately 0.77 seconds after warm-up. **At this recorded checkpoint, the complete B17C numerical/performance defect was not fixed:** 50 realizations still reach 100 outer GMM passes, and indefinite weighting matrices remain possible. No GMM equations, weighting updates, stopping rules, penalties, seeds, limits, or fallback policy were changed.
 
 ## Implemented scope
 
@@ -20,7 +20,7 @@ Original repository baselines: Numerics `e485640`, BestFit `1e8f26c`. The suppli
 
 Input: `examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit`, Example #1 - BCB, 68 exact systematic observations, regional skew 0.44, MSE 0.078, 1,000 realizations, seed 12345. The model's enabled penalty was preserved.
 
-The [benchmark project and frozen XML inputs](b17c-repair-evidence-20260917/Benchmark.csproj) invoke the actual BestFit and local Numerics assemblies. From the BestFit repository root:
+The [benchmark project and frozen XML inputs](Benchmark.csproj) invoke the actual BestFit and local Numerics assemblies. From the BestFit repository root:
 
 ```powershell
 dotnet run --project docs/verification/b17c-repair-evidence-20260917/Benchmark.csproj -c Release
@@ -53,19 +53,19 @@ Warm timings against the actual assemblies:
 | Release | 772.2006, 766.4873, 818.8463 | 0.7722 seconds | 2.1002 seconds |
 | Debug | 1976.6563, 2017.1049, 1976.4312 | 1.9767 seconds | 2.3341 seconds |
 
-The saved [Release](b17c-repair-evidence-20260917/benchmark-release.jsonl) and [Debug](b17c-repair-evidence-20260917/benchmark-debug.jsonl) runs each reproduce 683,957 bootstrap objective evaluations and 202 fallbacks. These headless timings do not establish UI or debugger performance. Earlier diagnostic timings included trace-related overhead and should not be used for a direct speedup ratio.
+The saved [Release](benchmark-release.jsonl) and [Debug](benchmark-debug.jsonl) runs each reproduce 683,957 bootstrap objective evaluations and 202 fallbacks. These headless timings do not establish UI or debugger performance. Earlier diagnostic timings included trace-related overhead and should not be used for a direct speedup ratio.
 
 ## Remaining numerical failures
 
-[The frozen residual reproductions](b17c-repair-evidence-20260917/residual-reproductions.json) include logged observations, randomized penalty centers, MSE, initial parameters, realization seeds, all outer solver results, convergence flags, and rejected regularization matrices.
+[The frozen residual reproductions](residual-reproductions.json) include logged observations, randomized penalty centers, MSE, initial parameters, realization seeds, all outer solver results, convergence flags, and rejected regularization matrices.
 
 Realization 8, seed 1219180210, still alternates between two fits. Pass 99 returns approximately `(3.2929216571, 0.1323194360, -0.1607021283)`; pass 100 returns `(3.3181854994, 0.1732220284, 0.5576639277)`. The existing acceptance logic retains this fit despite a false outer convergence flag. The independent SciPy 1.16.2 run on the corresponding original diagnostic fixture also reproduces the 100-pass two-cycle with the existing GMM loop and analytical derivatives. This is evidence of a remaining outer-iteration problem, not a reason to weaken BFGS's convergence checks.
 
 Realizations 213 and 402 produce indefinite moment matrices. The current terminal ridge fallback is smaller than a ridge that already failed, and returns its matrix without checking positive definiteness. In realization 213, this permits a negative GMM quadratic and a fitted location/scale at the lower bounds, even though the existing flags report convergence. Therefore, the 950 true outer convergence flags are **not** a certificate that every retained fit is statistically valid.
 
-The [separate regularization plan](b17c-regularization-exception-plan-20260917.md) describes how to remove expected Cholesky exceptions without changing numerical results, and isolates the terminal-ridge correction as a numerical decision requiring separate approval. That plan has not been implemented.
+The subsequent [Cholesky/ridge evidence](../b17c-cholesky-evidence-20260917/README.md) records the implemented exception and terminal-ridge corrections. The failures described in this section belong to the earlier checkpoint preserved here.
 
-The historical penalty-preservation change `e5c9222` should not be reverted: its older systematic-data clone path dropped enabled penalties. Likewise, `5b56a01` and `d29f87a` exposed/routed line-search failures that must remain visible. Restoring false success or dropping penalties would conceal this regression.
+The penalty-preservation change `e5c9222` should not be reverted: its older systematic-data clone path dropped enabled penalties. Likewise, `5b56a01` and `d29f87a` exposed/routed line-search failures that must remain visible. Restoring false success or dropping penalties would conceal this regression.
 
 ## Validation
 

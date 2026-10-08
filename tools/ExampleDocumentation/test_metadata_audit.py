@@ -1,5 +1,6 @@
 """Metadata edits must preserve every unrelated SQLite cell and roll back failures."""
 import hashlib
+import json
 from pathlib import Path
 import sqlite3
 import sys
@@ -73,3 +74,40 @@ def test_unapproved_trigger_change_rolls_back_description_and_payload(tmp_path):
     with pytest.raises(ValueError, match="Unapproved"):
         apply_updates(path, source_hash, [{"table": "Input Data", "rowid": 1, "name": "Record", "description": "New"}])
     assert read_project(path) == before
+
+
+@pytest.mark.parametrize("apply", [False, True])
+@pytest.mark.parametrize("legacy_value", [False, True])
+def test_legacy_deletion_manifest_rejected_before_any_write(tmp_path, monkeypatch, apply, legacy_value):
+    import update_descriptions
+
+    examples = tmp_path / "examples"
+    examples.mkdir()
+    first = examples / "first.bestfit"
+    legacy = examples / "abom-download-example.bestfit"
+    database(first)
+    database(legacy)
+    with sqlite3.connect(legacy) as connection:
+        connection.execute('CREATE TABLE "Time Series Data" (Name TEXT, Description TEXT)')
+        connection.execute('INSERT INTO "Time Series Data" VALUES (?, ?)', ("Time Series_7", "Test"))
+    originals = {path: path.read_bytes() for path in (first, legacy)}
+    manifest = [{"project": f"examples/{path.name}",
+                 "sha256": hashlib.sha256(originals[path]).hexdigest(),
+                 "edits": [{"table": "Input Data", "rowid": 1, "name": "Record",
+                            "description": "Reviewed description"}]}
+                for path in (first, legacy)]
+    manifest[1]["removeAbomTest"] = legacy_value
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    audit_dir = tmp_path / "audit"
+    arguments = ["update_descriptions.py", str(manifest_path), "--audit-dir", str(audit_dir)]
+    if apply:
+        arguments.append("--apply")
+    monkeypatch.setattr(update_descriptions, "ROOT", tmp_path)
+    monkeypatch.setattr(sys, "argv", arguments)
+
+    with pytest.raises(ValueError, match="removeAbomTest"):
+        update_descriptions.main()
+
+    assert {path: path.read_bytes() for path in originals} == originals
+    assert not audit_dir.exists()

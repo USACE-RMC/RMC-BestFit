@@ -4,7 +4,7 @@ The current-release repair is confined to Numerics `BFGS.cs`. It adds a terminal
 
 The check trusts the supplied derivative, as the existing convergence test does. It establishes first-order stationarity, not a global minimum or a second-order condition for arbitrary nonconvex objectives. It can perform additional supplied-gradient calls on ambiguous trials. Invalid gradients and exhausted objective budgets retain explicit failure statuses.
 
-No GMM, Nelder–Mead, B17C, penalty, tolerance, seed, fallback-policy, or serialization code was changed in this repair. The future outer-iteration design is saved locally at `docs/superpowers/specs/2026-09-17-gmm-outer-iteration-damping-design.md`; that directory is intentionally ignored by this repository. Its implementation is deferred beyond this release.
+No GMM, Nelder–Mead, B17C, penalty, tolerance, seed, fallback-policy, or serialization code was changed in this repair. An outer-iteration redesign is outside this repair and remains unimplemented.
 
 ## Actual 1,000-realization replay
 
@@ -47,7 +47,7 @@ The two additional capped fits are zero-based realizations **199** and **534**:
 
 Previously, Nelder–Mead returned an identical point on consecutive passes, satisfying the current outer parameter-change rule despite the unresolved inner gradient. The repaired BFGS solves those inner problems accurately and continues the slowly contracting alternating outer updates. At the unchanged 100-pass limit, their parameter errors relative to the independent fixed points are `5.92e-5` and `1.03e-5`, versus the previous `3.12e-6` and `2.00e-6`. Thus their finite-budget outputs are less accurate even though the inner solves are more accurate. Their `ConvergedWithinTolerance=false` results are recorded explicitly; no tolerance or fallback policy was changed to conceal this interaction.
 
-The other 51 capped fits remain capped. The requested general 3–5-pass performance is not established. The deferred outer-loop design addresses a different problem and must not be silently included in this release repair.
+The other 51 capped fits remain capped. The requested general 3–5-pass performance is not established. Outer-loop stabilization would address a separate scientific and numerical contract; this evidence does not establish its behavior.
 
 ## Reproduce and inspect
 

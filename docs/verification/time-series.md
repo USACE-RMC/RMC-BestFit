@@ -2,15 +2,17 @@
 
 # Time-Series Verification
 
-This chapter records the Phase 5 verification of autoregressive, moving-average, ARIMA, and
+This chapter records the scientific verification of autoregressive, moving-average, ARIMA, and
 ARIMAX models. Numerical claims require analytical, independently implemented, external-package,
-or recovery evidence. API, serialization, validation, and state-transition contracts remain in
+or recovery evidence. Dated execution results below describe their recorded source and runtime
+checkpoints; documentation maintenance does not rerun them. API, serialization, validation, and state-transition contracts remain in
 the fast test projects and are reported here as regression evidence rather than numerical
 Verification methods.
 
-## Phase 5 scope
+<a id="phase-5-scope"></a>
 
-Phase 5 covers TR-035 through TR-041 and TR-046. TR-042 remains closed and receives a refreshed
+## Time-series evidence scope
+The evidence covers TR-035 through TR-041 and TR-046. TR-042 remains closed and receives a refreshed
 information-criterion regression. The approved compatibility boundary freezes the public and
 protected contracts of `RMC.BestFit.UI` and `RMC.BestFit.App`; model-layer changes are permitted
 only when these consumers and existing persisted projects remain unaffected.
@@ -31,7 +33,7 @@ $$
 
 ## UI and App compatibility baseline
 
-Package 1 captured the pre-Phase-5 UI/App contract before any time-series production change.
+The compatibility baseline captured the UI/App contract before the time-series production corrections.
 `PublicApiContractSnapshot` includes exported types, declared public and protected constructors,
 methods, properties, events, fields and enum values, optional parameter defaults, virtual/abstract
 modifiers, and generic constraints. Inherited framework members and compiler-generated artifacts
@@ -52,7 +54,7 @@ The following deterministic compatibility contracts also pass:
   transform enum members; this is documented App behaviour rather than a tested contract, because
   the source-text regression that only matched App source files was removed.
 
-Commands executed on 20 August 2026 from base commit `8709263` plus the Package 1 working tree:
+Commands executed on 20 August 2026 from base commit `8709263` plus the recorded compatibility-baseline changes:
 
 ```powershell
 dotnet test src\RMC.BestFit.UI.Tests\RMC.BestFit.UI.Tests.csproj -c Debug `
@@ -90,7 +92,7 @@ configured marginal priors, parameter order, likelihood, estimator behavior, and
 ARIMAX name/value/type contract are preserved.
 
 **Compatibility.** No public or protected signature, XAML binding, property name, enum value, or
-XML element/attribute changes. UI passes 576/576, App 431/431, and API 496/496 with the Package 1
+XML element/attribute changes. UI passes 576/576, App 431/431, and API 496/496 with the original
 signature baselines intact. Core passes 3,183/3,183. The strict Debug solution build with
 `EnforceXmlDocumentation=true` reports zero warnings and errors.
 
@@ -267,13 +269,10 @@ Both focused builds reported zero warnings/errors. The methods passed 1/1 in 0.5
 0.271 s; their TRX directories begin `20260820-105550-...` and `20260820-105603-...`. Earlier
 compilation/regression runs exposed an ambiguous test enum, an unavailable MSTest helper,
 no-data canonicalization, and ARIMAX default initialization from the full differenced series.
-Those package defects were fixed.
-A preliminary strict solution build also reported one warning in the concurrently modified,
-out-of-scope `ResultsMapperTests.cs`; after that independent edit settled, the unchanged Package 4
-tree passed the clean strict build recorded above.
+Those defects were fixed before the recorded successful runs.
 A differenced ARIMAX state test also underflowed through the already recorded TR-041 holdout-index
-defect; its deterministic state fixture was narrowed so Package 4 does not pre-empt Package 5's
-approved alignment correction. No seed, tolerance, prior, sampler, optimizer, likelihood
+defect; its deterministic state fixture was narrowed to isolate transform state from the separately
+verified alignment correction. No seed, tolerance, prior, sampler, optimizer, likelihood
 definition, or convergence default changed. The complete Verification project was not run.
 
 ## TR-041 — ARIMAX differencing, date, covariate, and Jacobian alignment
@@ -302,8 +301,8 @@ Missing or duplicate covariate timestamps required by the training map emit expl
 errors. Scalar evaluation returns exact negative infinity, while pointwise arrays and component
 lists retain their documented conditional lengths and metadata with negative-infinity values.
 There is no positional fallback. Extra covariate dates outside the required window are harmless.
-This package does not change the separately scoped prediction reintegration or generation
-algorithms; TR-037 and TR-039 remain open.
+This alignment correction did not change prediction reintegration or generation; their
+subsequent corrections are documented under TR-037 and TR-039.
 
 **Compatibility.** No public or protected UI/App signature, XAML binding, property name, enum,
 existing XML element/attribute meaning, prediction/generation tuple, or `GenerateRandomValues`
@@ -363,7 +362,7 @@ R 4.4.3, jsonlite 2.0.0, and digest 0.6.39 produced the artifact against source 
 
 **Execution evidence and history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4
 built against the configured local Numerics project. From oracle commit `4e3f42c` plus the scoped
-Package 5 production/test diff, the guarded command was:
+ARIMAX alignment production/test changes, the guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
@@ -371,8 +370,8 @@ Package 5 production/test diff, the guarded command was:
 ```
 
 The final focused build reported zero warnings/errors and the exact method passed 1/1 in 0.370 s.
-Its TRX is under `TestResults/VerificationFocused/20260820-113316-...`. Earlier pre-finalization
-package runs also passed 1/1 in 0.541 s and 0.406 s and are retained as preliminary evidence.
+Its TRX is under `TestResults/VerificationFocused/20260820-113316-...`. Earlier isolated
+runs also passed 1/1 in 0.541 s and 0.406 s and are retained as preliminary evidence.
 Initial regression compilation exposed test-only `TimeSeries` namespace and `Transform` enum
 ambiguities, which were resolved by explicit aliases. The test platform ignored a requested
 fast-test filter, ran the complete Core project, and one unrelated cancellation timing test
@@ -387,9 +386,9 @@ not run.
 ## TR-037 — ARIMA and ARIMAX prediction reintegration
 
 **Disposition and behavior.** The original off-by-one defect is corrected, and a serious
-post-correction conditioning regression introduced during Phase 5 has also been corrected.
+post-correction conditioning regression introduced during time-series verification has also been corrected.
 ARIMA and ARIMAX calculate exactly `T-d+h` transformed-difference values and map model step `k`
-to raw slot `k+d`. The Phase 5 implementation initially reintegrated every fitted difference from
+to raw slot `k+d`. The time-series verification implementation initially reintegrated every fitted difference from
 the first transformed observation. That converted conditional one-step fitted values into a
 single simulated path: training innovations accumulated from the start of the record, training
 intervals widened with time, and forecasting began from a synthetic accumulated level rather than
@@ -407,7 +406,7 @@ order, and fixed-seed values remain bit for bit.
 
 Every existing prediction tuple signature and component name remains unchanged. Component arrays
 have raw output length `T+h`; slots `0...d-1` are zero conditioning entries, and model component
-`k` is stored at raw slot `k+d`. ARIMAX prediction uses the Package 5 exact-date level-covariate
+`k` is stored at raw slot `k+d`. ARIMAX prediction uses the exact-date level-covariate
 map for both observed and regularly extended response dates. The separate
 `GenerateRandomValues` simulation contracts in TR-038 and TR-039 remain unchanged: generation is
 a complete simulated path from observed/zero initialization anchors, whereas `Predict` is
@@ -618,7 +617,7 @@ Verification source SHA-256 is
 
 **Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
 3.6.4 built against the configured local Numerics project. From commit `3d79c31` plus the scoped
-Package 7 diff, the final guarded commands were:
+transformed-generator changes, the final guarded commands were:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
@@ -716,7 +715,7 @@ values are respectively `55D38426AE41AB795AB3A1F112D3C41BBF0D21BCFB9A6BDE1C0CFBB
 
 **Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
 3.6.4 built against the configured local Numerics project. From commit `b2332c0` plus the scoped
-Package 8 diff, the guarded command was:
+ARIMAX generator changes, the guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
@@ -732,13 +731,12 @@ locks on the API static-web-assets cache and UI output DLL and failed with one w
 the serial `-m:1` rerun passed with zero warnings/errors. Neither failure was erased or treated as
 numerical evidence. No production signature, extension policy, seed rule, tolerance, prior,
 sampler, optimizer, likelihood definition, or convergence default changed. The final independent
-ARIMAX MLE/Bayesian recovery pair remains Package 10 evidence. The complete Verification project
+ARIMAX MLE/Bayesian recovery pair is recorded in the integrated recovery matrix below. The complete Verification project
 was not run.
 
 ## TR-042 — information criteria use data likelihood at MAP
 
-**Disposition and behavior.** The Phase 2 correction remains closed and is refreshed here as a
-Phase 5 regression contract. AR, MA, ARIMA, ARIMAX, and rating-curve result builders evaluate
+**Disposition and behavior.** The corrected data-only criterion routing is verified here for time-series models. AR, MA, ARIMA, ARIMAX, and rating-curve result builders evaluate
 `DataLogLikelihood` exactly once at the stored MAP parameter vector and pass that data-only value
 to AIC/BIC. Prior density is excluded. With constant priors, the analytical MAP and constrained
 MLE parameter vectors coincide; nonconstant priors may move MAP but are never added to the
@@ -776,7 +774,7 @@ log-likelihood with an independent iid Gaussian evaluation of the training windo
 before forming the criteria; the rating-curve cell is a routing check on the production
 likelihood. Criterion acceptance is `1E-10` absolute. No sampler, simulation, external package, or
 source artifact is invoked; the largest fixture has 40 time steps and the injected posterior has
-one row, both below the Phase 5 cap of 1,000.
+one row, both below the time-series verification cap of 1,000.
 
 The fast-test and Verification source SHA-256 values are respectively
 `BD26248DFA8012737571E7EA857675642EF01A0917CFE65BF10237A9E83B43F1` and
@@ -785,7 +783,7 @@ is `629C76B20DF807626C718C59E5152C59E17D72A8CDD4FA700F8EFB3604F96E08`.
 
 **Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
 3.6.4 built against the configured local Numerics project. From commit `a4db99a` plus the scoped
-Package 9 test/report diff, the guarded command was:
+information-criteria test and documentation changes, the guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
@@ -816,7 +814,7 @@ likelihood. No `BayesianAnalysis` setting is assigned.
 
 ## Integrated recovery matrix — complete
 
-**Fixture and execution contract.** Package 10 adds the committed R artifact
+**Fixture and execution contract.** The independent recovery design uses the committed R artifact
 `verification/data/time-series/phase5-recovery-fixtures.json` and generator
 `verification/r/time-series/generate_phase5_recovery_fixtures.R`. The artifact implements AR(1),
 MA(1), logarithmic ARIMA(1,1,1), and differenced ARIMAX(1,1,0) with a dated level covariate
@@ -849,14 +847,14 @@ After the prediction-oracle correction, the recovery-source SHA-256 is
 |---|---|---|
 | AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Passed 1/1 under production Differential Evolution and the common observed-information rule |
 | AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 fresh on 2 September 2026 with unchanged production DEMCzs defaults |
-| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 under the common observed-information rule; rerun fresh 26 September 2026 under the current `10*k` DE population (`20260926-075013-...`, Task 2.12) |
+| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 under the common observed-information rule; rerun fresh 26 September 2026 under the current `10*k` DE population (`20260926-075013-...`) |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 fresh on 2 September 2026 with unchanged production DEMCzs defaults |
-| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle; rerun fresh 26 September 2026 under the current `10*k` DE population (`20260926-075017-...`, Task 2.12) |
+| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle; rerun fresh 26 September 2026 under the current `10*k` DE population (`20260926-075017-...`) |
 | ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 fresh on 2 September 2026; truth lies in every central 95% interval with R-hat/ESS diagnostics |
 | ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 against the date-indexed conditional optimum using the unchanged production Differential Evolution default |
 | ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 fresh on 2 September 2026; truth lies in every central 95% interval with R-hat/ESS diagnostics |
 
-**Chunk 16 artifact reconciliation.** Sampled-MAP percentage fields and their generator metadata were
+**Recovery artifact acceptance rules.** Sampled-MAP percentage fields and their generator metadata were
 removed because they were not a statistically justified recovery rule. Same-point posterior-kernel parity
 remains deterministic parameterization evidence; scientific Bayesian acceptance is central-95% parent
 inclusion with R-hat and ESS diagnostics. The current frozen files are:
@@ -1022,7 +1020,7 @@ production prediction was corrected. This failure history is retained explicitly
 rewritten as a fixture defect.
 
 **Superseded sampled-MAP history.** The following 20-21 August sequence explains why a default-prior
-posterior MAP was added to the artifact at that time. Chunk 16 no longer uses a sampled-MAP percentage
+posterior MAP was added to the artifact at that time. The current recovery rule no longer uses a sampled-MAP percentage
 comparison as recovery acceptance; the current rule and hashes are stated above.
 
 The first unchanged-default ARIMA Bayesian run correctly placed every generating value inside its
@@ -1098,7 +1096,7 @@ prediction-affected cells rerun against the restored boundary oracle.
 
 ## Final repository gates
 
-The final gates were executed serially on 20 August 2026 from Phase 5 code commit `b0dff5c` while
+The final gates were executed serially on 20 August 2026 from time-series verification code commit `b0dff5c` while
 preserving unrelated working-tree changes. The separately named
 `scripts/validate-code-xml-docs.ps1` script is absent from this checkout. Its strict build fallback
 was therefore run as:
@@ -1136,10 +1134,11 @@ SHA-256 `90A23BC7A863A6A4D3D10E6EBD8DF5FFE80A501E82369611DF6D888050A3A78B`; comm
 its pre-Phase-5 content by exactly four additive read-only `TransformLambda` properties, one each on
 AR, MA, ARIMA, and ARIMAX. No other Core signature changed. The passing UI suite includes legacy,
 new transform-state, and unknown-optional-attribute XML contracts. The full Verification project was
-not run; every Phase 5 numerical and recovery result was an exact guarded one-method invocation.
+not run; every time-series verification numerical and recovery result was an exact guarded one-method invocation.
 
-## Phase 5 findings
+<a id="phase-5-findings"></a>
 
+## Time-series scientific findings
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
 |---|---|---|---|
 | TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
@@ -1153,27 +1152,29 @@ not run; every Phase 5 numerical and recovery result was an exact guarded one-me
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
 | Integrated recovery | Complete | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations; Bayesian cells assert unchanged defaults before and after sampling; corrected boundary and transformed-scale regressions pass in Core 3,238/3,238 | All eight exact recovery cells pass historically; all four prediction-affected ARIMA/ARIMAX cells pass again against the restored boundary oracle, with independent conditional MLE/posterior-MAP oracles and truth retained as a central-95% coverage criterion |
 
-The complete Verification project was not run during Phase 5. Every numerical and recovery result
+The complete Verification project was not run during time-series verification. Every numerical and recovery result
 was executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.
 
-## Phase 7 legacy recovery cells - 22 August 2026
+<a id="phase-7-legacy-recovery-cells---22-august-2026"></a>
 
+## Historical time-series recovery design - 22 August 2026
 TR-089 recorded three legacy MAP recovery cells (`ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22`,
 `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22`, `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111`)
 that failed their 40% relative bands with 500 observations. By decision (22 August 2026) every legacy
 recovery fixture in `ARAnalysisTests`, `MAAnalysisTests`, `ARIMAAnalysisTests`, `ARIMAXAnalysisTests`, and
-`ARIMAXMLERecoveryTests` that generated 500 observations now generates 1,000, matching the Phase 5 recovery
+`ARIMAXMLERecoveryTests` that generated 500 observations now generates 1,000, matching the time-series verification recovery
 convention; models and seeds are unchanged. At 1,000 observations 27/29 passed the former bands; the two ARMA(2,2)
 cells still missed the 40% band on phi1 because the fixture is weakly identified (MLE standard errors 0.13-0.17,
 estimate 1.4-1.5 standard errors from the truth, convention parity confirmed by the MLE-minus-truth likelihood
 gaps), so by a second decision the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat < 1.1
 through `LegacyRecoveryAssertions` while the 7 MLE cells keep their tolerances. Rerun one method per guarded
-invocation: all 29 cells pass with 1,000 observations (the 22 Bayesian cells under the central 90% credible-interval and R-hat rule, the 7 MLE cells under their unchanged tolerances). The Phase 5 independent matrix remains the oracle-backed recovery evidence. Per-cell
-outcomes: [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026).
+invocation: all 29 cells pass with 1,000 observations (the 22 Bayesian cells under the central 90% credible-interval and R-hat rule, the 7 MLE cells under their unchanged tolerances). The independent recovery matrix remains the oracle-backed recovery evidence. Per-cell
+outcomes: [Recorded historical runs](time-series.md#historical-recovery-results---22-august-2026).
 
-## Chunk 13 completeness reconciliation - 31 August 2026
+<a id="chunk-13-completeness-reconciliation---31-august-2026"></a>
 
-Chunk 13 replaces the Phase 7 Cartesian recovery inventory as current evidence. The historical
+## Independent time-series oracles - 31 August 2026
+The independent time-series oracles replace the historical Cartesian recovery inventory as current evidence. The historical
 method bodies remain in source for provenance, but 76 redundant, smoke-only, N=10,000, weakly
 identified, or convention-mismatched methods no longer carry `TestMethod` identities and were
 removed from the catalog. Historical passes were not transferred to any new identity.
@@ -1191,11 +1192,11 @@ discards 110 initialization steps and retains exactly 1,000 raw observations.
 | Higher-order AR(2) | `[mu, phi1, phi2, sigma]`, seed 20260831; the predeclared recurrence, one-step response, production stationarity diagnostic, and root moduli `2.1320, 2.1320` identify the dynamics. | 998 | Passed |
 | Higher-order MA(2) | `[mu, theta1, theta2, sigma]`, seed 20260832; recursive residual and one-step response, production invertibility diagnostic, and roots `2.9830, 1.1973`. | 1,000 | Passed |
 | Pure AR and pure MA through ARIMA | ARIMA(2,0,0) and ARIMA(0,0,2) reuse the independently generated N=1,000 AR2/MA2 fixtures but evaluate the ARIMA-specific conditional initialization, contribution count, likelihood, one-step response, and stationarity/invertibility diagnostics. | 998 each | New combined independent identity passed |
-| ARIMA(1,1,1), log transform | Existing Phase 5 fixture; no intercept; `[phi, theta, sigma]`; 1,000 retained raw values, 999 differences, 998 conditional terms; final raw observation anchors inverse reintegration. | 998 | MLE production/R optima in joint 95% LR region, truth inside all independent 95% profiles; Bayesian cell retained and verified |
-| ARIMAX(1,1,0), one level covariate | Existing Phase 5 fixture; `[drift, beta, phi, sigma]`; with `d=1`, the first coordinate is an intercept on the differenced model scale (drift), not a raw-level unconditional mean. The covariate matches the raw-response date and is not differenced. | 998 | MLE production/R optima and truth inside joint 95% LR region; Bayesian cell retained and verified |
+| ARIMA(1,1,1), log transform | Existing time-series verification fixture; no intercept; `[phi, theta, sigma]`; 1,000 retained raw values, 999 differences, 998 conditional terms; final raw observation anchors inverse reintegration. | 998 | MLE production/R optima in joint 95% LR region, truth inside all independent 95% profiles; Bayesian cell retained and verified |
+| ARIMAX(1,1,0), one level covariate | Existing time-series verification fixture; `[drift, beta, phi, sigma]`; with `d=1`, the first coordinate is an intercept on the differenced model scale (drift), not a raw-level unconditional mean. The covariate matches the raw-response date and is not differenced. | 998 | MLE production/R optima and truth inside joint 95% LR region; Bayesian cell retained and verified |
 | ARIMAX(1,0,1) interaction | `[conditional/regression intercept, trend, seasonal-sin, seasonal-cos, beta1, beta2, phi, theta, sigma]`; monthly period 12; two current level covariates begin one and two months before the response and align by exact raw timestamp; deliberately wrong index alignment changes the oracle likelihood from `-1597.134695090` to `-939039.172443445`; seed 20260833. | 999 | New independent date-discriminating recurrence/likelihood cell passed |
 
-The four current Chunk 13 oracle identities each passed after final review hardening through the
+The four current independent time-series oracle identities each passed after final review hardening through the
 guarded runner with exactly one TRX result. The retained MA(1) MLE also passed exactly once under
 the normalized observed-information rule. The retained AR(1) MLE initially produced exactly one
 failed boundary result with non-finite/non-positive covariance. The authored-red
@@ -1217,11 +1218,12 @@ exactly to that bound, without consuming an additional random draw. BestFit MLE/
 `max(100,10*k)` DE population members for `k` coordinates while retaining the Numerics convergence
 tolerances; under that configuration the exact guarded AR(1) rerun passed 1/1 under
 `20260831-192951-...`. Haden Smith reverted the `max(100,10*k)` minimum on 8 September 2026
-(commit `81882ce`); see [D1 DE population reconciliation](#d1-de-population-reconciliation---26-september-2026)
+(commit `81882ce`); see [Differential Evolution population evidence](#d1-de-population-reconciliation---26-september-2026)
 below for the current `10*k` configuration and its rerun evidence.
 
-## D1 DE population reconciliation - 26 September 2026
+<a id="d1-de-population-reconciliation---26-september-2026"></a>
 
+## Differential Evolution population evidence - 26 September 2026
 **Decision and behavior.** Haden Smith reverted the BestFit-side `max(100, 10*k)` Differential
 Evolution population minimum on 8 September 2026 (commit `81882ce`), restoring the unmodified
 Numerics default population `10*k` for `k` fitted coordinates in both `MaximumLikelihood` and
@@ -1229,7 +1231,7 @@ Numerics default population `10*k` for `k` fitted coordinates in both `MaximumLi
 midpoint infeasible-trial repair described above and all convergence tolerances are unchanged by
 this revert.
 
-**Reruns (Task 2.11, 26 September 2026).** The AR(1) MLE recovery cell and the five Log10-Normal
+**Six initial reruns - 26 September 2026.** The AR(1) MLE recovery cell and the five Log10-Normal
 equivalence identities were the only recorded evidence citing the former 100-member minimum. Each
 was rerun individually through `scripts/run-verification-test.ps1` at default settings under the
 current `10*k` population:
@@ -1246,13 +1248,13 @@ current `10*k` population:
 All six passed. No likelihood, bound, seed, tolerance, sample size, fixture, or population setting
 was changed to obtain these results.
 
-**Other evidence recorded under the minimum (Task 2.11 scope).** The Task 2.11 rerun scope followed
+**Other evidence recorded under the minimum.** The six initial reruns followed
 decision D1 as it then stood: only records that cite the minimum were rerun. The minimum was in the
 working tree from the 31 August 2026 AR(1) run (`20260831-192951`), was committed in `808be5c`
 (1 September 2026), and was reverted in `81882ce` (8 September 2026), so every BestFit MLE/MAP fit on
 Differential Evolution in that window used it, whether or not its record says so. Besides the six
 cells rerun above, the Differential Evolution MLE/MAP evidence dated inside the window covered 53
-identities, none of which had been rerun as of Task 2.11:
+identities, none of which had been rerun at the initial six-run checkpoint:
 
 | Identities | Recorded runs | Record |
 |---|---|---|
@@ -1263,14 +1265,14 @@ identities, none of which had been rerun as of Task 2.11:
 | 14 `CopulaEstimationOracleTests` independent MPL/IFM optima, including both Student-t cells | 1 September 2026, `20260901-143648-...` through `20260901-143950-...` | [bivariate.md](bivariate.md#copula-estimation-oracle) |
 | `SpatialGEVChunk14OracleTests.HeldOutCopulaFold_MatchesIndependentFittedOracle` | 1 September 2026, `20260901-144228-...` | [spatial-extremes.md](spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026) |
 | `SpatialGEVMLERecoveryTests.MLE_BasicHomogeneous_RecoversParameters` and `MLE_WithCopula_RecoversParameters` | 2 September 2026, `20260902-074615-...` and `20260902-074645-...` | [spatial-extremes.md](spatial-extremes.md#verification-completeness-chunk-15-recovery-reconciliation-2-september-2026) |
-| `RatingCurveExampleRecoveryTests.Mle_OneSegment_RecoversExampleCurve`, `Mle_TwoSegment_RecoversExampleCurve`, and `Mle_ThreeSegment_RecoversExampleCurve` | 2 September 2026, `20260902-141102-...` through `20260902-141123-...` ([test-inventory.md](test-inventory.md) dates them 1 September 2026) | [rating-curve.md](rating-curve.md#example-replication-recovery-cells) |
+| `RatingCurveExampleRecoveryTests.Mle_OneSegment_RecoversExampleCurve`, `Mle_TwoSegment_RecoversExampleCurve`, and `Mle_ThreeSegment_RecoversExampleCurve` | 2 September 2026, `20260902-141102-...` through `20260902-141123-...` (the older inventory labeled these runs 1 September; the result-directory timestamps identify 2 September) | [rating-curve.md](rating-curve.md#example-replication-recovery-cells) |
 
 The `FittingAnalysis` generated-parent recovery cells (29 August 2026) predate the window, but the
-TR-064 `FittingAnalysis` criteria pair above was produced under the minimum. As of Task 2.11 the
-Chunk 13 MA(1) and ARIMA(1,1,1) MLE recovery cells recorded no run date or directory, so their
-records could not place their then-current passes inside or outside the window (Task 2.12 rerun both
+TR-064 `FittingAnalysis` criteria pair above was produced under the minimum. At the initial six-run checkpoint the
+independent MA(1) and ARIMA(1,1,1) MLE recovery cells recorded no run date or directory, so their
+records could not place their then-current passes inside or outside the window (the expanded rerun set included both
 below out of conservative caution); the ARIMAX MLE cell's current pass is its 26 September 2026
-rerun in the D6 section below and needed no further rerun here. The two
+rerun in the ARIMAX conditioning section below and needed no further rerun here. The two
 `ProfileLikelihoodGridPointFailureTests` identities recorded on 31 August 2026 (`20260831-200518-...`
 and `20260831-200524-...`) fit with BFGS, which the minimum did not affect, and were not rerun.
 Three linear `CoincidentFrequencyAnalysisTests` cells (`SumOfNormals_RhoZero_MatchesClosedForm`,
@@ -1280,14 +1282,14 @@ their Normal marginals by Differential Evolution MLE and recorded runs at `20260
 roughly twelve hours before the AR(1) run that first placed the minimum in the working tree; the
 1 September 2026 remediation-plan entry for the DE reliability change nonetheless states that these
 three cells "passed in serial one-result guarded runs" that day, so whether their governing evidence
-predates or falls inside the window could not be resolved from the record alone (Task 2.12 rerun all
+predates or falls inside the window could not be resolved from the record alone (the expanded rerun set included all
 three out of the same caution).
 
-**Reruns (Task 2.12, 26 September 2026).** Haden Smith widened decision D1 on 26 September 2026 to
+**Expanded reruns - 26 September 2026.** Haden Smith widened decision D1 on 26 September 2026 to
 rerun every Differential Evolution MLE/MAP Verification identity whose recorded evidence was produced
 while the minimum was in the working tree, resolving the residual placement ambiguities above by
-including any identity that could not be excluded from the window. Task 2.12 reran the 53 identities
-above, the two undated Chunk 13 MA(1)/ARIMA(1,1,1) MLE cells, and the three
+including any identity that could not be excluded from the window. The expanded set reran the 53 identities
+above, the two undated independent MA(1)/ARIMA(1,1,1) MLE cells, and the three
 `CoincidentFrequencyAnalysisTests` cells, each individually through
 `scripts/run-verification-test.ps1` at default settings under the current `10*k` population:
 
@@ -1353,13 +1355,14 @@ above, the two undated Chunk 13 MA(1)/ARIMA(1,1,1) MLE cells, and the three
 | `RMC.BestFit.Verification.Bivariate.CoincidentFrequencyAnalysisTests.SumOfNormals_RhoNegative_MatchesClosedForm` | `TestResults/VerificationFocused/20260926-075110-RMC_BestFit_Verification_Bivariate_CoincidentFrequencyAnalysisTests_SumOfNormals_RhoNegative_MatchesClosedForm/haden_HADEN_2026-09-26_13_51_32.771.trx` | Passed 1/1 |
 
 All 58 passed. No likelihood, bound, seed, tolerance, sample size, fixture, or population setting was
-changed to obtain these results. Combined with the six Task 2.11 reruns, no Differential Evolution
+changed to obtain these results. Combined with the six initial reruns, no Differential Evolution
 MLE/MAP evidence dated inside the 31 August-8 September 2026 window remains unreran; the two
 `ProfileLikelihoodGridPointFailureTests` identities recorded in that window remain outside the rerun
 scope because they fit with BFGS, which the minimum did not affect.
 
-## D6 ARIMAX conditioning order - 26 September 2026
+<a id="d6-arimax-conditioning-order---26-september-2026"></a>
 
+## ARIMAX conditioning order - 26 September 2026
 **Decision and behavior.** Haden Smith approved review decision D6 on 25 September 2026: an ARIMAX
 model with covariates now conditions on `K = max(q, p + b)` model steps. Haden Smith confirmed on
 26 September 2026 that a model without covariates conditions on `K = max(p, q)`, because the
@@ -1429,11 +1432,11 @@ all 112 floating-point and 120 other leaves of the alignment artifact and all 44
 values exactly. Only the generation time, source commit, and working-copy generator hash differed,
 so the committed artifacts were kept byte for byte.
 
-Two further oracle generators were also considered: the Chunk 13 Python ARIMAX(1,0,1) oracle behind
+Two further oracle generators were also considered: the independent time-series verification Python ARIMAX(1,0,1) oracle behind
 `TimeSeriesChunk13OracleTests.ArimaxTrendSeasonalityAndCovariatesMatchIndependentPythonOracle` (its
 two current-level covariates carry `b = 0`) and `verification/r/time-series/generate_phase5_recovery_fixtures.R`,
 whose dated level-covariate ARIMAX(1,1,0) fixture also uses `b = 0`. Both are therefore unchanged by
-the new `max(q, p + b)` conditioning, and their consumers were rerun and passed in Task 2.8: see
+the new `max(q, p + b)` conditioning, and their consumers were rerun and passed on 26 September 2026: see
 `TimeSeriesChunk13OracleTests.ArimaxTrendSeasonalityAndCovariatesMatchIndependentPythonOracle` and
 `TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` /
 `BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` in the guarded-rerun table below.
@@ -1468,5 +1471,42 @@ default was changed, and the complete Verification project was not run.
 
 ---
 
-[Verification index](README.md) | [Finalization plan](verification-finalization-plan.md) |
-[Scientific findings](../technical-reference/review-findings.md#tr-035)
+[Verification index](README.md) | [Verification methodology](methodology.md#scientific-claim-inventory) |
+[Scientific findings](time-series.md#time-series-scientific-findings)
+
+
+## Historical recovery results - 22 August 2026
+
+These are the last recorded one-method results at the 22 August 2026 checkpoint. They retain the then-used fixtures and acceptance rules described in the historical evidence above. Later N=1000 central-95% recovery designs and current catalog dispositions supersede earlier percentage-band, four-standard-deviation, or central-90% rules where indicated; results are not transferred between changed designs. Timings are recorded wall-clock observations, not current performance guarantees.
+
+| Method | Outcome | Time |
+|---|---|---|
+| `ARAnalysisTests.Test_EstimateParameters_AR2` | Passed | 36 s |
+| `ARAnalysisTests.Test_EstimateParameters_AR3` | Passed | 49 s |
+| `MAAnalysisTests.Test_EstimateParameters_MA2` | Passed | 33 s |
+| `MAAnalysisTests.Test_EstimateParameters_MA3` | Passed | 39 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA11` | Passed | 40 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA21` | Passed | 50 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA12` | Passed | 45 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22` | Passed | 58 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA_FitsAR1` | Passed | 27 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA_FitsMA1` | Passed | 29 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX11` | Passed | 29 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX21` | Passed | 42 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX12` | Passed | 37 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22` | Passed | 55 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX_FitsAR1` | Passed | 22 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX_FitsMA1` | Passed | 20 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA110` | Passed | 21 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA011` | Passed | 20 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111` | Passed | 27 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_LinearTrend_Only` | Passed | 20 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_AR1_LinearTrend` | Passed | 25 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_AR1_Seasonal` | Passed | 39 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_LinearTrend_Only` | Passed | 3.3 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_QuadraticTrend_Only` | Passed | 3.3 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_CubicTrend_Only` | Passed | 3.2 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_AR1_LinearTrend` | Passed | 3.2 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_AR1_QuadraticTrend` | Passed | 3.4 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_AR1_CubicTrend` | Passed | 3.4 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_MA1_LinearTrend` | Passed | 3.3 s |
