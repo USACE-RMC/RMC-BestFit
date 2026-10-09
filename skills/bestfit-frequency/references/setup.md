@@ -7,7 +7,7 @@ or a supplied matching source snapshot. Verify its contents rather than assuming
 the default branch or an application version identifies the required contracts.
 The ZIP contains instructions/scripts, not BestFit binaries or unpublished commits.
 
-For plugin **0.3.2**, the default API source is the permanent **v2.0.1** release
+For the RMC-BestFit plugin **0.3.3**, the default API source is the permanent **v2.0.1** release
 tag. Use this release when the user has not supplied another compatible checkout
 or revision. The plugin must not be published before that tag contains the
 v2.0.1 API, RMC.Numerics 2.2.0 dependency, chronology/source contracts, and
@@ -80,14 +80,24 @@ redirected to HTTPS. Run from the compiled DLL's directory so its copied
 agent can use Python:
 
 ```python
-import os, subprocess
+import os, shutil, subprocess
 from pathlib import Path
 api_dll = Path("src/RMC.BestFit.Api/bin/Release/net10.0/RMC.BestFit.Api.dll").resolve(strict=True)
-env = dict(os.environ, ASPNETCORE_ENVIRONMENT="Development")
+# Pass only runtime paths needed by the child, not the entire parent environment.
+# In particular, do not forward API keys, cloud credentials, or unrelated app settings.
+runtime_names = (
+    "PATH", "SystemRoot", "WINDIR", "HOME", "USERPROFILE", "TEMP", "TMP", "TMPDIR",
+    "DOTNET_ROOT", "DOTNET_ROOT_X64", "DOTNET_ROOT_ARM64", "DOTNET_ROOT(x86)",
+)
+env = {name: value for name in runtime_names if (value := os.getenv(name)) is not None}
+env.update(ASPNETCORE_ENVIRONMENT="Development", DOTNET_CLI_TELEMETRY_OPTOUT="1")
+dotnet = shutil.which("dotnet")
+if dotnet is None:
+    raise RuntimeError("The .NET 10 runtime is not available in this session")
 log = open("bestfit-api.log", "w", encoding="utf-8")
 flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 server = subprocess.Popen([
-    "dotnet", str(api_dll),
+    dotnet, str(api_dll),
     "--urls", "http://127.0.0.1:5210"
 ], cwd=api_dll.parent, env=env, stdout=log, stderr=subprocess.STDOUT,
     creationflags=flags)
@@ -96,10 +106,12 @@ server = subprocess.Popen([
 # server.terminate(); server.wait(timeout=30); log.close()
 ```
 
-On PowerShell, set `$env:ASPNETCORE_ENVIRONMENT='Development'` and use
-`Start-Process ... -PassThru -WindowStyle Hidden` with the absolute DLL path,
-`-WorkingDirectory` set to its parent directory, and redirected logs, or the
-host's managed background-command tool. If port 5210 is occupied, choose another
+Use this Python launch example from PowerShell as well; its explicit environment
+allowlist avoids passing unrelated credentials to the API child process. A host's
+managed background-command tool is also suitable if it supports the same restricted
+child environment, loopback binding, working directory, and retained logs. This
+limits environment inheritance; it does not sandbox the process or restrict files
+that the operating-system account can access. If port 5210 is occupied, choose another
 loopback port and pass the matching `--base-url` to the client. Do not kill the
 existing listener or all `dotnet` processes. Do not expose this development host
 on a public network; this workflow has no account/authentication setup.
@@ -118,9 +130,12 @@ literal localhost/loopback authority matching the request scheme, host and
 effective port; a matching arbitrary DNS hostname is not implicitly trusted.
 
 For a separately authorized browser client, list each exact origin in the
-`Cors:AllowedOrigins` array, or set environment entries such as
-`Cors__AllowedOrigins__0=https://client.example`. Use only the scheme, host and
-optional port: no wildcard, trailing slash/path, query, fragment or credentials.
+`Cors:AllowedOrigins` array in the compiled directory's `appsettings.json`, or add
+the approved origin directly to the Python child environment before `Popen`, for
+example `env["Cors__AllowedOrigins__0"] = "https://client.example"`. Setting that
+variable only in the parent shell is insufficient because the launch allowlist
+intentionally excludes unrelated application settings. Use only the scheme, host
+and optional port: no wildcard, trailing slash/path, query, fragment or credentials.
 The configured origin must match, with case/default-port normalization; subdomains
 are not included automatically. The shipped `https://localhost` entry is retained.
 Origin checks are not authentication: native clients can omit the header. Keep this

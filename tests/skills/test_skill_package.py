@@ -8,6 +8,7 @@ import struct
 import tempfile
 import unittest
 import zipfile
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("package_skill", ROOT / "scripts/package-bestfit-skill.py")
@@ -16,12 +17,76 @@ SPEC.loader.exec_module(PACKAGE)
 
 
 class PackageTests(unittest.TestCase):
+    def test_all_distributions_include_the_maintained_privacy_policy(self):
+        policy = (ROOT / "docs/plugin-privacy.md").read_bytes()
+        builds = (
+            (PACKAGE.package, ("bestfit-frequency/",)),
+            (PACKAGE.package_marketplace, (
+                "rmc-bestfit-marketplace/plugins/rmc-bestfit/",
+                "rmc-bestfit-marketplace/plugins/rmc-bestfit/skills/bestfit-frequency/")),
+            (PACKAGE.package_openai_plugin, ("", "skills/bestfit-frequency/")),
+            (PACKAGE.package_claude_plugin, (
+                "rmc-bestfit-claude-plugin/",
+                "rmc-bestfit-claude-plugin/skills/bestfit-frequency/")),
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            for index, (build, roots) in enumerate(builds):
+                with self.subTest(build=build.__name__):
+                    path = Path(temp) / f"package-{index}.zip"
+                    build(path)
+                    with zipfile.ZipFile(path) as archive:
+                        for root in roots:
+                            self.assertEqual(archive.read(root + "PRIVACY.md"), policy)
+
+    def test_directory_metadata_identifies_the_purpose_and_public_policy(self):
+        templates = ROOT / "packaging/bestfit-frequency"
+        openai = json.loads((templates / "plugin.json").read_text(encoding="utf-8"))
+        claude = json.loads((templates / "claude-plugin.json").read_text(encoding="utf-8"))
+        catalog = json.loads((templates / "marketplace.json").read_text(encoding="utf-8"))
+        claude_catalog = json.loads((templates / "claude-marketplace.json").read_text(encoding="utf-8"))
+        self.assertEqual(openai["name"], claude["name"])
+        self.assertEqual(catalog["plugins"][0]["name"], openai["name"])
+        self.assertEqual(claude_catalog["plugins"][0]["name"], claude["name"])
+        self.assertEqual(openai["version"], claude["version"])
+        self.assertRegex(openai["version"], r"^\d+\.\d+\.\d+$")
+        self.assertEqual(openai["interface"]["displayName"], "RMC-BestFit")
+        self.assertEqual(claude["displayName"], openai["interface"]["displayName"])
+        self.assertEqual(openai["interface"]["category"], "Data & Analytics")
+        self.assertEqual(catalog["plugins"][0]["category"], openai["interface"]["category"])
+        self.assertEqual(claude_catalog["plugins"][0]["category"], "data-analysis")
+        self.assertEqual(openai["interface"]["privacyPolicyURL"], claude["privacyPolicyUrl"])
+        for field in ("websiteURL", "supportURL", "privacyPolicyURL"):
+            parsed = urlparse(openai["interface"][field])
+            self.assertEqual(parsed.scheme, "https")
+            self.assertEqual(parsed.netloc, "github.com")
+            self.assertTrue(parsed.path.startswith("/USACE-RMC/RMC-BestFit"))
+        policy_path = urlparse(openai["interface"]["privacyPolicyURL"]).path
+        self.assertEqual(policy_path, "/USACE-RMC/RMC-BestFit/blob/main/docs/plugin-privacy.md")
+        self.assertTrue((ROOT / policy_path.split("/blob/main/", 1)[1]).is_file())
+        self.assertEqual(claude["supportUrl"], openai["interface"]["supportURL"])
+        self.assertEqual(claude["documentationUrl"], openai["interface"]["websiteURL"])
+
+    def test_claude_directory_autodetects_full_size_official_icon(self):
+        artwork = (ROOT / "packaging/bestfit-frequency/assets/bestfit-icon-512.png").read_bytes()
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "claude-plugin.zip"
+            PACKAGE.package_claude_plugin(path)
+            with zipfile.ZipFile(path) as archive:
+                content = archive.read("rmc-bestfit-claude-plugin/.claude-plugin/icon.png")
+                self.assertEqual(content, artwork)
+                self.assertEqual(content[:8], b"\x89PNG\r\n\x1a\n")
+                width, height = struct.unpack_from(">II", content, 16)
+                self.assertEqual(width, height)
+                self.assertGreaterEqual(width, 512)
+                self.assertLessEqual(width, 2048)
+                self.assertLess(len(content), 2 * 1024 * 1024)
+
     def test_claude_directory_package_contains_required_root_readme(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "claude-plugin.zip"
             PACKAGE.package_claude_plugin(path)
             with zipfile.ZipFile(path) as archive:
-                readme_path = "bestfit-frequency-claude-plugin/README.md"
+                readme_path = "rmc-bestfit-claude-plugin/README.md"
                 self.assertIn(readme_path, archive.namelist(),
                               "Claude directory submission requires a README in the plugin folder")
                 readme = archive.read(readme_path).decode("utf-8")
@@ -33,7 +98,8 @@ class PackageTests(unittest.TestCase):
         templates = ROOT / "packaging/bestfit-frequency"
         manifest = json.loads((templates / "plugin.json").read_text(encoding="utf-8"))
         interface = manifest["interface"]
-        for field, limit in (("shortDescription", 30), ("defaultPrompt", 128)):
+        for field, limit in (("displayName", 30), ("shortDescription", 30),
+                             ("longDescription", 4000), ("developerName", 80), ("defaultPrompt", 128)):
             with self.subTest(field=field):
                 self.assertGreater(len(interface[field]), 0)
                 self.assertLessEqual(len(interface[field]), limit)
@@ -62,11 +128,11 @@ class PackageTests(unittest.TestCase):
         builds = (
             ("skill", PACKAGE.package, "bestfit-frequency/", None),
             ("marketplace", PACKAGE.package_marketplace,
-             "bestfit-frequency-marketplace/plugins/bestfit-frequency/skills/bestfit-frequency/",
-             "bestfit-frequency-marketplace/plugins/bestfit-frequency/"),
+             "rmc-bestfit-marketplace/plugins/rmc-bestfit/skills/bestfit-frequency/",
+             "rmc-bestfit-marketplace/plugins/rmc-bestfit/"),
             ("openai-plugin", PACKAGE.package_openai_plugin, "skills/bestfit-frequency/", ""),
             ("claude-plugin", PACKAGE.package_claude_plugin,
-             "bestfit-frequency-claude-plugin/skills/bestfit-frequency/", None),
+             "rmc-bestfit-claude-plugin/skills/bestfit-frequency/", None),
         )
         expected_skill = dict(PACKAGE.skill_entries())
         with tempfile.TemporaryDirectory() as temp:
@@ -97,7 +163,7 @@ class PackageTests(unittest.TestCase):
                                                  (ROOT / "packaging/bestfit-frequency" / relative).read_bytes())
                         if label == "openai-plugin":
                             self.assertEqual({name.split("/")[0] for name in names},
-                                             {".codex-plugin", "skills", "assets"})
+                                             {".codex-plugin", "skills", "assets", "PRIVACY.md"})
                             self.assertFalse(any(name.endswith("marketplace.json") for name in names))
 
     def test_claude_archive_contains_complete_workflows_and_is_reproducible(self):
@@ -121,10 +187,10 @@ class PackageTests(unittest.TestCase):
             PACKAGE.package_marketplace(path)
             self.assertEqual(original, path.read_bytes())
             with zipfile.ZipFile(path) as archive:
-                prefix = "bestfit-frequency-marketplace/"
+                prefix = "rmc-bestfit-marketplace/"
                 catalog = json.loads(archive.read(prefix + ".agents/plugins/marketplace.json"))
-                self.assertEqual(catalog["plugins"][0]["source"]["path"], "./plugins/bestfit-frequency")
-                root = prefix + "plugins/bestfit-frequency/"
+                self.assertEqual(catalog["plugins"][0]["source"]["path"], "./plugins/rmc-bestfit")
+                root = prefix + "plugins/rmc-bestfit/"
                 manifest = json.loads(archive.read(root + ".codex-plugin/plugin.json"))
                 self.assertEqual(manifest["skills"], "./skills/")
                 self.assertNotIn("mcpServers", manifest)
@@ -146,11 +212,11 @@ class PackageTests(unittest.TestCase):
                 self.assertIsNone(archive.testzip())
                 names = archive.namelist()
                 # Uploads accept a plugin root at the top of the archive or one folder down.
-                root = "bestfit-frequency-claude-plugin/"
+                root = "rmc-bestfit-claude-plugin/"
                 self.assertTrue(all(name.startswith(root) for name in names))
                 manifest = json.loads(archive.read(root + ".claude-plugin/plugin.json"))
                 openai = json.loads((ROOT / "packaging/bestfit-frequency/plugin.json").read_text(encoding="utf-8"))
-                self.assertEqual(manifest["name"], "bestfit-frequency")
+                self.assertEqual(manifest["name"], "rmc-bestfit")
                 self.assertEqual(manifest["version"], openai["version"])
                 self.assertNotIn("mcpServers", manifest)
                 catalog = json.loads(archive.read(root + ".claude-plugin/marketplace.json"))

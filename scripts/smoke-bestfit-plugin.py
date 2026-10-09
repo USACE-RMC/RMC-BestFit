@@ -60,15 +60,15 @@ def extract_plugin(path, destination):
                     or PurePosixPath(name).is_absolute() or any(part in ("", ".", "..") for part in parts)
                     or stat.S_ISLNK(member.external_attr >> 16)):
                 raise ValueError(f"Unsafe plugin ZIP member: {name!r}")
-            if parts[0] not in (".codex-plugin", "skills", "assets"):
+            if parts[0] not in (".codex-plugin", "skills", "assets") and name != "PRIVACY.md":
                 raise ValueError(f"Unexpected submission ZIP root: {parts[0]}")
         manifest_name = ".codex-plugin/plugin.json"
         if manifest_name not in names or "skills/bestfit-frequency/SKILL.md" not in names:
             raise ValueError("Expected a plugin-root OpenAI submission ZIP, with its maintained skill")
         manifest = json.loads(archive.read(manifest_name))
-        if (manifest.get("name") != "bestfit-frequency" or manifest.get("skills") != "./skills/"
+        if (manifest.get("name") != "rmc-bestfit" or manifest.get("skills") != "./skills/"
                 or "mcpServers" in manifest):
-            raise ValueError("Expected the skills-only bestfit-frequency plugin manifest")
+            raise ValueError("Expected the skills-only rmc-bestfit plugin manifest")
         for field in ("logo", "composerIcon"):
             relative = manifest.get("interface", {}).get(field, "").removeprefix("./")
             if not relative or relative not in names:
@@ -337,7 +337,7 @@ def main():
     """Require fresh evidence output and expose wait limits without estimator overrides."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="Fresh evidence directory; existing paths are refused")
-    parser.add_argument("--plugin-zip", type=Path, default=ROOT / "artifacts/bestfit-frequency-openai-plugin.zip")
+    parser.add_argument("--plugin-zip", type=Path, default=ROOT / "artifacts/rmc-bestfit-openai-plugin.zip")
     parser.add_argument("--api-dll", type=Path, default=ROOT / "src/RMC.BestFit.Api/bin/Release/net10.0/RMC.BestFit.Api.dll")
     parser.add_argument("--startup-timeout", type=float, default=60, help="Health readiness wait in seconds")
     parser.add_argument("--request-timeout", type=float, default=1800,

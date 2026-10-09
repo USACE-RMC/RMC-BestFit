@@ -3,10 +3,10 @@
   "interface": { "displayName": "BestFit Local" },
   "plugins": [
     {
-      "name": "bestfit-frequency",
-      "source": { "source": "local", "path": "./plugins/bestfit-frequency" },
+      "name": "rmc-bestfit",
+      "source": { "source": "local", "path": "./plugins/rmc-bestfit" },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
-      "category": "Productivity"
+      "category": "Data & Analytics"
     }
   ]
 }

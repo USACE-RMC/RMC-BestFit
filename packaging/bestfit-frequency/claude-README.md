@@ -1,11 +1,12 @@
-# BestFit Flood Frequency
+# RMC-BestFit
 
-This plugin provides the `bestfit-frequency` skill for evidence-backed flood
-frequency analysis with the local RMC-BestFit API. It helps organize historical
-and regional flood evidence, prepare input chronology, configure supported
-analyses, and export frequency and diagnostic plots as PNG and SVG. Saved results
-can also be plotted without starting a new fit. Numerical estimation remains in
-BestFit; the bundled Python helpers prepare requests and render its results.
+The `rmc-bestfit` plugin provides the maintained `bestfit-frequency` skill for
+statistical analysis and plotting with RMC-BestFit. It organizes historical and
+regional flood evidence, prepares input chronology, and runs supported flood
+frequency workflows through the local API. It also renders supplied frequency,
+bivariate, rating-curve, time-series, regression, and diagnostic results as PNG
+and SVG without starting a new fit. Numerical estimation remains in BestFit;
+the bundled Python helpers prepare requests and render its results.
 
 ## Requirements and setup
 
@@ -15,7 +16,7 @@ a compatible [RMC-BestFit v2.0.1 source checkout](https://github.com/USACE-RMC/R
 a terminal with a writable workspace, the .NET 10 SDK, Python and its listed
 dependencies, package network access, a persistent child process, and loopback
 HTTP access in the same execution environment. The compatible source uses
-RMC.Numerics 2.2.0. Plugin version 0.3.2 is separate from application version 2.0.1.
+RMC.Numerics 2.2.0. Plugin version 0.3.3 is separate from application version 2.0.1.
 
 Read the bundled [setup instructions](skills/bestfit-frequency/references/setup.md)
 before execution. They describe cloning the compatible source, installing Python
@@ -25,9 +26,13 @@ source evidence are written to the workspace. Research can fetch public source
 material, and setup fetches source and dependencies; this package does not
 configure a hosted connector or automatically start a service when installed.
 
+Read the bundled [plugin privacy policy](PRIVACY.md), also available at the
+[public policy URL](https://github.com/USACE-RMC/RMC-BestFit/blob/main/docs/plugin-privacy.md),
+for information processed, recipients, retention, and user controls.
+
 ## Use and verification
 
-In Claude Code, invoke `/bestfit-frequency:bestfit-frequency` after installing the
+In Claude Code, invoke `/rmc-bestfit:bestfit-frequency` after installing the
 plugin. Ask it to prepare the bundled synthetic study and display its chronology
 before fitting. Follow the [installation and live acceptance guide](skills/bestfit-frequency/references/install.md)
 for other surfaces and subsequent analysis checks.

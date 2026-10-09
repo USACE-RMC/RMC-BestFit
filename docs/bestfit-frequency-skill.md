@@ -44,16 +44,22 @@ The packager produces four archives, each with a `.zip.sha256` sidecar:
 
 | Archive under `artifacts/` | Purpose |
 |---|---|
-| `bestfit-frequency-skill.zip` | Standalone skill with one `bestfit-frequency/` root |
-| `bestfit-frequency-marketplace.zip` | OpenAI local marketplace with a nested plugin |
-| `bestfit-frequency-openai-plugin.zip` | Direct OpenAI plugin upload: `.codex-plugin/plugin.json`, `skills/`, and `assets/` at the archive root |
-| `bestfit-frequency-claude-plugin.zip` | Claude plugin with its own one-plugin marketplace |
+| `rmc-bestfit-skill.zip` | Standalone skill with one `bestfit-frequency/` root |
+| `rmc-bestfit-marketplace.zip` | OpenAI local marketplace with a nested plugin |
+| `rmc-bestfit-openai-plugin.zip` | Direct OpenAI plugin upload: `.codex-plugin/plugin.json`, `skills/`, `assets/`, and `PRIVACY.md` at the archive root |
+| `rmc-bestfit-claude-plugin.zip` | Claude plugin with its own one-plugin marketplace |
 
 All four contain identical maintained skill files, including preparation,
 research-capture, execution and plotting helpers, Python requirements, references,
 synthetic examples and the repository license. They exclude local results, virtual
-environments and application binaries. Plugin version **0.3.2** is independent of
+environments and application binaries. Plugin version **0.3.3** is independent of
 the BestFit application/API version **2.0.1** and RMC.Numerics **2.2.0**.
+
+The plugin is listed as **RMC-BestFit** with the identifier `rmc-bestfit`; the
+maintained skill keeps its `bestfit-frequency` name. Both plugin formats link to
+the [privacy policy](plugin-privacy.md), which is included in every archive.
+Publish that document at the manifest's exact public URL before resubmission.
+The Claude plugin also includes a 512-pixel copy of the existing official icon.
 
 See [installation instructions](../skills/bestfit-frequency/references/install.md)
 for Codex, Claude Desktop, Claude Code, and custom ZIP uploads. Once installed, matching prompts

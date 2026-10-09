@@ -1,11 +1,14 @@
 {
-  "name": "bestfit-frequency",
-  "displayName": "BestFit Flood Frequency",
-  "version": "0.3.2",
-  "description": "Evidence-backed flood frequency analysis with the local BestFit API.",
+  "name": "rmc-bestfit",
+  "displayName": "RMC-BestFit",
+  "version": "0.3.3",
+  "description": "Statistical analysis and plotting with RMC-BestFit: run supported flood frequency workflows and visualize saved model results.",
   "author": { "name": "USACE Risk Management Center" },
   "homepage": "https://github.com/USACE-RMC/RMC-BestFit",
   "repository": "https://github.com/USACE-RMC/RMC-BestFit",
+  "documentationUrl": "https://github.com/USACE-RMC/RMC-BestFit",
+  "supportUrl": "https://github.com/USACE-RMC/RMC-BestFit/issues",
+  "privacyPolicyUrl": "https://github.com/USACE-RMC/RMC-BestFit/blob/main/docs/plugin-privacy.md",
   "license": "0BSD",
-  "keywords": ["flood-frequency", "bulletin-17c", "hydrology", "bestfit"]
+  "keywords": ["statistical-analysis", "data-visualization", "flood-frequency", "bulletin-17c", "hydrology", "bestfit"]
 }

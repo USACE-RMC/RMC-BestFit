@@ -84,8 +84,8 @@ jobs:
         with:
           name: plugin-packages-${{ matrix.os }}
           path: |
-            artifacts/bestfit-frequency-*.zip
-            artifacts/bestfit-frequency-*.zip.sha256
+            artifacts/rmc-bestfit-*.zip
+            artifacts/rmc-bestfit-*.zip.sha256
           if-no-files-found: error
 
   release-assets:
@@ -111,7 +111,7 @@ jobs:
           cd packages
           assets=()
           for kind in skill marketplace openai-plugin claude-plugin; do
-            archive="bestfit-frequency-${kind}.zip"
+            archive="rmc-bestfit-${kind}.zip"
             sha256sum --check "${archive}.sha256"
             assets+=("$archive" "${archive}.sha256")
           done

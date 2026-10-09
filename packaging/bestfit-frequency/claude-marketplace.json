@@ -1,13 +1,13 @@
 {
   "name": "bestfit-local",
   "owner": { "name": "USACE Risk Management Center" },
-  "description": "Local catalog for the BestFit Flood Frequency plugin.",
+  "description": "Local catalog for the RMC-BestFit statistical analysis and plotting plugin.",
   "plugins": [
     {
-      "name": "bestfit-frequency",
+      "name": "rmc-bestfit",
       "source": "./",
-      "description": "Evidence-backed flood frequency analysis with the local BestFit API.",
-      "category": "productivity"
+      "description": "Statistical analysis and plotting with RMC-BestFit: run supported flood frequency workflows and visualize saved model results.",
+      "category": "data-analysis"
     }
   ]
 }

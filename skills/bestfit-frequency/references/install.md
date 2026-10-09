@@ -9,19 +9,25 @@ python scripts/package-bestfit-skill.py
 
 | Archive under `artifacts/` | Installation purpose |
 |---|---|
-| `bestfit-frequency-skill.zip` | Standalone skill upload/copy |
-| `bestfit-frequency-marketplace.zip` | OpenAI local marketplace registration |
-| `bestfit-frequency-openai-plugin.zip` | Direct OpenAI plugin ZIP submission |
-| `bestfit-frequency-claude-plugin.zip` | Claude plugin upload/local marketplace |
+| `rmc-bestfit-skill.zip` | Standalone skill upload/copy |
+| `rmc-bestfit-marketplace.zip` | OpenAI local marketplace registration |
+| `rmc-bestfit-openai-plugin.zip` | Direct OpenAI plugin ZIP submission |
+| `rmc-bestfit-claude-plugin.zip` | Claude plugin upload/local marketplace |
 
 Each has a SHA-256 sidecar. Packaging does not modify profiles, register a connector
 or publish a plugin. The direct OpenAI archive places the supported compatibility
-manifest `.codex-plugin/plugin.json`, `skills/`, and `assets/` at its root. The
+manifest `.codex-plugin/plugin.json`, `skills/`, `assets/`, and `PRIVACY.md` at its root. The
 marketplace archive nests that plugin beneath its marketplace root; it is not the
 direct-upload archive. The Claude plugin uses `.claude-plugin/plugin.json` and
 includes its own one-plugin marketplace. All four contain identical skill files
 and the repository license, with no BestFit binaries or runtimes. Plugin version
-**0.3.2** is separate from BestFit **2.0.1** and RMC.Numerics **2.2.0**.
+**0.3.3** is separate from BestFit **2.0.1** and RMC.Numerics **2.2.0**.
+
+The plugin's public name is **RMC-BestFit** and package identifier is
+`rmc-bestfit`. The maintained skill remains `bestfit-frequency`; its folder and
+standalone invocation have not changed. Version 0.3.2 used the plugin identifier
+`bestfit-frequency`. The renamed plugin is a new listing, not an update of that
+identifier. Select one installed copy to avoid duplicate skills.
 
 ## Runtime requirement for every platform
 
@@ -39,12 +45,12 @@ validation applies. Saved responses can still be plotted in a capable Python ses
 
 ## OpenAI desktop / Codex
 
-1. Extract `bestfit-frequency-marketplace.zip` to a chosen local directory, keeping
-   its top-level `bestfit-frequency-marketplace` folder and hidden `.agents` folder.
+1. Extract `rmc-bestfit-marketplace.zip` to a chosen local directory, keeping
+   its top-level `rmc-bestfit-marketplace` folder and hidden `.agents` folder.
 2. Register that extracted marketplace root:
-   `codex plugin marketplace add ABSOLUTE_PATH/bestfit-frequency-marketplace`.
+   `codex plugin marketplace add ABSOLUTE_PATH/rmc-bestfit-marketplace`.
 3. Restart the desktop client. Open **Plugins Directory**, select **BestFit Local**,
-   and install **BestFit Flood Frequency**. Installation is a separate user action;
+   and install **RMC-BestFit**. Installation is a separate user action;
    creating the ZIP does not install it.
 4. Start a fresh task with access to the matching BestFit checkout. Select the skill
    with `@` where available, or invoke `$bestfit-frequency` in Codex CLI.
@@ -89,11 +95,18 @@ assuming that another client's local installation made the plugin available.
 
 ## OpenAI public plugin directory
 
-The owner can submit `bestfit-frequency-openai-plugin.zip` through the OpenAI
+The owner can submit `rmc-bestfit-openai-plugin.zip` through the OpenAI
 Platform Plugins dashboard using an eligible organization/project and verified
 developer identity. Resolve package and skill findings, submit for review, and
 publish only after approval. Metadata or skill updates require a new complete ZIP.
 See the official [submission process](https://developers.openai.com/plugins/deploy/submission).
+
+Before uploading, publish and anonymously verify the exact
+[privacy-policy URL](https://github.com/USACE-RMC/RMC-BestFit/blob/main/docs/plugin-privacy.md)
+declared in the manifest. A policy bundled inside the ZIP does not make this URL
+publicly accessible. The policy must describe the publisher's actual practices.
+The listing uses **Data & Analytics**, with analysis and plotting described in
+its metadata. A valid category name does not guarantee a category-fit approval.
 
 After publication, users can find the plugin in the shared ChatGPT/Codex directory,
 install it, start a fresh chat, and invoke it with `@`. Actual surfaces and account
@@ -108,7 +121,7 @@ for a session without execution tools.
 1. Enable **Code execution and file creation** under **Settings → Capabilities**.
    Team/Enterprise administrators may control skills and execution availability.
 2. Open **Customize → Skills → + → Create skill → Upload a skill**.
-3. Upload `bestfit-frequency-skill.zip`. It has one top-level `bestfit-frequency/`
+3. Upload `rmc-bestfit-skill.zip`. It has one top-level `bestfit-frequency/`
    folder containing `SKILL.md`; do not upload a plugin or marketplace ZIP instead.
 4. Enable the skill, start a fresh chat, and explicitly request `bestfit-frequency`.
 5. Supply the compatible repository revision and study location/data. Test the
@@ -122,8 +135,8 @@ that chat environment. Keep runtime acceptance distinct from successful upload.
 ## Claude Desktop plugin
 
 1. Open **Customize → Plugins**, choose the upload option, and select
-   `bestfit-frequency-claude-plugin.zip`. It has one top-level
-   `bestfit-frequency-claude-plugin/` folder holding `.claude-plugin/plugin.json`
+   `rmc-bestfit-claude-plugin.zip`. It has one top-level
+   `rmc-bestfit-claude-plugin/` folder holding `.claude-plugin/plugin.json`
    and `skills/bestfit-frequency/`; do not upload the skill or OpenAI ZIP instead.
 2. Open the installed plugin and confirm it lists the `bestfit-frequency` skill.
    An installed plugin is saved to the account, so the skill is also available in
@@ -137,17 +150,18 @@ that chat environment. Keep runtime acceptance distinct from successful upload.
 
 Plugin route:
 
-1. Extract `bestfit-frequency-claude-plugin.zip`, keeping its top-level
-   `bestfit-frequency-claude-plugin` folder and hidden `.claude-plugin` folder.
+1. Extract `rmc-bestfit-claude-plugin.zip`, keeping its top-level
+   `rmc-bestfit-claude-plugin` folder and hidden `.claude-plugin` folder.
 2. Validate the marketplace, plugin manifest, and skill directory explicitly:
 
    ```sh
    claude --version
-   claude plugin validate ABSOLUTE_PATH/bestfit-frequency-claude-plugin/.claude-plugin/marketplace.json --strict
-   claude plugin validate ABSOLUTE_PATH/bestfit-frequency-claude-plugin/.claude-plugin/plugin.json --strict
-   claude plugin validate ABSOLUTE_PATH/bestfit-frequency-claude-plugin/skills --strict
+   claude plugin validate ABSOLUTE_PATH/rmc-bestfit-claude-plugin/.claude-plugin/marketplace.json --strict
+   claude plugin validate ABSOLUTE_PATH/rmc-bestfit-claude-plugin/.claude-plugin/plugin.json --strict
+   claude plugin validate ABSOLUTE_PATH/rmc-bestfit-claude-plugin/skills --strict
    ```
 
+   Directory-listing URL fields require Claude Code 2.1.281 or newer.
    Skills-directory validation requires Claude Code 2.1.233 or newer. Older
    directory validation prioritizes a marketplace manifest when both manifests
    exist; validation of both from the root requires 2.1.289 or newer. Keep all three
@@ -155,10 +169,10 @@ Plugin route:
    as skill validation. See the official
    [validator reference](https://code.claude.com/docs/en/plugins/cli-reference#plugin-validate).
 3. Register that folder as a local marketplace:
-   `claude plugin marketplace add ABSOLUTE_PATH/bestfit-frequency-claude-plugin`
+   `claude plugin marketplace add ABSOLUTE_PATH/rmc-bestfit-claude-plugin`
    (or `/plugin marketplace add ...` inside a session).
-4. Run `claude plugin install bestfit-frequency@bestfit-local`, start a new session
-   in the compatible checkout, and invoke `/bestfit-frequency:bestfit-frequency`.
+4. Run `claude plugin install rmc-bestfit@bestfit-local`, start a new session
+   in the compatible checkout, and invoke `/rmc-bestfit:bestfit-frequency`.
 
 Standalone route instead: extract the skill folder into `~/.claude/skills/` or the
 repository's `.claude/skills/` and invoke `/bestfit-frequency`. Choose one route to
@@ -175,17 +189,30 @@ permanent branch or tag. The directory requires a paid Claude account and a
 connected GitHub account with push access. Select the organization that should
 own the listing long term before submitting.
 
-The generated Claude archive includes a plugin-root README and a manifest license.
+The generated Claude archive includes a plugin-root README, privacy policy,
+512-pixel PNG icon, and a manifest license and privacy-policy URL.
 Publish its extracted plugin contents at the chosen durable GitHub location;
 do not point the listing at a development branch that will be deleted. A full
 BestFit source checkout is not a suitable directory snapshot: the directory's
 repository limits are 50 MiB archived, 256 MiB unpacked and 10,000 entries.
 A small distribution repository or retained distribution branch is needed.
 
+For this renamed 0.3.3 package, extract `rmc-bestfit-claude-plugin.zip` and publish
+the contents of its outer folder at the selected permanent source ref. The old
+`bestfit-frequency-v0.3.2` tag identifies the previous package and must not be
+moved or reused for these bytes. Select the plugin root and the new ref in the
+portal. Keep application source pinned to `v2.0.1` as described in `setup.md`.
+
 Run **Validate** in the portal, resolve blocking findings, complete the listing,
 data-handling and compliance fields, then submit for review. Native
 `claude plugin validate` checks do not replace this directory validation. Confirm
 the portal reports **Published** before advertising directory availability.
+The setup example passes a limited runtime environment to its local API child;
+it does not copy ambient API keys or cloud credentials. Scanners can still flag
+instructions for review. Review the actual finding and explain the data flow;
+do not assert that a local validator clears a portal hold. If a required
+compliance declaration describes MCP-only execution, clarify its application to
+these documented skill scripts with Anthropic before acknowledging it.
 See the official [publication guide](https://claude.com/docs/directory/publish)
 and [directory checklist](https://claude.com/docs/plugins/pre-submission-checklist).
 
