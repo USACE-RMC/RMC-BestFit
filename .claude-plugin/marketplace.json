@@ -1,0 +1,13 @@
+{
+  "name": "bestfit-local",
+  "owner": { "name": "USACE Risk Management Center" },
+  "description": "Local catalog for the RMC-BestFit statistical analysis and plotting plugin.",
+  "plugins": [
+    {
+      "name": "rmc-bestfit",
+      "source": "./",
+      "description": "Statistical analysis and plotting with RMC-BestFit: run supported flood frequency workflows and visualize saved model results.",
+      "category": "data-analysis"
+    }
+  ]
+}

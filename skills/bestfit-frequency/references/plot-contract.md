@@ -1,0 +1,143 @@
+# BestFit plotting contracts
+
+The canonical package covers the 45 slots listed in
+[app-plot-map.json](app-plot-map.json). Each entry identifies the actual desktop
+factory and population method, source fixture, adapter, applicable variants, and
+evidence. [saved-plots.md](saved-plots.md) documents the common saved-source CLI.
+The remainder of this page describes the preserved legacy frequency command.
+
+PlotSpec v1 retains raw coordinates with explicit `linear`, `log`, `date`, or
+`normal_probability` axes, named series, interval types, and source/run identity.
+Bands may be vertical (flow quantiles) or horizontal (coincident probability and
+rating discharge). Frequency uses AEP; bivariate probability views use marginal
+CDF. Time-series chronology retains actual dates and the training boundary.
+Histogram bar height is density per unit width when that is the app contract.
+Nonfinite coordinates become explicit gaps; source observations are not altered.
+
+The desktop adapter labels GMM quantile information **Quantile Penalty** and
+records its bounds as `interval.kind: penalty`. Bayesian annotations retain
+**Quantile Prior** and `interval.kind: prior`. This corrects an ambiguous legacy
+desktop legend without changing coordinates or the saved report text.
+
+Desktop snapshots also preserve explicit or resolved axis `minimum` and `maximum`
+bounds in source units, and a boolean `reversed` flag for display direction after
+the axis transform. Date bounds use ISO 8601. The desktop adapter accounts for
+AEP's decreasing transform. Source RGBA fills retain their original transparency;
+`alpha: null` lets Matplotlib use the alpha encoded in each color.
+
+Monthly seasonality bands are the 5th–95th and 25th–75th percentiles of observed
+values in each month (`MonthlySummaryStatistics` columns 1/5 and 2/4). Python
+labels these **90% Observed Range** and **50% Observed Range**, correcting the
+desktop's legacy confidence-interval labels without changing their coordinates.
+They describe sample spread, not uncertainty in a fitted mean or flood quantile.
+
+## Legacy frequency command
+
+## Input chronology before fitting
+
+`GET /api/inputdata/{id}/chronology` (MCP `get_inputdata_chronology`) returns
+`schemaVersion:1`, input identity and model-derived observation DTOs. It works
+before creating any analysis. `plot_chronology.py` renders these coordinates on
+linear axes so zeros and negative paleoflood year indexes remain visible.
+
+Exact observations are black circles, low outliers red crosses, uncertain data
+green diamonds with model bounds, intervals cyan circles with bounds, and
+perception windows salmon shading from zero to the threshold. Window endpoints
+are inclusive; one-year rectangles expand by half a year for visibility only.
+Labels show effective aggregate above/below counts. No annual dates are invented
+for aggregate censored floods. Gaps remain unknown, not zeros.
+
+Supply known units and the declared index convention explicitly. Save full-range
+PNG/SVG and optional `--zoom START END` systematic-period views. Nonfinite bounds
+are reported in display notes, never silently clipped or statistically recomputed.
+Use `/source` to compare original submitted counts and evidence with processed
+chronology. Inspect and display the PNG before running a fit.
+
+## Frequency curve after fitting
+
+The renderer targets one standard B17C or stationary Bayesian univariate analysis.
+It matches default desktop semantics and styling, not saved project customizations,
+WPF font rasterization, interactive tooltips, alternative overlays, or other plot
+families through that legacy command. Python never estimates a distribution, computes confidence limits,
+reruns MGBT, or reconstructs plotting positions.
+
+| Element | Rendering contract |
+|---|---|
+| X axis | Annual exceedance probability, decreasing left to right; normal-probability coordinate `Phi^-1(1-AEP)`. Implementation uses equivalent `-Phi^-1(AEP)` to avoid cancellation. |
+| X ticks | Major AEPs 0.9, 0.5, 0.1 and decimal tails/complements; intermediate minor ticks. AEP labels, not percentages or return periods. |
+| Y axis | Logarithmic flow; limits padded to powers of ten, whole-number labels; solid major and dashed minor horizontal grids. Blank unit label unless supplied. |
+| Point curve | Black solid, width 1. `Computed` for B17C; `Posterior Mean` or `Posterior Mode` according to `fittedDistribution.pointEstimator` for Bayesian. The legacy array name `modeCurve` does not identify which estimator was used. |
+| Mean curve | Blue dashed, width 1. `Expected Probability` for B17C; `Posterior Predictive` for Bayesian. |
+| Uncertainty | Fill RGBA `(104,140,175,75)/255`, outline `#353b7a`; percentage from `credibleIntervalWidth`. B17C says **Confidence Intervals**, Bayesian **Credible Intervals**. |
+| Exact data | Black circles at API `plottingPosition`/`value`. |
+| Low outliers | Red crosses for exact records with `isLowOutlier:true`. |
+| Uncertain data | Green diamonds with black bounds from API `lowerBound`/`upperBound`. |
+| Interval data | Cyan circles with black interval endpoints. |
+| Quantile annotations | Red squares with model-computed bounds from `quantileAnnotations`; Python says `Quantile Prior` for Bayesian priors and `Quantile Penalty` for GMM penalties. |
+| Layout | White background, legend upper left, title `Frequency`; axis title/tick fonts 16/12 pt. PNG and SVG exports. |
+
+The API returns probabilities and aligned curve arrays; a stable display ordering
+keeps these paired. It returns the data frame's computed observation positions,
+including historical/threshold and low-outlier treatment. Threshold records affect
+those positions but have no separate marker in this default desktop plot.
+
+Zero/negative/nonfinite magnitudes cannot appear on a log axis. The renderer also
+uses the desktop's `1e-16` display cutoff, omitting positive values at or below it.
+It omits
+their markers with a count and leaves gaps in non-displayable curve ordinates.
+Original inputs/results stay unchanged. It never moves zeros to an arbitrary
+positive floor. Unrepresentable error bounds are omitted and reported; remaining
+valid markers stay visible. Missing bounds produce a compatibility error rather
+than an approximation. Failed responses, invalid AEPs, mismatched arrays, inverted
+intervals, and fewer than two displayable point-curve values are rejected.
+
+For B17C the JSON field name `credibleIntervalWidth` is a compatibility name;
+the ensemble is not a Bayesian MCMC posterior. Quantile penalty display coordinates
+are in physical units even when a penalty is specified in log10 space. Univariate
+annotations are present only when quantile priors are enabled; B17C includes only
+enabled penalties.
+
+Source anchors in the BestFit repository:
+
+- `src/RMC.BestFit.UI/Elements/UnivariateAnalysis/{B17CAnalysis,UnivariateAnalysis}.cs`,
+  `CreateDefaultFrequencyPlot` / `ApplyDefaultPlotStyle`.
+- `src/RMC.BestFit.App/GUI/UnivariateAnalysis/B17C/B17CAnalysisControl.xaml.cs` and
+  `Univariate/UnivariateAnalysisControl.xaml.cs`, `UpdateFrequencyPlot`.
+- WPF-Framework `src/OxyPlot/OxyPlot/Axes/NormalProbabilityAxis.cs`,
+  `PreTransform`, `GetTickValues`, `FormatValueOverride`.
+- Model `QuantilePrior`, `QuantilePenalty`, `UncertainData` display properties.
+
+Matplotlib uses its available sans-serif font and drawing engine; exact pixels and
+automatic label layout can differ from WPF. The renderer intentionally handles
+invalid log bounds explicitly. Custom desktop axis/series settings are outside
+this contract.
+
+PlotSpec may set `legendLocation` to `best` (default), `upper left`, `upper right`,
+`lower left`, `lower right` or `outside right`. Traces default to an outside-right
+legend so excursions remain visible. Use a fixed corner after visual review if automatic
+placement covers an observation; this must not change coordinates or axis bounds.
+
+Rating-curve and time-series bands use `interval.kind = "prediction"` and
+**Prediction Intervals** in all adapters. BestFit's prediction methods include
+residual/process variation; the legacy `ConfidenceIntervals`/`CredibleIntervals`
+field or series name does not turn these into mean-curve uncertainty. Coincident
+frequency bounds retain `credible` and their horizontal probability orientation.
+GMM quantile annotations use `penalty`, while Bayesian annotations use `prior`.
+
+The desktop adapter carries exporter `displayCorrections` into each PlotSpec.
+For covariate-model residual views, the repository exporter bypasses reset live
+parameter values by passing the persisted vector to the existing BestFit residual
+method. It never estimates parameters or rewrites source cells. The example
+regression check independently compares residuals with observed minus saved
+ModeCurve and the saved RMSE.
+
+For figure interpretation and known source limitations, consult the
+[worked-example guide](examples.md).
+
+An explicit desktop snapshot `legacySavedFrequency` payload may supply original
+saved GMM probability/point/expected/lower/upper arrays and the stored confidence
+width when an older model format fails current app loading. The adapter accepts
+this only for an observation-only B17C frequency view. It preserves the arrays,
+adds standard Computed/Expected Probability/Confidence labels, expands logarithmic
+display limits when necessary, and records the original source columns. It never
+replaces an existing fitted plot or derives missing uncertainty values.

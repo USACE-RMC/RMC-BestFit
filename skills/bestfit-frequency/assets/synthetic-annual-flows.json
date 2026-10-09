@@ -1,0 +1,21 @@
+{
+  "name": "Synthetic annual flows - demonstration only, illustrative units",
+  "description": "Fabricated fixture for exercising the workflow; not observed station data or a validation oracle.",
+  "exactData": [
+    {"index": 1990, "value": 0}, {"index": 1991, "value": 0},
+    {"index": 1992, "value": 12}, {"index": 1993, "value": 190},
+    {"index": 1994, "value": 240}, {"index": 1995, "value": 270},
+    {"index": 1996, "value": 310}, {"index": 1997, "value": 340},
+    {"index": 1998, "value": 380}, {"index": 1999, "value": 410},
+    {"index": 2000, "value": 450}, {"index": 2001, "value": 490},
+    {"index": 2002, "value": 530}, {"index": 2003, "value": 570},
+    {"index": 2004, "value": 610}, {"index": 2005, "value": 660},
+    {"index": 2006, "value": 710}, {"index": 2007, "value": 770},
+    {"index": 2008, "value": 830}, {"index": 2009, "value": 900},
+    {"index": 2010, "value": 980}, {"index": 2011, "value": 1070},
+    {"index": 2012, "value": 1180}, {"index": 2013, "value": 1300},
+    {"index": 2014, "value": 1450}, {"index": 2015, "value": 1630},
+    {"index": 2016, "value": 1860}, {"index": 2017, "value": 2180},
+    {"index": 2018, "value": 2660}, {"index": 2019, "value": 3600}
+  ]
+}
